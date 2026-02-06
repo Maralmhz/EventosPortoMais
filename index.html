@@ -596,12 +596,15 @@
               <p class="text-sm text-amber-800 mb-3">
                 Sincroniza automaticamente com Firebase quando conectado à internet
               </p>
-              <div class="flex gap-2">
-                <button onclick="syncWithFirebase(); closeConfigModal();" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-lg font-bold transition">
-                  🔄 Sincronizar Agora
+              <div class="grid grid-cols-3 gap-2">
+                <button onclick="uploadToFirebase(); closeConfigModal();" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-lg font-bold transition">
+                  📤 Enviar
                 </button>
-                <button onclick="checkFirebaseStatus(); closeConfigModal();" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white px-4 py-3 rounded-lg font-bold transition">
-                  🔍 Ver Status
+                <button onclick="downloadFromFirebase(); closeConfigModal();" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-3 rounded-lg font-bold transition">
+                  📥 Baixar
+                </button>
+                <button onclick="checkFirebaseStatus(); closeConfigModal();" class="bg-amber-400 hover:bg-amber-500 text-white px-4 py-3 rounded-lg font-bold transition">
+                  🔍 Status
                 </button>
               </div>
             </div>

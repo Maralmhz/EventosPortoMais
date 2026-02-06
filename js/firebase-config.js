@@ -1,14 +1,16 @@
-// ===== CONFIGURAÇÃO FIREBASE =====
-// Substitua pelos seus dados do Firebase Console
+// Your web app's Firebase configuration
 const firebaseConfig = {
-    apiKey: "SUA_API_KEY_AQUI",
-    authDomain: "seu-projeto.firebaseapp.com",
-    databaseURL: "https://seu-projeto.firebaseio.com",
-    projectId: "seu-projeto-id",
-    storageBucket: "seu-projeto.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef123456"
+  apiKey: "AIzaSyASDJpwHTtOn71liMYaMTwyWVDY4s1FJRU",
+  authDomain: "porto-mais-eventos.firebaseapp.com",
+  databaseURL: "https://porto-mais-eventos-default-rtdb.firebaseio.com",
+  projectId: "porto-mais-eventos",
+  storageBucket: "porto-mais-eventos.firebasestorage.app",
+  messagingSenderId: "1084717178712",
+  appId: "1:1084717178712:web:05f7aa39e06d626d208f2d"
 };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
 // Instruções para configurar:
 // 1. Acesse: https://console.firebase.google.com

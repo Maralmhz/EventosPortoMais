@@ -10,6 +10,10 @@
   <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
   <link href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" rel="stylesheet" />
   <link href="assets/styles.css" rel="stylesheet" />
@@ -22,27 +26,18 @@
 
     .layout { display: flex; height: 100vh; overflow: hidden; }
 
+    /* Menu reduzido - apenas 4 ícones */
     .sidebar { width: 60px; background: linear-gradient(180deg, #002B5C 0%, #001b3a 100%); color: #fff; flex-shrink: 0; display: flex; flex-direction: column; position: relative; transition: width .2s ease; }
-    .sidebar.open { width: 270px; }
-    .sidebar .logo { display:flex; align-items:center; gap:12px; padding:18px; border-bottom: 1px solid rgba(255,255,255,.08); }
-    .sidebar .logo img { height: 40px; transition: opacity .2s ease; }
-    .sidebar:not(.open) .logo img { opacity: 0; width: 0; }
-    .sidebar .logo h1 { font-size: 16px; font-weight: 800; line-height: 1.1; transition: opacity .2s ease; }
-    .sidebar:not(.open) .logo h1, .sidebar:not(.open) .logo .text-xs { opacity:0; width:0; overflow:hidden; }
+    .sidebar .logo { display:flex; align-items:center; justify-content:center; padding:18px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .sidebar .logo img { height: 40px; }
 
-    .sidebar .menu { padding: 10px; display:flex; flex-direction:column; gap:6px; overflow:auto; }
-    .sidebar .item { display:flex; align-items:center; gap:10px; padding: 10px 12px; border-radius: 12px; cursor:pointer; font-weight:800; color: rgba(255,255,255,.88); transition: background .15s ease; }
-    .sidebar .item:hover { background: rgba(255,255,255,.10); }
-    .sidebar .item.active { background: rgba(255,255,255,.16); color:#fff; }
-    .sidebar .item .txt { white-space: nowrap; transition: opacity .2s ease; }
-    .sidebar:not(.open) .item { justify-content:center; }
-    .sidebar:not(.open) .item .txt { opacity:0; width:0; overflow:hidden; }
+    .sidebar .menu { padding: 10px; display:flex; flex-direction:column; gap:10px; overflow:auto; }
+    .sidebar .item { display:flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius: 12px; cursor:pointer; font-size:24px; color: rgba(255,255,255,.88); transition: all .15s ease; margin:0 auto; }
+    .sidebar .item:hover { background: rgba(255,255,255,.10); transform: scale(1.1); }
+    .sidebar .item.active { background: rgba(255,255,255,.16); color:#fff; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
 
-    .sidebar .footer { margin-top:auto; padding: 12px 12px 16px; border-top: 1px solid rgba(255,255,255,.08); display:flex; flex-direction:column; gap:8px; transition: opacity .2s ease; }
-    .sidebar:not(.open) .footer { opacity:0; height:0; overflow:hidden; padding:0; }
-
-    .sidebar-toggle { position:absolute; right:-14px; top:16px; width:28px; height:28px; border-radius:999px; background:#111827; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; border: 2px solid rgba(255,255,255,.15); box-shadow: 0 10px 20px rgba(0,0,0,.18); transition: transform .2s ease; }
-    .sidebar-toggle:hover { transform: scale(1.06); }
+    .sidebar .footer { margin-top:auto; padding: 12px; border-top: 1px solid rgba(255,255,255,.08); text-align:center; }
+    .sidebar .footer .badge { font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 999px; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; display:inline-block; }
 
     .content { flex:1; background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%); overflow:auto; }
 
@@ -70,66 +65,59 @@
     .open-panel-item:hover { background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); transform: translateX(4px); }
 
     .sync-badge { display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; padding:6px 12px; border-radius:999px; font-size:11px; font-weight:800; box-shadow:0 4px 12px rgba(16,185,129,.3); animation:pulse-glow 2s infinite; }
+    
+    /* Top 5 Rankings Styles */
+    .ranking-item { display:flex; align-items:center; gap:12px; padding:12px; background:#f8fafc; border-radius:8px; margin-bottom:8px; transition:all .2s ease; }
+    .ranking-item:hover { background:#e2e8f0; transform:translateX(4px); }
+    .ranking-pos { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; flex-shrink:0; }
+    .ranking-pos.gold { background:linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); }
+    .ranking-pos.silver { background:linear-gradient(135deg, #94a3b8 0%, #64748b 100%); }
+    .ranking-pos.bronze { background:linear-gradient(135deg, #fb923c 0%, #ea580c 100%); }
+    .ranking-info { flex:1; }
+    .ranking-name { font-weight:800; font-size:14px; color:#1e293b; }
+    .ranking-details { font-size:11px; color:#64748b; margin-top:2px; }
+    .ranking-value { font-weight:900; font-size:16px; color:#3b82f6; text-align:right; }
   </style>
 </head>
 
 <body>
   <div class="layout">
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-toggle" onclick="toggleSidebar()" title="Menu">☰</div>
       <div class="logo">
-        <img src="https://agi-prod-file-upload-public-main-use1.s3.amazonaws.com/cacca5b9-29da-4402-ace7-419b369140a7" alt="Porto Mais" />
-        <div>
-          <h1>Gerenciador<br/>de Eventos</h1>
-          <div class="text-xs font-semibold text-white/70">Apresentação mensal</div>
-        </div>
+        <img src="https://agi-prod-file-upload-public-main-use1.s3.amazonaws.com/cacca5b9-29da-4402-ace7-419b369140a7" alt="Porto Mais" title="Porto Mais - Gerenciador de Eventos" />
       </div>
 
       <nav class="menu">
-        <div class="item active" id="nav-data" onclick="go('data')"><span>📝</span><span class="txt">Editar dados</span></div>
-        <div class="item" id="nav-dash" onclick="go('dash')"><span>📊</span><span class="txt">Dashboard</span></div>
-        <div class="item" id="nav-juridico" onclick="go('juridico')"><span>⚖️</span><span class="txt">Jurídico (3º causador)</span></div>
-        <div class="item" id="nav-compare" onclick="go('compare')"><span>📈</span><span class="txt">Comparar meses</span></div>
-
-        <div class="mt-2 px-2 text-xs font-extrabold tracking-wider text-white/60">AÇÕES</div>
-        <div class="item" onclick="openImportModal()"><span>📋</span><span class="txt">Colar Excel</span></div>
-        <div class="item" onclick="exportData()"><span>💾</span><span class="txt">Exportar CSV</span></div>
-        <div class="item" onclick="exportAllBackup()"><span>🗄️</span><span class="txt">Gerar backup</span></div>
-        <div class="item" onclick="importBackupFile()"><span>📂</span><span class="txt">Restaurar backup</span></div>
-        <div class="item" onclick="showCloudSyncModal()"><span>☁️</span><span class="txt">Sincronizar nuvem</span></div>
+        <div class="item active" id="nav-dash" onclick="go('dash')" title="Dashboard"><span>📊</span></div>
+        <div class="item" id="nav-data" onclick="go('data')" title="Editar Dados"><span>📝</span></div>
+        <div class="item" id="nav-juridico" onclick="go('juridico')" title="Jurídico"><span>⚖️</span></div>
+        <div class="item" id="nav-config" onclick="showConfigMenu()" title="Configurações"><span>⚙️</span></div>
       </nav>
 
       <div class="footer">
-        <div class="flex items-center justify-between">
-          <span class="text-xs text-white/70">Mês selecionado</span>
-          <span class="badge" id="badge-month">ATUAL</span>
-        </div>
-        <div id="sync-status" class="text-xs text-white/50 text-center"></div>
+        <div class="badge" id="badge-month">ATUAL</div>
+        <div id="sync-status" style="font-size:9px; margin-top:4px; color:rgba(255,255,255,0.6);"></div>
       </div>
     </aside>
 
     <main class="content">
       <div class="topbar">
         <div class="flex items-center gap-3">
-          <div class="text-lg font-extrabold text-gray-800" id="page-title">Editar dados</div>
-          <div class="text-xs font-bold text-gray-500" id="page-sub">Tabela principal do mês atual</div>
+          <div class="text-lg font-extrabold text-gray-800" id="page-title">Dashboard</div>
+          <div class="text-xs font-bold text-gray-500" id="page-sub">Visão geral do mês atual</div>
         </div>
 
         <div class="flex items-center gap-2 flex-wrap">
           <div class="month-selector" style="margin:0; padding:0; box-shadow:none; background:transparent;">
             <select id="month-switch" onchange="handleMonthSwitch()"></select>
           </div>
-          <button class="btn btn-primary" onclick="saveCurrentMonthWithChecks()">💾 Salvar mês</button>
-          <button class="btn btn-success" onclick="updateDashboard(); go('dash')">📊 Atualizar dashboard</button>
+          <button class="btn btn-primary" onclick="saveCurrentMonthWithChecks()">💾 Salvar</button>
+          <button class="btn btn-success" onclick="updateDashboard(); go('dash')">🔄 Atualizar</button>
         </div>
       </div>
 
-      <section id="page-data" class="page active">
-        <div class="alert alert-info">💡 <b>EVENTO TIPO</b> (VIDROS/ROUBO etc.) define o que aparece no Dashboard. <b>CAUSADOR</b> define quem causou (TERCEIRO entra no Jurídico).</div>
-        <div class="card"><div id="spreadsheet"></div></div>
-      </section>
-
-      <section id="page-dash" class="page">
+      <!-- DASHBOARD PAGE -->
+      <section id="page-dash" class="page active">
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <div class="kpi-card border-blue-500" onclick="kpiFilter('all')" style="border-image:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) 1;"><p class="kpi-label">Total de Eventos</p><p class="kpi-value" style="background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-total">0</p><p class="kpi-sub">Todos registros</p></div>
           <div class="kpi-card border-purple-500" onclick="kpiFilter('roubo')" style="border-image:linear-gradient(135deg, #a855f7 0%, #9333ea 100%) 1;"><p class="kpi-label">Roubo / Furto</p><p class="kpi-value" style="background:linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-roubo">0</p><p class="kpi-sub">Clique para filtrar</p></div>
@@ -161,8 +149,35 @@
             <div id="open-panel" class="text-sm text-gray-700"></div>
           </div>
         </div>
+
+        <!-- TOP 5 OFICINAS E CARROS -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="card">
+            <h3 class="font-bold text-gray-700 mb-4 text-lg">🏆 Top 5 Oficinas (mais carros)</h3>
+            <div id="top-oficinas"></div>
+          </div>
+          <div class="card">
+            <h3 class="font-bold text-gray-700 mb-4 text-lg">💎 Top 5 Carros mais caros</h3>
+            <div id="top-carros"></div>
+          </div>
+        </div>
+
+        <!-- RANKING JURÍDICO -->
+        <div class="card mb-6">
+          <h3 class="font-bold text-gray-700 mb-4 text-lg">⚖️ Ranking Jurídico - Maiores valores a recuperar</h3>
+          <div id="ranking-juridico"></div>
+        </div>
       </section>
 
+      <!-- EDITAR DADOS PAGE -->
+      <section id="page-data" class="page">
+        <div class="alert alert-info" style="background:#dbeafe; border-left:4px solid #3b82f6; padding:16px; border-radius:8px; margin-bottom:16px;">
+          💡 <b>EVENTO TIPO</b> (VIDROS/ROUBO etc.) define o que aparece no Dashboard. <b>CAUSADOR</b> define quem causou (TERCEIRO entra no Jurídico).
+        </div>
+        <div class="card"><div id="spreadsheet"></div></div>
+      </section>
+
+      <!-- JURÍDICO PAGE -->
       <section id="page-juridico" class="page">
         <div class="card mb-4">
           <h2 class="text-2xl font-extrabold text-gray-800">⚖️ Jurídico (3º causador)</h2>
@@ -178,31 +193,7 @@
         </div>
       </section>
 
-      <section id="page-compare" class="page">
-        <div class="card mb-6">
-          <h2 class="text-2xl font-bold text-gray-800 mb-4">📈 Comparação de Meses</h2>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-2">Selecione o Mês 1:</label>
-              <select id="month1-select" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500">
-                <option value="">-- Selecione um mês --</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-2">Selecione o Mês 2:</label>
-              <select id="month2-select" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500">
-                <option value="">-- Selecione um mês --</option>
-              </select>
-            </div>
-            <div class="flex items-end">
-              <button onclick="compareMonths()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold">🔄 Comparar</button>
-            </div>
-          </div>
-
-          <div id="compare-results" class="hidden"></div>
-        </div>
-      </section>
-
+      <!-- MODAIS -->
       <div id="importModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
           <div class="p-4 border-b-2 border-[#002B5C] flex justify-between items-center bg-gradient-to-r from-[#002B5C] to-[#003d7a] rounded-t-lg">
@@ -231,29 +222,32 @@
         </div>
       </div>
 
-      <div id="cloudSyncModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+      <div id="configModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
           <div class="p-6 border-b bg-gradient-to-r from-blue-500 to-purple-600 rounded-t-2xl">
-            <h3 class="font-bold text-xl text-white flex items-center gap-2">☁️ Sincronização na Nuvem</h3>
-            <p class="text-sm text-white/80 mt-1">Acesse seus dados de qualquer computador</p>
+            <h3 class="font-bold text-xl text-white flex items-center gap-2">⚙️ Menu de Configurações</h3>
           </div>
           <div class="p-6">
-            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
-              <p class="text-sm text-gray-700"><b>🚧 Firebase não configurado ainda.</b></p>
-              <p class="text-xs text-gray-600 mt-2">Para habilitar sync na nuvem:<br/>1. Crie projeto no Firebase (gratuíto)<br/>2. Adicione configuração no código<br/>3. Seus dados serão salvos automaticamente</p>
-            </div>
-            <div class="text-xs text-gray-500 mb-4">
-              <p><b>O que você ganha:</b></p>
-              <ul class="list-disc list-inside mt-2 space-y-1">
-                <li>Acesso de qualquer computador</li>
-                <li>Backup automático em tempo real</li>
-                <li>Sincronização instantânea</li>
-                <li>100% gratuito (Firebase Spark)</li>
-              </ul>
+            <div class="space-y-3">
+              <button onclick="openImportModal(); closeConfigModal()" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg font-bold text-left flex items-center gap-3">
+                <span>📋</span> Colar dados do Excel
+              </button>
+              <button onclick="exportData(); closeConfigModal()" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg font-bold text-left flex items-center gap-3">
+                <span>💾</span> Exportar CSV
+              </button>
+              <button onclick="exportAllBackup(); closeConfigModal()" class="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-lg font-bold text-left flex items-center gap-3">
+                <span>🗄️</span> Gerar backup completo
+              </button>
+              <button onclick="importBackupFile(); closeConfigModal()" class="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-lg font-bold text-left flex items-center gap-3">
+                <span>📂</span> Restaurar backup
+              </button>
+              <button onclick="syncToFirebase(); closeConfigModal()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-lg font-bold text-left flex items-center gap-3">
+                <span>☁️</span> Sincronizar nuvem
+              </button>
             </div>
           </div>
           <div class="p-4 bg-gray-50 rounded-b-2xl text-right">
-            <button onclick="closeCloudSyncModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-bold">Fechar</button>
+            <button onclick="closeConfigModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-bold">Fechar</button>
           </div>
         </div>
       </div>
@@ -269,30 +263,116 @@
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth() + 1;
     let chartTipo, chartJuridico, chartCustos;
+    let firebaseDb = null;
 
-    function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); }
+    // ============ FIREBASE AUTO-CONNECT ============
+    function initFirebase() {
+      try {
+        const firebaseConfig = {
+          apiKey: "AIzaSyASDJpwHTtOn71liMYaMTwyWVDY4s1FJRU",
+          authDomain: "porto-mais-eventos.firebaseapp.com",
+          databaseURL: "https://porto-mais-eventos-default-rtdb.firebaseio.com",
+          projectId: "porto-mais-eventos",
+          storageBucket: "porto-mais-eventos.firebasestorage.app",
+          messagingSenderId: "1084717178712",
+          appId: "1:1084717178712:web:05f7aa39e06d626d208f2d"
+        };
+        
+        const app = firebase.initializeApp(firebaseConfig);
+        firebaseDb = firebase.database();
+        
+        document.getElementById('sync-status').innerHTML = '<span style="color:#10b981;">✓ Online</span>';
+        console.log('✅ Firebase conectado automaticamente!');
+        
+        // Auto-sync a cada 30 segundos
+        setInterval(() => {
+          if (firebaseDb) {
+            const md = saveCurrentMonth();
+            firebaseDb.ref('months/' + monthKey(currentYear, currentMonth)).set(md)
+              .then(() => console.log('🔄 Auto-sync realizado'))
+              .catch(err => console.error('Erro no auto-sync:', err));
+          }
+        }, 30000);
+        
+      } catch (error) {
+        console.warn('Firebase não configurado:', error);
+        document.getElementById('sync-status').innerHTML = '<span style="color:#64748b;">Offline</span>';
+      }
+    }
 
-    function monthKey(y, m){ return `month_${y}_${String(m).padStart(2,'0')}`; }
-    function monthLabel(y,m){ const d = new Date(y, m-1); return d.toLocaleString('pt-BR',{month:'long',year:'numeric'}).toUpperCase(); }
-    function setBadge(){ const b = document.getElementById('badge-month'); if(b) b.innerText = monthLabel(currentYear, currentMonth); }
+    function syncToFirebase() {
+      if (!firebaseDb) {
+        Swal.fire('Firebase não disponível', 'Conexão com nuvem não configurada.', 'warning');
+        return;
+      }
+      
+      const months = getSavedMonths();
+      const promises = months.map(m => 
+        firebaseDb.ref('months/' + m.key).set({
+          year: m.year,
+          month: m.month,
+          monthLabel: m.monthLabel,
+          saveDate: new Date().toLocaleString('pt-BR'),
+          data: m.data
+        })
+      );
+      
+      Promise.all(promises)
+        .then(() => Swal.fire('✅ Sincronizado!', 'Todos os dados foram salvos na nuvem.', 'success'))
+        .catch(err => Swal.fire('Erro', 'Falha ao sincronizar: ' + err.message, 'error'));
+    }
 
+    // ============ PARSE DE DATAS DD/MM/YYYY (FIX JANEIRO) ============
+    function parseDateDDMMYYYY(dateStr) {
+      if (!dateStr) return null;
+      
+      const str = dateStr.toString().trim();
+      
+      // Formato DD/MM/YYYY
+      const match = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (match) {
+        const day = parseInt(match[1]);
+        const month = parseInt(match[2]) - 1; // JS months são 0-indexed
+        const year = parseInt(match[3]);
+        
+        // FIX: Validar se mês é válido (0-11)
+        if (month >= 0 && month <= 11) {
+          return new Date(year, month, day);
+        }
+      }
+      
+      return null;
+    }
+
+    // ============ NAVIGATION ============
     function go(page){
-      const pages = ['data','dash','juridico','compare'];
+      const pages = ['data','dash','juridico'];
       pages.forEach(p=>{
         const el = document.getElementById('page-'+p);
         const nav = document.getElementById('nav-'+p);
         if(el) el.classList.toggle('active', p===page);
         if(nav) nav.classList.toggle('active', p===page);
       });
-      const titleMap = { data:'Editar dados', dash:'Dashboard', juridico:'Jurídico (3º causador)', compare:'Comparar meses' };
-      const subMap = { data:'Tabela principal do mês selecionado', dash:'KPIs e gráficos do mês selecionado', juridico:'Cobrança e status jurídico (3º causador)', compare:'Comparação de custos e oficinas entre meses' };
+      const titleMap = { data:'Editar dados', dash:'Dashboard', juridico:'Jurídico (3º causador)' };
+      const subMap = { data:'Tabela principal do mês selecionado', dash:'KPIs, gráficos e rankings do mês', juridico:'Cobrança e status jurídico (3º causador)' };
       document.getElementById('page-title').innerText = titleMap[page] || 'Gerenciador';
       document.getElementById('page-sub').innerText = subMap[page] || '';
       if(page==='dash') updateDashboard();
-      if(page==='compare') updateCompareSelects();
       if(page==='juridico') filterJuridicoView();
       if(page==='data') setTimeout(()=>hot.render(), 50);
     }
+
+    function showConfigMenu() {
+      document.getElementById('configModal').classList.remove('hidden');
+    }
+    
+    function closeConfigModal() {
+      document.getElementById('configModal').classList.add('hidden');
+    }
+
+    function monthKey(y, m){ return `month_${y}_${String(m).padStart(2,'0')}`; }
+    function monthLabel(y,m){ const d = new Date(y, m-1); return d.toLocaleString('pt-BR',{month:'long',year:'numeric'}).toUpperCase(); }
+    function setBadge(){ const b = document.getElementById('badge-month'); if(b) b.innerText = monthLabel(currentYear, currentMonth); }
 
     function getSavedMonths(){
       const months = [];
@@ -389,8 +469,122 @@
                 <div class="text-xs text-gray-500 mt-1">${item.eventoTipo || ''} • ${item.veiculo || ''} • ${item.oficina || ''}</div>
               </div>`;
           }).join('')}
-          ${openRows.length>12 ? `<div class="text-xs text-gray-400 text-center mt-3">Mostrando 12 de ${openRows.length}. Use “Ver na planilha” para ver todos.</div>` : ''}
+          ${openRows.length>12 ? `<div class="text-xs text-gray-400 text-center mt-3">Mostrando 12 de ${openRows.length}. Use "Ver na planilha" para ver todos.</div>` : ''}
         </div>`;
+    }
+
+    // ============ TOP 5 OFICINAS (MAIS CARROS) ============
+    function buildTopOficinas(data) {
+      const wrap = document.getElementById('top-oficinas');
+      if (!wrap) return;
+      
+      const oficinas = {};
+      data.forEach(r => {
+        if (!r[0]) return;
+        const oficina = (r[6] || 'SEM OFICINA').toString().trim().toUpperCase();
+        if (!oficinas[oficina]) oficinas[oficina] = { count: 0, valor: 0 };
+        oficinas[oficina].count++;
+        oficinas[oficina].valor += parseFloat(r[11]) || 0;
+      });
+      
+      const sorted = Object.entries(oficinas)
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 5);
+      
+      if (sorted.length === 0) {
+        wrap.innerHTML = '<div class="text-gray-400 text-center py-4">Sem dados de oficinas</div>';
+        return;
+      }
+      
+      wrap.innerHTML = sorted.map(([nome, info], idx) => {
+        const posClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
+        return `
+          <div class="ranking-item">
+            <div class="ranking-pos ${posClass}">${idx + 1}</div>
+            <div class="ranking-info">
+              <div class="ranking-name">${nome}</div>
+              <div class="ranking-details">${info.valor.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}</div>
+            </div>
+            <div class="ranking-value">${info.count} carros</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ============ TOP 5 CARROS MAIS CAROS ============
+    function buildTopCarros(data) {
+      const wrap = document.getElementById('top-carros');
+      if (!wrap) return;
+      
+      const carros = data
+        .filter(r => r[0] && r[4]) // Tem associação e placa
+        .map((r, idx) => ({
+          placa: normalizePlaca(r[4]),
+          veiculo: r[3] || 'N/D',
+          valor: parseFloat(r[11]) || 0,
+          rowIndex: idx
+        }))
+        .sort((a, b) => b.valor - a.valor)
+        .slice(0, 5);
+      
+      if (carros.length === 0) {
+        wrap.innerHTML = '<div class="text-gray-400 text-center py-4">Sem dados de veículos</div>';
+        return;
+      }
+      
+      wrap.innerHTML = carros.map((car, idx) => {
+        const posClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
+        return `
+          <div class="ranking-item" onclick="openRow(${car.rowIndex})">
+            <div class="ranking-pos ${posClass}">${idx + 1}</div>
+            <div class="ranking-info">
+              <div class="ranking-name">${car.placa}</div>
+              <div class="ranking-details">${car.veiculo}</div>
+            </div>
+            <div class="ranking-value">${car.valor.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ============ RANKING JURÍDICO (VALOR A RECUPERAR) ============
+    function buildRankingJuridico(data) {
+      const wrap = document.getElementById('ranking-juridico');
+      if (!wrap) return;
+      
+      const juridico = data
+        .map((r, idx) => ({ r, idx }))
+        .filter(x => isTerceiroCausadorRow(x.r) && (parseFloat(x.r[16]) || 0) > 0)
+        .map(x => ({
+          placa: normalizePlaca(x.r[4]),
+          veiculo: x.r[3] || 'N/D',
+          beneficiario: x.r[1] || 'N/D',
+          eventoTipo: x.r[2] || 'N/D',
+          status: x.r[14] || 'N/D',
+          valorRecuperar: parseFloat(x.r[16]) || 0,
+          rowIndex: x.idx
+        }))
+        .sort((a, b) => b.valorRecuperar - a.valorRecuperar)
+        .slice(0, 10);
+      
+      if (juridico.length === 0) {
+        wrap.innerHTML = '<div class="text-gray-400 text-center py-4">Sem valores a recuperar no momento</div>';
+        return;
+      }
+      
+      wrap.innerHTML = juridico.map((item, idx) => {
+        const posClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
+        return `
+          <div class="ranking-item" onclick="openRow(${item.rowIndex})">
+            <div class="ranking-pos ${posClass}">${idx + 1}</div>
+            <div class="ranking-info">
+              <div class="ranking-name">${item.placa} - ${item.beneficiario}</div>
+              <div class="ranking-details">${item.eventoTipo} • Status: ${item.status} • ${item.veiculo}</div>
+            </div>
+            <div class="ranking-value">${item.valorRecuperar.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}</div>
+          </div>
+        `;
+      }).join('');
     }
 
     function openRow(rowIndex){ go('data'); setTimeout(()=>{ hot.selectCell(rowIndex, 0); hot.scrollViewportTo(rowIndex, 0); }, 120); }
@@ -429,7 +623,17 @@
         }
         return;
       }
-      saveCurrentMonth(); fillMonthSwitch(); setBadge(); Swal.fire('✅ Salvo!', 'Mês salvo com sucesso.', 'success');
+      saveCurrentMonth(); fillMonthSwitch(); setBadge(); 
+      
+      // Auto-sync com Firebase se disponível
+      if (firebaseDb) {
+        const md = saveCurrentMonth();
+        firebaseDb.ref('months/' + monthKey(currentYear, currentMonth)).set(md)
+          .then(() => Swal.fire('✅ Salvo!', 'Mês salvo e sincronizado com a nuvem.', 'success'))
+          .catch(() => Swal.fire('✅ Salvo!', 'Mês salvo localmente.', 'success'));
+      } else {
+        Swal.fire('✅ Salvo!', 'Mês salvo com sucesso.', 'success');
+      }
     }
 
     function exportAllBackup(){
@@ -468,9 +672,6 @@
       i.click();
     }
 
-    function showCloudSyncModal(){ document.getElementById('cloudSyncModal').classList.remove('hidden'); }
-    function closeCloudSyncModal(){ document.getElementById('cloudSyncModal').classList.add('hidden'); }
-
     const initialData = [["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]];
 
     const container = document.getElementById('spreadsheet');
@@ -487,7 +688,7 @@
         { type:'dropdown', source: EVENTO_TIPO_OPTS },
         { type:'text' },
         { type:'text' },
-        { type:'date', dateFormat:'DD/MM/YYYY' },
+        { type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true },
         { type:'text' },
         { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
         { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
@@ -497,7 +698,7 @@
         { type:'dropdown', source:['FINALIZADO','EM ANDAMENTO','NEGADO','PENDENTE','ACORDO'] },
         { type:'dropdown', source: CAUSADOR_OPTS },
         { type:'dropdown', source: JURIDICO_STATUS },
-        { type:'date', dateFormat:'DD/MM/YYYY' },
+        { type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true },
         { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
         { type:'text' }
       ],
@@ -633,6 +834,9 @@
       el('kpi-jur-valor', m(jurValor));
 
       buildOpenPanel(openRows.sort((a,b)=> (b.valor-a.valor)));
+      buildTopOficinas(data);
+      buildTopCarros(data);
+      buildRankingJuridico(data);
 
       if(chartTipo) chartTipo.destroy();
       chartTipo = new Chart(document.getElementById('chart-tipo'), {
@@ -739,16 +943,14 @@
         </div>`;
     }
 
-    function updateCompareSelects(){
-      const months = getSavedMonths();
-      const html = months.map(m=> `<option value="${m.key}">${m.monthLabel||monthLabel(m.year,m.month)}</option>`).join('');
-      document.getElementById('month1-select').innerHTML = '<option value="">-- Selecione um mês --</option>' + html;
-      document.getElementById('month2-select').innerHTML = '<option value="">-- Selecione um mês --</option>' + html;
-    }
-
-    function compareMonths(){ Swal.fire('Em breve','A comparação detalhada será reintroduzida após consolidar as novas colunas.','info'); }
-
-    setTimeout(()=>{ setBadge(); saveCurrentMonth(); fillMonthSwitch(); updateCompareSelects(); updateDashboard(); }, 200);
+    // Initialize
+    setTimeout(()=>{ 
+      initFirebase();
+      setBadge(); 
+      saveCurrentMonth(); 
+      fillMonthSwitch(); 
+      updateDashboard(); 
+    }, 200);
   </script>
 </body>
 </html>

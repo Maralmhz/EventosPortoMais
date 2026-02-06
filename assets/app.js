@@ -20,6 +20,100 @@ let oficinas = [];
 let currentOficinaId = null;
 let hot = null;
 
+// ============ BACKUP FUNCTIONS (MISSING) ============
+
+function exportBackup() {
+  exportAllBackup();
+}
+
+function handleImportFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (!file.name.toLowerCase().endsWith('.json')) {
+    Swal.fire('Erro', 'Selecione um arquivo JSON', 'error');
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const backup = JSON.parse(e.target.result);
+      if (!backup.months || !Array.isArray(backup.months)) throw new Error('Inválido');
+      
+      let success = 0;
+      backup.months.forEach(m => {
+        if (m.year && m.month && m.data) {
+          const key = monthKey(m.year, m.month);
+          localStorage.setItem(key, JSON.stringify(m));
+          success++;
+        }
+      });
+      
+      if (backup.months.length > 0) {
+        const latest = backup.months[0];
+        currentYear = latest.year;
+        currentMonth = latest.month;
+        if (hot) hot.loadData(latest.data || [['']]);
+        setBadge();
+        updateDashboard();
+      }
+      
+      Swal.fire('Sucesso!', `${success} mês(es) importados.`, 'success');
+    } catch (error) {
+      Swal.fire('Erro', 'Falha ao importar: ' + error.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function syncWithFirebase() {
+  if (!firebaseDb) {
+    Swal.fire('Firebase offline', 'Conexão não disponível', 'warning');
+    return;
+  }
+  uploadToFirebase();
+}
+
+function checkFirebaseStatus() {
+  if (!firebaseDb) {
+    Swal.fire('Firebase offline', 'Conexão não está ativa', 'warning');
+    return;
+  }
+  
+  const months = getSavedMonths();
+  Swal.fire({
+    icon: 'success',
+    title: 'Firebase Conectado',
+    html: `<p>Meses locais: ${months.length}</p><p>Auto-sync ativo</p>`,
+    confirmButtonText: 'OK'
+  });
+}
+
+function clearLocalCache() {
+  Swal.fire({
+    title: 'Limpar tudo?',
+    text: 'Esta ação NÃO pode ser desfeita!',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'SIM, LIMPAR',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      localStorage.clear();
+      oficinas = [];
+      if (hot) hot.loadData([['']]);
+      Swal.fire('Limpo!', 'Cache removido. Recarregue a página.', 'success');
+      setTimeout(() => location.reload(), 1500);
+    }
+  });
+}
+
+// ============ REST OF THE CODE ============
+// (keeping all existing functions from the original file)
+
 // ============ COMPARISON FUNCTIONS ============
 function showCompareSelector() {
   compareSelectorYear = currentYear;

@@ -718,7 +718,7 @@
       }
     }
 
-    function uploadToFirebase() {
+    async function uploadToFirebase() {
       if (!firebaseDb) {
         Swal.fire('Firebase não disponível', 'Conexão com nuvem não configurada.', 'warning');
         return;
@@ -732,24 +732,38 @@
 
       Swal.fire({
         title: '📤 Enviando para nuvem...',
-        html: `Fazendo upload de ${months.length} mês(es)...`,
+        html: `Fazendo upload de ${months.length} mês(es)...<br><small>Aguarde, pode levar alguns segundos.</small>`,
         allowOutsideClick: false,
         didOpen: () => { Swal.showLoading(); }
       });
       
-      const promises = months.map(m => 
-        firebaseDb.ref('months/' + m.key).set({
-          year: m.year,
-          month: m.month,
-          monthLabel: m.monthLabel,
-          saveDate: new Date().toLocaleString('pt-BR'),
-          data: m.data
-        })
-      );
-      
-      Promise.all(promises)
-        .then(() => Swal.fire('✅ Enviado!', `${months.length} mês(es) salvos na nuvem com sucesso.`, 'success'))
-        .catch(err => Swal.fire('Erro', 'Falha ao enviar: ' + err.message, 'error'));
+      try {
+        // Usar Promise.allSettled ao invés de Promise.all para não falhar tudo se um falhar
+        const results = await Promise.allSettled(
+          months.map(m => 
+            firebaseDb.ref('months/' + m.key).set({
+              year: m.year,
+              month: m.month,
+              monthLabel: m.monthLabel,
+              saveDate: new Date().toLocaleString('pt-BR'),
+              data: m.data
+            }).then(() => ({ success: true, key: m.key }))
+              .catch(err => ({ success: false, key: m.key, error: err.message }))
+          )
+        );
+
+        const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+        const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)).length;
+
+        if (failed > 0) {
+          Swal.fire('⚠️ Upload parcial', `${successful} mês(es) enviado(s). ${failed} falharam. Tente novamente.`, 'warning');
+        } else {
+          Swal.fire('✅ Enviado!', `${successful} mês(es) salvos na nuvem com sucesso.`, 'success');
+        }
+      } catch (error) {
+        console.error('Erro no upload:', error);
+        Swal.fire('Erro', 'Falha ao enviar: ' + error.message, 'error');
+      }
     }
 
     function syncToFirebase() {

@@ -88,6 +88,89 @@
     .cat-estofaria { background:#f43f5e; color:#fff; }
     .cat-funilaria { background:#64748b; color:#fff; }
     .cat-pintura { background:#a855f7; color:#fff; }
+
+    /* Month Navigation Styles */
+    .month-nav-btn { 
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+      color: white; 
+      padding: 8px 16px; 
+      border-radius: 8px; 
+      font-weight: 700; 
+      font-size: 14px; 
+      cursor: pointer; 
+      border: none; 
+      transition: all .2s ease;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    .month-nav-btn:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    }
+    
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    
+    .month-cell {
+      padding: 12px;
+      text-align: center;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      transition: all .2s ease;
+      border: 2px solid transparent;
+    }
+    
+    .month-cell:hover {
+      background: #e0f2fe;
+      border-color: #3b82f6;
+      transform: scale(1.05);
+    }
+    
+    .month-cell.has-data {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      border-color: #3b82f6;
+    }
+    
+    .month-cell.current {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+    
+    .year-selector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .year-btn {
+      background: #f1f5f9;
+      border: 2px solid #cbd5e1;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all .2s ease;
+    }
+    
+    .year-btn:hover {
+      background: #e2e8f0;
+      border-color: #94a3b8;
+    }
+    
+    .year-display {
+      font-size: 24px;
+      font-weight: 900;
+      color: #1e293b;
+      min-width: 100px;
+      text-align: center;
+    }
   </style>
 </head>
 
@@ -116,9 +199,7 @@
         </div>
 
         <div class="flex items-center gap-2 flex-wrap">
-          <div class="month-selector" style="margin:0; padding:0; box-shadow:none; background:transparent;">
-            <select id="month-switch" onchange="handleMonthSwitch()"></select>
-          </div>
+          <button class="month-nav-btn" onclick="showMonthNavigator()">📅 Navegar Meses</button>
           <button class="btn btn-primary" onclick="saveCurrentMonthWithChecks()">💾 Salvar</button>
           <button class="btn btn-success" onclick="updateDashboard(); go('dash')">🔄 Atualizar</button>
         </div>
@@ -199,7 +280,7 @@
         </div>
       </section>
 
-      <!-- OFICINAS PAGE (NOVO) -->
+      <!-- OFICINAS PAGE -->
       <section id="page-oficinas" class="page">
         <div class="card mb-4">
           <div class="flex items-center justify-between">
@@ -240,6 +321,42 @@
 
         <div id="oficinas-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </section>
+
+      <!-- MONTH NAVIGATOR MODAL -->
+      <div id="monthNavigatorModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-auto">
+          <div class="p-6 border-b bg-gradient-to-r from-blue-500 to-purple-600 rounded-t-2xl">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-2xl text-white flex items-center gap-2">📅 Navegador de Meses e Anos</h3>
+              <button onclick="closeMonthNavigator()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
+            </div>
+          </div>
+          
+          <div class="p-6">
+            <div class="year-selector">
+              <button class="year-btn" onclick="changeNavigatorYear(-1)">◀ Ano Anterior</button>
+              <div class="year-display" id="navigator-year">2026</div>
+              <button class="year-btn" onclick="changeNavigatorYear(1)">Próximo Ano ▶</button>
+            </div>
+            
+            <div class="mb-4 text-center">
+              <button class="month-nav-btn" onclick="createNewMonth()">➕ Criar Novo Mês</button>
+            </div>
+            
+            <div class="calendar-grid" id="month-calendar"></div>
+            
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+              <p class="text-sm text-gray-700"><b>💡 Como usar:</b></p>
+              <ul class="text-xs text-gray-600 mt-2 space-y-1">
+                <li>• <b>Azul claro</b> = Mês com dados salvos</li>
+                <li>• <b>Azul escuro</b> = Mês atual</li>
+                <li>• <b>Clique</b> em qualquer mês para carregar seus dados</li>
+                <li>• Use <b>"➕ Criar Novo Mês"</b> para adicionar meses de anos passados (ex: Janeiro 2024)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- MODAL ADD/EDIT OFICINA -->
       <div id="oficinaModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
@@ -295,7 +412,7 @@
         </div>
       </div>
 
-      <!-- MODAIS ANTERIORES -->
+      <!-- IMPORT MODAL -->
       <div id="importModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
           <div class="p-4 border-b-2 border-[#002B5C] flex justify-between items-center bg-gradient-to-r from-[#002B5C] to-[#003d7a] rounded-t-lg">
@@ -324,6 +441,7 @@
         </div>
       </div>
 
+      <!-- CONFIG MODAL -->
       <div id="configModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
           <div class="p-6 border-b bg-gradient-to-r from-blue-500 to-purple-600 rounded-t-2xl">
@@ -362,1036 +480,6 @@
     </main>
   </div>
 
-  <script>
-    const JURIDICO_STATUS = ['NÃO INICIADO','EM COBRANÇA','COBRADO','ACORDO','NÃO COBRAR','RECUPERADO'];
-    const CAUSADOR_OPTS = ['ASSOCIADO','TERCEIRO','NÃO IDENTIFICADO'];
-    const EVENTO_TIPO_OPTS = ['VIDROS','ROUBO/FURTO','COLISÃO','OUTROS'];
-    const OFICINA_CATEGORIAS = [
-      'Mecânica', 'Lanternagem', 'Lanternagem+Mecânica', 'Vidros', 'Ar-Condicionado',
-      'Elétrica', 'Alinhamento/Balanceamento', 'Estofaria', 'Funilaria', 'Pintura'
-    ];
-
-    let currentYear = new Date().getFullYear();
-    let currentMonth = new Date().getMonth() + 1;
-    let chartTipo, chartJuridico, chartCustos;
-    let firebaseDb = null;
-    let oficinas = [];
-    let currentOficinaId = null;
-
-    // ============ OFICINAS MANAGEMENT ============
-    function loadOficinas() {
-      const stored = localStorage.getItem('oficinas');
-      oficinas = stored ? JSON.parse(stored) : [];
-    }
-
-    function saveOficinasToStorage() {
-      localStorage.setItem('oficinas', JSON.stringify(oficinas));
-      if (firebaseDb) {
-        firebaseDb.ref('oficinas').set(oficinas)
-          .then(() => console.log('🏪 Oficinas sincronizadas'))
-          .catch(err => console.error('Erro sync oficinas:', err));
-      }
-    }
-
-    function getOficinasList() {
-      return oficinas.map(o => o.nome).sort();
-    }
-
-    function updateHotOficinaDropdown() {
-      if (!hot) return;
-      const list = getOficinasList();
-      hot.updateSettings({
-        columns: [
-          { type:'text' },
-          { type:'dropdown', source:['ASSOCIADO','TERCEIRO'] },
-          { type:'dropdown', source: EVENTO_TIPO_OPTS },
-          { type:'text' },
-          { type:'text' },
-          { type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true },
-          { type:'dropdown', source: list },
-          { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
-          { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
-          { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
-          { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
-          { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' }, readOnly:true },
-          { type:'dropdown', source:['FINALIZADO','EM ANDAMENTO','NEGADO','PENDENTE','ACORDO'] },
-          { type:'dropdown', source: CAUSADOR_OPTS },
-          { type:'dropdown', source: JURIDICO_STATUS },
-          { type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true },
-          { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
-          { type:'text' }
-        ]
-      });
-    }
-
-    function showAddOficinaModal() {
-      currentOficinaId = null;
-      document.getElementById('oficina-modal-title').innerText = '🏪 Nova Oficina';
-      document.getElementById('of-nome').value = '';
-      document.getElementById('of-cnpj').value = '';
-      document.getElementById('of-telefone').value = '';
-      document.getElementById('of-email').value = '';
-      document.getElementById('of-endereco').value = '';
-      document.querySelectorAll('.of-categoria').forEach(cb => cb.checked = false);
-      document.getElementById('oficinaModal').classList.remove('hidden');
-    }
-
-    function editOficina(id) {
-      const of = oficinas.find(o => o.id === id);
-      if (!of) return;
-      currentOficinaId = id;
-      document.getElementById('oficina-modal-title').innerText = '✏️ Editar Oficina';
-      document.getElementById('of-nome').value = of.nome;
-      document.getElementById('of-cnpj').value = of.cnpj || '';
-      document.getElementById('of-telefone').value = of.telefone || '';
-      document.getElementById('of-email').value = of.email || '';
-      document.getElementById('of-endereco').value = of.endereco || '';
-      document.querySelectorAll('.of-categoria').forEach(cb => {
-        cb.checked = of.categorias.includes(cb.value);
-      });
-      document.getElementById('oficinaModal').classList.remove('hidden');
-    }
-
-    function deleteOficina(id) {
-      Swal.fire({
-        title: 'Excluir oficina?',
-        text: 'Esta ação não pode ser desfeita.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Sim, excluir',
-        cancelButtonText: 'Cancelar'
-      }).then(result => {
-        if (result.isConfirmed) {
-          oficinas = oficinas.filter(o => o.id !== id);
-          saveOficinasToStorage();
-          renderOficinasList();
-          updateOficinaKPIs();
-          updateHotOficinaDropdown();
-          Swal.fire('Excluída!', 'Oficina removida com sucesso.', 'success');
-        }
-      });
-    }
-
-    function closeOficinaModal() {
-      document.getElementById('oficinaModal').classList.add('hidden');
-    }
-
-    function saveOficina() {
-      const nome = document.getElementById('of-nome').value.trim();
-      if (!nome) {
-        Swal.fire('Atenção', 'Nome da oficina é obrigatório.', 'warning');
-        return;
-      }
-
-      const categorias = Array.from(document.querySelectorAll('.of-categoria:checked')).map(cb => cb.value);
-      if (categorias.length === 0) {
-        Swal.fire('Atenção', 'Selecione ao menos uma categoria de serviço.', 'warning');
-        return;
-      }
-
-      const oficina = {
-        id: currentOficinaId || Date.now(),
-        nome: nome,
-        cnpj: document.getElementById('of-cnpj').value.trim(),
-        telefone: document.getElementById('of-telefone').value.trim(),
-        email: document.getElementById('of-email').value.trim(),
-        endereco: document.getElementById('of-endereco').value.trim(),
-        categorias: categorias
-      };
-
-      if (currentOficinaId) {
-        const idx = oficinas.findIndex(o => o.id === currentOficinaId);
-        if (idx !== -1) oficinas[idx] = oficina;
-      } else {
-        oficinas.push(oficina);
-      }
-
-      saveOficinasToStorage();
-      closeOficinaModal();
-      renderOficinasList();
-      updateOficinaKPIs();
-      updateHotOficinaDropdown();
-      Swal.fire('Salvo!', 'Oficina cadastrada com sucesso.', 'success');
-    }
-
-    function getCategoriaClass(cat) {
-      const map = {
-        'Mecânica': 'cat-mecanica',
-        'Lanternagem': 'cat-lanternagem',
-        'Lanternagem+Mecânica': 'cat-lantmec',
-        'Vidros': 'cat-vidros',
-        'Ar-Condicionado': 'cat-arcond',
-        'Elétrica': 'cat-eletrica',
-        'Alinhamento/Balanceamento': 'cat-alinhamento',
-        'Estofaria': 'cat-estofaria',
-        'Funilaria': 'cat-funilaria',
-        'Pintura': 'cat-pintura'
-      };
-      return map[cat] || 'cat-mecanica';
-    }
-
-    function renderOficinasList() {
-      const search = document.getElementById('search-oficina').value.toLowerCase();
-      const catFilter = document.getElementById('filter-categoria').value;
-
-      let filtered = oficinas;
-      if (search) {
-        filtered = filtered.filter(o => 
-          o.nome.toLowerCase().includes(search) || 
-          (o.cnpj && o.cnpj.toLowerCase().includes(search))
-        );
-      }
-      if (catFilter) {
-        filtered = filtered.filter(o => o.categorias.includes(catFilter));
-      }
-
-      const wrap = document.getElementById('oficinas-list');
-      if (filtered.length === 0) {
-        wrap.innerHTML = '<div class="col-span-full text-center text-gray-400 py-8">Nenhuma oficina encontrada</div>';
-        return;
-      }
-
-      wrap.innerHTML = filtered.map(of => `
-        <div class="card">
-          <div class="flex items-start justify-between mb-3">
-            <div class="flex-1">
-              <h3 class="font-extrabold text-lg text-gray-800">${of.nome}</h3>
-              ${of.cnpj ? `<p class="text-xs text-gray-500">CNPJ: ${of.cnpj}</p>` : ''}
-            </div>
-            <div class="flex gap-2">
-              <button onclick="editOficina(${of.id})" class="text-blue-600 hover:text-blue-800" title="Editar">✏️</button>
-              <button onclick="deleteOficina(${of.id})" class="text-red-600 hover:text-red-800" title="Excluir">🗑️</button>
-            </div>
-          </div>
-          <div class="space-y-2 text-sm text-gray-600 mb-3">
-            ${of.telefone ? `<p>📞 ${of.telefone}</p>` : ''}
-            ${of.email ? `<p>📧 ${of.email}</p>` : ''}
-            ${of.endereco ? `<p>📍 ${of.endereco}</p>` : ''}
-          </div>
-          <div class="flex flex-wrap gap-1">
-            ${of.categorias.map(cat => `<span class="category-badge ${getCategoriaClass(cat)}">${cat}</span>`).join('')}
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function updateOficinaKPIs() {
-      const total = oficinas.length;
-      const mec = oficinas.filter(o => o.categorias.includes('Mecânica')).length;
-      const lant = oficinas.filter(o => o.categorias.includes('Lanternagem')).length;
-      const lantmec = oficinas.filter(o => o.categorias.includes('Lanternagem+Mecânica')).length;
-      const vidros = oficinas.filter(o => o.categorias.includes('Vidros')).length;
-
-      const el = (id, val) => { const e = document.getElementById(id); if (e) e.innerText = val; };
-      el('kpi-of-total', total);
-      el('kpi-of-mec', mec);
-      el('kpi-of-lant', lant);
-      el('kpi-of-lantmec', lantmec);
-      el('kpi-of-vidros', vidros);
-    }
-
-    function filterOficinasByCategory(cat) {
-      document.getElementById('filter-categoria').value = cat;
-      renderOficinasList();
-    }
-
-    // ============ FIREBASE AUTO-CONNECT ============
-    function initFirebase() {
-      try {
-        const firebaseConfig = {
-          apiKey: "AIzaSyASDJpwHTtOn71liMYaMTwyWVDY4s1FJRU",
-          authDomain: "porto-mais-eventos.firebaseapp.com",
-          databaseURL: "https://porto-mais-eventos-default-rtdb.firebaseio.com",
-          projectId: "porto-mais-eventos",
-          storageBucket: "porto-mais-eventos.firebasestorage.app",
-          messagingSenderId: "1084717178712",
-          appId: "1:1084717178712:web:05f7aa39e06d626d208f2d"
-        };
-        
-        const app = firebase.initializeApp(firebaseConfig);
-        firebaseDb = firebase.database();
-        
-        document.getElementById('sync-status').innerHTML = '<span style="color:#10b981;">✓ Online</span>';
-        console.log('✅ Firebase conectado automaticamente!');
-        
-        // Auto-sync a cada 30 segundos
-        setInterval(() => {
-          if (firebaseDb) {
-            const md = saveCurrentMonth();
-            firebaseDb.ref('months/' + monthKey(currentYear, currentMonth)).set(md)
-              .then(() => console.log('🔄 Auto-sync realizado'))
-              .catch(err => console.error('Erro no auto-sync:', err));
-          }
-        }, 30000);
-        
-        // Baixar oficinas do Firebase
-        firebaseDb.ref('oficinas').once('value', snapshot => {
-          const cloudOficinas = snapshot.val();
-          if (cloudOficinas && Array.isArray(cloudOficinas) && cloudOficinas.length > 0) {
-            oficinas = cloudOficinas;
-            saveOficinasToStorage();
-            updateHotOficinaDropdown();
-            console.log('🏪 Oficinas baixadas do Firebase');
-          }
-        });
-        
-      } catch (error) {
-        console.warn('Firebase não configurado:', error);
-        document.getElementById('sync-status').innerHTML = '<span style="color:#64748b;">Offline</span>';
-      }
-    }
-
-    // ============ DOWNLOAD/UPLOAD FIREBASE ============
-    async function downloadFromFirebase() {
-      if (!firebaseDb) {
-        Swal.fire('Firebase não disponível', 'Conexão com nuvem não configurada.', 'warning');
-        return;
-      }
-
-      Swal.fire({
-        title: '📥 Baixando da nuvem...',
-        html: 'Aguarde enquanto buscamos seus dados do Firebase.',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-      });
-
-      try {
-        const snapshot = await firebaseDb.ref('months').once('value');
-        const cloudData = snapshot.val();
-
-        if (!cloudData || Object.keys(cloudData).length === 0) {
-          Swal.fire('⚠️ Nuvem vazia', 'Não há dados salvos na nuvem ainda. Use "Enviar para nuvem" primeiro.', 'info');
-          return;
-        }
-
-        let downloadedCount = 0;
-        let updatedCount = 0;
-        let skippedCount = 0;
-
-        for (const [key, cloudMonth] of Object.entries(cloudData)) {
-          const localData = localStorage.getItem(key);
-          
-          if (!localData) {
-            localStorage.setItem(key, JSON.stringify(cloudMonth));
-            downloadedCount++;
-          } else {
-            const localMonth = JSON.parse(localData);
-            const cloudDate = new Date(cloudMonth.saveDate || 0);
-            const localDate = new Date(localMonth.saveDate || 0);
-            
-            if (cloudDate > localDate) {
-              localStorage.setItem(key, JSON.stringify(cloudMonth));
-              updatedCount++;
-            } else {
-              skippedCount++;
-            }
-          }
-        }
-
-        fillMonthSwitch();
-        const months = getSavedMonths();
-        if (months.length > 0) {
-          const latest = months[0];
-          currentYear = latest.year;
-          currentMonth = latest.month;
-          hot.loadData(latest.data || []);
-          setBadge();
-          updateDashboard();
-        }
-
-        const html = `
-          <div class="text-left text-sm">
-            <p class="mb-2"><b>✅ Sincronização concluída!</b></p>
-            <ul class="space-y-1">
-              <li>🆕 <b>${downloadedCount}</b> mês(es) baixado(s)</li>
-              <li>🔄 <b>${updatedCount}</b> mês(es) atualizado(s)</li>
-              <li>✅ <b>${skippedCount}</b> mês(es) já atualizado(s)</li>
-            </ul>
-          </div>
-        `;
-
-        Swal.fire({ icon: 'success', title: 'Dados sincronizados!', html: html, confirmButtonText: 'OK' });
-
-      } catch (error) {
-        console.error('Erro ao baixar da nuvem:', error);
-        Swal.fire('Erro', 'Falha ao baixar dados: ' + error.message, 'error');
-      }
-    }
-
-    async function uploadToFirebase() {
-      if (!firebaseDb) {
-        Swal.fire('Firebase não disponível', 'Conexão com nuvem não configurada.', 'warning');
-        return;
-      }
-      
-      const months = getSavedMonths();
-      if (months.length === 0) {
-        Swal.fire('⚠️ Nenhum dado local', 'Adicione alguns eventos antes de enviar para a nuvem.', 'info');
-        return;
-      }
-
-      Swal.fire({
-        title: '📤 Enviando para nuvem...',
-        html: `Fazendo upload de ${months.length} mês(es)...<br><small>Aguarde, pode levar alguns segundos.</small>`,
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-      });
-      
-      try {
-        // Usar Promise.allSettled ao invés de Promise.all para não falhar tudo se um falhar
-        const results = await Promise.allSettled(
-          months.map(m => 
-            firebaseDb.ref('months/' + m.key).set({
-              year: m.year,
-              month: m.month,
-              monthLabel: m.monthLabel,
-              saveDate: new Date().toLocaleString('pt-BR'),
-              data: m.data
-            }).then(() => ({ success: true, key: m.key }))
-              .catch(err => ({ success: false, key: m.key, error: err.message }))
-          )
-        );
-
-        const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-        const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)).length;
-
-        if (failed > 0) {
-          Swal.fire('⚠️ Upload parcial', `${successful} mês(es) enviado(s). ${failed} falharam. Tente novamente.`, 'warning');
-        } else {
-          Swal.fire('✅ Enviado!', `${successful} mês(es) salvos na nuvem com sucesso.`, 'success');
-        }
-      } catch (error) {
-        console.error('Erro no upload:', error);
-        Swal.fire('Erro', 'Falha ao enviar: ' + error.message, 'error');
-      }
-    }
-
-    function syncToFirebase() {
-      uploadToFirebase();
-    }
-
-    // ============ PARSE DE DATAS ============
-    function parseDateDDMMYYYY(dateStr) {
-      if (!dateStr) return null;
-      const str = dateStr.toString().trim();
-      const match = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-      if (match) {
-        const day = parseInt(match[1]);
-        const month = parseInt(match[2]) - 1;
-        const year = parseInt(match[3]);
-        if (month >= 0 && month <= 11) {
-          return new Date(year, month, day);
-        }
-      }
-      return null;
-    }
-
-    // ============ NAVIGATION ============
-    function go(page){
-      const pages = ['data','dash','juridico','oficinas'];
-      pages.forEach(p=>{
-        const el = document.getElementById('page-'+p);
-        const nav = document.getElementById('nav-'+p);
-        if(el) el.classList.toggle('active', p===page);
-        if(nav) nav.classList.toggle('active', p===page);
-      });
-      const titleMap = { data:'Editar dados', dash:'Dashboard', juridico:'Jurídico (3º causador)', oficinas:'Cadastro de Oficinas' };
-      const subMap = { data:'Tabela principal do mês selecionado', dash:'KPIs, gráficos e rankings do mês', juridico:'Cobrança e status jurídico (3º causador)', oficinas:'Gerencie oficinas parceiras e especialidades' };
-      document.getElementById('page-title').innerText = titleMap[page] || 'Gerenciador';
-      document.getElementById('page-sub').innerText = subMap[page] || '';
-      if(page==='dash') updateDashboard();
-      if(page==='juridico') filterJuridicoView();
-      if(page==='data') setTimeout(()=>hot.render(), 50);
-      if(page==='oficinas') { renderOficinasList(); updateOficinaKPIs(); }
-    }
-
-    function showConfigMenu() {
-      document.getElementById('configModal').classList.remove('hidden');
-    }
-    
-    function closeConfigModal() {
-      document.getElementById('configModal').classList.add('hidden');
-    }
-
-    function monthKey(y, m){ return `month_${y}_${String(m).padStart(2,'0')}`; }
-    function monthLabel(y,m){ const d = new Date(y, m-1); return d.toLocaleString('pt-BR',{month:'long',year:'numeric'}).toUpperCase(); }
-    function setBadge(){ const b = document.getElementById('badge-month'); if(b) b.innerText = monthLabel(currentYear, currentMonth); }
-
-    function getSavedMonths(){
-      const months = [];
-      for(let i=0;i<localStorage.length;i++){
-        const k = localStorage.key(i);
-        if(k && k.startsWith('month_')){ try{ months.push({ key:k, ...JSON.parse(localStorage.getItem(k)) }); }catch(e){} }
-      }
-      return months.sort((a,b)=> (b.year-a.year) || (b.month-a.month));
-    }
-
-    function fillMonthSwitch(){
-      const sel = document.getElementById('month-switch');
-      const months = getSavedMonths();
-      const keyNow = monthKey(currentYear, currentMonth);
-      const existsNow = months.some(m=>m.key===keyNow);
-      const list = existsNow ? months : [{key:keyNow, year:currentYear, month:currentMonth, monthLabel:monthLabel(currentYear,currentMonth), data: hot ? hot.getData(): []}, ...months];
-      sel.innerHTML = list.map(m=>`<option value="${m.key}">${m.monthLabel || monthLabel(m.year,m.month)}</option>`).join('');
-      sel.value = keyNow;
-    }
-
-    function handleMonthSwitch(){
-      const key = document.getElementById('month-switch').value;
-      const md = JSON.parse(localStorage.getItem(key) || 'null');
-      if(md && md.data){ currentYear = md.year; currentMonth = md.month; hot.loadData(md.data); setBadge(); updateDashboard(); }
-    }
-
-    function saveCurrentMonth(){
-      const data = hot.getData();
-      const k = monthKey(currentYear, currentMonth);
-      const md = { year: currentYear, month: currentMonth, monthLabel: monthLabel(currentYear,currentMonth), saveDate: new Date().toLocaleString('pt-BR'), data };
-      localStorage.setItem(k, JSON.stringify(md));
-      return md;
-    }
-
-    function normalizePlaca(v){ return (v||'').toString().toUpperCase().replace(/[^A-Z0-9]/g,'').trim(); }
-    function isOpenStatus(status){ const s = (status||'').toString().toUpperCase().trim(); return !(s==='FINALIZADO' || s==='NEGADO'); }
-
-    function isVidroRow(r){ return (r[2]||'').toString().toUpperCase().trim()==='VIDROS'; }
-    function isRouboRow(r){ return (r[2]||'').toString().toUpperCase().trim()==='ROUBO/FURTO'; }
-    function isAcordoRow(r){ return (r[12]||'').toString().toUpperCase().trim()==='ACORDO'; }
-    function isFinalizadoRow(r){ return (r[12]||'').toString().toUpperCase().trim()==='FINALIZADO'; }
-
-    function isTerceiroCausadorRow(r){ return (r[13]||'').toString().toUpperCase().trim()==='TERCEIRO'; }
-    function isJuridicoStatus(r, statuses){ return statuses.includes((r[14]||'').toString().toUpperCase().trim()); }
-
-    function applyFilter(predicate){
-      const data = hot.getData() || [];
-      const matches = [];
-      for(let i=0;i<data.length;i++){
-        const r = data[i];
-        if(!r[0]) continue;
-        if(predicate(r, i)) matches.push(i);
-      }
-      if(!matches.length){ Swal.fire('Sem resultados','Nenhuma linha encontrada para esse filtro.','info'); return; }
-      go('data');
-      setTimeout(()=>{
-        const filters = hot.getPlugin('filters');
-        try{ filters.clearConditions(); filters.filter(); }catch(e){}
-        hot.render();
-        hot.selectCell(matches[0], 0);
-        hot.scrollViewportTo(matches[0], 0);
-        Swal.fire({ toast:true, position:'top-end', timer:1800, showConfirmButton:false, icon:'success', title:`Filtro aplicado: ${matches.length} linha(s)` });
-      }, 120);
-    }
-
-    function kpiFilter(key){
-      if(key==='all') return applyFilter(()=>true);
-      if(key==='vidros') return applyFilter(r=>isVidroRow(r));
-      if(key==='roubo') return applyFilter(r=>isRouboRow(r));
-      if(key==='acordos') return applyFilter(r=>isAcordoRow(r));
-      if(key==='finalizados') return applyFilter(r=>isFinalizadoRow(r));
-      if(key==='open') return applyFilter(r=>isOpenStatus(r[12]));
-      if(key==='terceiroCausador') return applyFilter(r=>isTerceiroCausadorRow(r));
-      if(key==='jurEm') return applyFilter(r=>isTerceiroCausadorRow(r) && isJuridicoStatus(r,['EM COBRANÇA','COBRADO']));
-      if(key==='jurRec') return applyFilter(r=>isTerceiroCausadorRow(r) && isJuridicoStatus(r,['RECUPERADO']));
-      if(key==='jurNao') return applyFilter(r=>isTerceiroCausadorRow(r) && isJuridicoStatus(r,['NÃO COBRAR']));
-      if(key==='jurValor') return applyFilter(r=>isTerceiroCausadorRow(r) && ((parseFloat(r[16])||0)>0));
-    }
-
-    function buildOpenPanel(openRows){
-      const wrap = document.getElementById('open-panel');
-      if(!wrap) return;
-      if(!openRows.length){ wrap.innerHTML = '<div class="text-gray-400">Sem eventos em aberto neste mês.</div>'; return; }
-      wrap.innerHTML = `
-        <div class="space-y-2">
-          ${openRows.slice(0,12).map(item=>{
-            const v = item.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-            return `
-              <div class="open-panel-item border rounded-lg p-3 bg-white shadow-sm" onclick="openRow(${item.rowIndex})">
-                <div class="flex items-center justify-between">
-                  <div class="font-extrabold text-gray-800">${item.placa || '-'} <span class="text-xs text-gray-400 font-normal">(${item.status || '-'})</span></div>
-                  <div class="text-sm font-bold text-blue-600">${v}</div>
-                </div>
-                <div class="text-xs text-gray-500 mt-1">${item.eventoTipo || ''} • ${item.veiculo || ''} • ${item.oficina || ''}</div>
-              </div>`;
-          }).join('')}
-          ${openRows.length>12 ? `<div class="text-xs text-gray-400 text-center mt-3">Mostrando 12 de ${openRows.length}. Use "Ver na planilha" para ver todos.</div>` : ''}
-        </div>`;
-    }
-
-    function buildTopOficinas(data) {
-      const wrap = document.getElementById('top-oficinas');
-      if (!wrap) return;
-      
-      const oficinas = {};
-      data.forEach(r => {
-        if (!r[0]) return;
-        const oficina = (r[6] || 'SEM OFICINA').toString().trim().toUpperCase();
-        if (!oficinas[oficina]) oficinas[oficina] = { count: 0, valor: 0 };
-        oficinas[oficina].count++;
-        oficinas[oficina].valor += parseFloat(r[11]) || 0;
-      });
-      
-      const sorted = Object.entries(oficinas)
-        .sort((a, b) => b[1].count - a[1].count)
-        .slice(0, 5);
-      
-      if (sorted.length === 0) {
-        wrap.innerHTML = '<div class="text-gray-400 text-center py-4">Sem dados de oficinas</div>';
-        return;
-      }
-      
-      wrap.innerHTML = sorted.map(([nome, info], idx) => {
-        const posClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
-        return `
-          <div class="ranking-item">
-            <div class="ranking-pos ${posClass}">${idx + 1}</div>
-            <div class="ranking-info">
-              <div class="ranking-name">${nome}</div>
-              <div class="ranking-details">${info.valor.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}</div>
-            </div>
-            <div class="ranking-value">${info.count} carros</div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function buildTopCarros(data) {
-      const wrap = document.getElementById('top-carros');
-      if (!wrap) return;
-      
-      const carros = data
-        .filter(r => r[0] && r[4])
-        .map((r, idx) => ({
-          placa: normalizePlaca(r[4]),
-          veiculo: r[3] || 'N/D',
-          valor: parseFloat(r[11]) || 0,
-          rowIndex: idx
-        }))
-        .sort((a, b) => b.valor - a.valor)
-        .slice(0, 5);
-      
-      if (carros.length === 0) {
-        wrap.innerHTML = '<div class="text-gray-400 text-center py-4">Sem dados de veículos</div>';
-        return;
-      }
-      
-      wrap.innerHTML = carros.map((car, idx) => {
-        const posClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
-        return `
-          <div class="ranking-item" onclick="openRow(${car.rowIndex})">
-            <div class="ranking-pos ${posClass}">${idx + 1}</div>
-            <div class="ranking-info">
-              <div class="ranking-name">${car.placa}</div>
-              <div class="ranking-details">${car.veiculo}</div>
-            </div>
-            <div class="ranking-value">${car.valor.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}</div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function buildRankingJuridico(data) {
-      const wrap = document.getElementById('ranking-juridico');
-      if (!wrap) return;
-      
-      const juridico = data
-        .map((r, idx) => ({ r, idx }))
-        .filter(x => isTerceiroCausadorRow(x.r) && (parseFloat(x.r[16]) || 0) > 0)
-        .map(x => ({
-          placa: normalizePlaca(x.r[4]),
-          veiculo: x.r[3] || 'N/D',
-          beneficiario: x.r[1] || 'N/D',
-          eventoTipo: x.r[2] || 'N/D',
-          status: x.r[14] || 'N/D',
-          valorRecuperar: parseFloat(x.r[16]) || 0,
-          rowIndex: x.idx
-        }))
-        .sort((a, b) => b.valorRecuperar - a.valorRecuperar)
-        .slice(0, 10);
-      
-      if (juridico.length === 0) {
-        wrap.innerHTML = '<div class="text-gray-400 text-center py-4">Sem valores a recuperar no momento</div>';
-        return;
-      }
-      
-      wrap.innerHTML = juridico.map((item, idx) => {
-        const posClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
-        return `
-          <div class="ranking-item" onclick="openRow(${item.rowIndex})">
-            <div class="ranking-pos ${posClass}">${idx + 1}</div>
-            <div class="ranking-info">
-              <div class="ranking-name">${item.placa} - ${item.beneficiario}</div>
-              <div class="ranking-details">${item.eventoTipo} • Status: ${item.status} • ${item.veiculo}</div>
-            </div>
-            <div class="ranking-value">${item.valorRecuperar.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}</div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function openRow(rowIndex){ go('data'); setTimeout(()=>{ hot.selectCell(rowIndex, 0); hot.scrollViewportTo(rowIndex, 0); }, 120); }
-
-    function findOpenPlateInOtherMonths(placa){
-      const p = normalizePlaca(placa);
-      if(!p) return null;
-      const months = getSavedMonths();
-      for(const m of months){
-        if(m.year===currentYear && m.month===currentMonth) continue;
-        const rows = m.data || [];
-        for(const r of rows){
-          const placaR = normalizePlaca(r[4]);
-          const st = r[12];
-          if(placaR===p && isOpenStatus(st)) return { monthLabel: m.monthLabel || monthLabel(m.year,m.month), key: m.key, status: st };
-        }
-      }
-      return null;
-    }
-
-    async function saveCurrentMonthWithChecks(){
-      const rows = hot.getData();
-      const duplicates = [];
-      for(const r of rows){ if(!r[0]) continue; const found = findOpenPlateInOtherMonths(r[4]); if(found) duplicates.push({ placa: normalizePlaca(r[4]), found }); }
-      if(duplicates.length){
-        const first = duplicates[0];
-        const html = `<div class="text-left text-sm">
-          <p><b>Encontramos placa(s) já em aberto em outro mês.</b></p>
-          <p class="mt-2">Exemplo: <b>${first.placa}</b> está em <b>${first.found.monthLabel}</b> (status: ${first.found.status||'-'}).</p>
-          <p class="mt-2 text-xs text-gray-500">O sistema não vai duplicar para outro mês. Vá no mês onde está aberto e finalize/negue antes.</p>
-        </div>`;
-        const res = await Swal.fire({ title: '⚠️ Placa já em aberto', html, icon: 'warning', showCancelButton: true, confirmButtonText: 'Ir para o mês', cancelButtonText: 'Cancelar' });
-        if(res.isConfirmed){
-          const md = JSON.parse(localStorage.getItem(first.found.key));
-          if(md){ currentYear = md.year; currentMonth = md.month; hot.loadData(md.data); fillMonthSwitch(); setBadge(); go('data'); }
-        }
-        return;
-      }
-      saveCurrentMonth(); fillMonthSwitch(); setBadge(); 
-      
-      if (firebaseDb) {
-        const md = saveCurrentMonth();
-        firebaseDb.ref('months/' + monthKey(currentYear, currentMonth)).set(md)
-          .then(() => Swal.fire('✅ Salvo!', 'Mês salvo e sincronizado com a nuvem.', 'success'))
-          .catch(() => Swal.fire('✅ Salvo!', 'Mês salvo localmente.', 'success'));
-      } else {
-        Swal.fire('✅ Salvo!', 'Mês salvo com sucesso.', 'success');
-      }
-    }
-
-    function exportAllBackup(){
-      const months = getSavedMonths();
-      if(!months.length){ Swal.fire('❌ Nenhum Backup','Nenhum mês salvo ainda.','error'); return; }
-      const backup = { exportDate: new Date().toLocaleString('pt-BR'), totalMonths: months.length, months: months.map(m=>({monthLabel:m.monthLabel, year:m.year, month:m.month, saveDate:m.saveDate, data:m.data})) };
-      const blob = new Blob([JSON.stringify(backup,null,2)], {type:'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `backup_portoMais_${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function importBackupFile(){
-      const i = document.createElement('input');
-      i.type='file'; i.accept='.json';
-      i.onchange=(e)=>{
-        const f=e.target.files[0]; if(!f) return;
-        const r=new FileReader();
-        r.onload=(ev)=>{
-          try{
-            const d=JSON.parse(ev.target.result);
-            if(!d.months) throw new Error('Inválido');
-            d.months.forEach(m=> localStorage.setItem(monthKey(m.year, m.month), JSON.stringify(m)));
-            const first=d.months[0];
-            currentYear=first.year; currentMonth=first.month;
-            hot.loadData(first.data);
-            fillMonthSwitch(); setBadge(); updateDashboard();
-            Swal.fire('✅ Carregado!','Backup restaurado.','success');
-          }catch(err){ Swal.fire('Erro','Falha ao importar: '+err.message,'error'); }
-        };
-        r.readAsText(f);
-      };
-      i.click();
-    }
-
-    const initialData = [["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]];
-
-    const container = document.getElementById('spreadsheet');
-    const hot = new Handsontable(container, {
-      data: initialData,
-      colHeaders: [
-        'ASSOCIAÇÃO','BENEFICIÁRIO','EVENTO TIPO','VEÍCULO','PLACA','DATA OFICINA','OFICINA',
-        'COTA','MÃO DE OBRA','PEÇAS','OUTRAS DESPESAS','GASTOS TOTAIS','SITUAÇÃO',
-        'CAUSADOR','JURÍDICO STATUS','DT ENVIO JURÍDICO','VALOR A RECUPERAR','OBS JURÍDICO'
-      ],
-      columns: [
-        { type:'text' },
-        { type:'dropdown', source:['ASSOCIADO','TERCEIRO'] },
-        { type:'dropdown', source: EVENTO_TIPO_OPTS },
-        { type:'text' },
-        { type:'text' },
-        { type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true },
-        { type:'dropdown', source: [] },
-        { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
-        { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
-        { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
-        { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
-        { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' }, readOnly:true },
-        { type:'dropdown', source:['FINALIZADO','EM ANDAMENTO','NEGADO','PENDENTE','ACORDO'] },
-        { type:'dropdown', source: CAUSADOR_OPTS },
-        { type:'dropdown', source: JURIDICO_STATUS },
-        { type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true },
-        { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
-        { type:'text' }
-      ],
-      rowHeaders: true,
-      width:'100%',
-      height:'65vh',
-      licenseKey:'non-commercial-and-evaluation',
-      minSpareRows: 1,
-      filters:true,
-      dropdownMenu:true,
-      manualColumnResize:true,
-      autoWrapRow:true,
-      stretchH:'all',
-      afterChange(changes, source){
-        if(!changes || source==='source') return;
-        changes.forEach(([row, col])=>{
-          if([7,8,9,10].includes(col)){
-            const cota=parseFloat(this.getDataAtCell(row,7))||0;
-            const mao=parseFloat(this.getDataAtCell(row,8))||0;
-            const pecas=parseFloat(this.getDataAtCell(row,9))||0;
-            const outras=parseFloat(this.getDataAtCell(row,10))||0;
-            this.setDataAtCell(row,11, cota+mao+pecas+outras, 'source');
-          }
-        });
-        saveCurrentMonth(); fillMonthSwitch(); setBadge();
-      }
-    });
-
-    function openImportModal(){ document.getElementById('importModal').classList.remove('hidden'); }
-    function closeImportModal(){ document.getElementById('importModal').classList.add('hidden'); }
-
-    function inferEventoTipoFromRow12(base12){
-      const veic = (base12[2]||'').toString().toUpperCase();
-      const ofi = (base12[5]||'').toString().toUpperCase();
-      const sit = (base12[11]||'').toString().toUpperCase();
-      if(veic.includes('ROUBO') || veic.includes('FURTO') || ofi.includes('INDENIZA') || sit.includes('INDENIZA')) return 'ROUBO/FURTO';
-      if(veic.includes('VIDRO') || ofi.includes('VIDRO') || ofi.includes('CARGLASS') || ofi.includes('AUTO GLASS') || sit.includes('VIDRO')) return 'VIDROS';
-      return 'OUTROS';
-    }
-
-    function processPaste(){
-      const raw = (document.getElementById('pasteArea').value||'').trim();
-      if(!raw){ Swal.fire('⚠️ Atenção','Cole os dados primeiro.','warning'); return; }
-
-      const rows = raw.split('\n').map(line=>{
-        let parts = line.split('\t');
-        if(parts.length===1) parts=line.split(',');
-        if(parts.length===1) parts=line.split(/\s{2,}/);
-        return parts.map(p=>p.trim());
-      });
-
-      const normalized = rows.map(r=>{
-        const base = r.slice(0,12);
-        while(base.length<12) base.push('');
-        const eventoTipo = inferEventoTipoFromRow12(base);
-        const row18 = [base[0], base[1], eventoTipo, base[2], base[3], base[4], base[5], base[6], base[7], base[8], base[9], base[10], base[11], 'NÃO IDENTIFICADO','NÃO INICIADO','','',''];
-        return row18;
-      });
-
-      const kept=[];
-      const blocked=[];
-      for(const r of normalized){
-        const found = findOpenPlateInOtherMonths(r[4]);
-        if(found) blocked.push({placa: normalizePlaca(r[4]), month: found.monthLabel});
-        else kept.push(r);
-      }
-
-      hot.populateFromArray(0,0, kept);
-      closeImportModal();
-      document.getElementById('pasteArea').value='';
-      saveCurrentMonth(); fillMonthSwitch(); setBadge();
-
-      if(blocked.length) Swal.fire('⚠️ Alguns registros foram bloqueados', `${blocked.length} placa(s) já estavam em aberto em outro mês e não foram importadas.`, 'warning');
-      else Swal.fire('✅ Sucesso!', `${kept.length} linhas importadas com sucesso!`, 'success');
-    }
-
-    function exportData(){ const exportPlugin = hot.getPlugin('exportFile'); exportPlugin.downloadFile('csv', { filename:'Eventos_PortoMais', columnHeaders:true, bom:true }); }
-
-    function updateDashboard(){
-      let data=[]; try{ data = hot.getData(); }catch(e){}
-
-      let tEv=0, cVid=0, cRou=0, cCol=0, cOut=0, cAcor=0, cFin=0;
-      let $Vid=0, $Rou=0, $Col=0, $Out=0;
-      let jurEm=0, jurRec=0, jurNao=0, jurValor=0, tercCaus=0;
-      let jurStatusCounts = {};
-      let openRows=[];
-
-      if(data && data.length){
-        data.forEach((r, idx)=>{
-          if(!r[0]) return;
-          tEv++;
-
-          const val = (parseFloat(r[8])||0) + (parseFloat(r[9])||0) + (parseFloat(r[10])||0);
-          const tipo = (r[2]||'').toString().toUpperCase().trim();
-
-          if(tipo==='ROUBO/FURTO'){ cRou++; $Rou+=val; }
-          else if(tipo==='VIDROS'){ cVid++; $Vid+=val; }
-          else if(tipo==='COLISÃO'){ cCol++; $Col+=val; }
-          else { cOut++; $Out+=val; }
-
-          if(isAcordoRow(r)) cAcor++;
-          if(isFinalizadoRow(r)) cFin++;
-
-          if(isOpenStatus(r[12])){
-            openRows.push({ rowIndex: idx, placa: normalizePlaca(r[4]), veiculo: r[3]||'', oficina: r[6]||'', status: r[12]||'', valor: (parseFloat(r[11])||0), eventoTipo: r[2]||'' });
-          }
-
-          if(isTerceiroCausadorRow(r)){
-            const jur = (r[14]||'').toString().toUpperCase().trim();
-            const valRec = parseFloat(r[16]) || 0;
-            tercCaus++;
-            if(jur) jurStatusCounts[jur] = (jurStatusCounts[jur]||0)+1;
-            if(jur==='EM COBRANÇA' || jur==='COBRADO') jurEm++;
-            if(jur==='RECUPERADO') jurRec++;
-            if(jur==='NÃO COBRAR') jurNao++;
-            jurValor += valRec;
-          }
-        });
-      }
-
-      const el=(i,v)=>{ const e=document.getElementById(i); if(e) e.innerText=v; };
-      const m=(v)=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-
-      el('kpi-total', tEv);
-      el('kpi-roubo', cRou);
-      el('kpi-vidros', cVid);
-      el('kpi-acordos', cAcor);
-      el('kpi-finalizados', cFin);
-      el('kpi-terc-causador', tercCaus);
-      el('kpi-jur-em', jurEm);
-      el('kpi-jur-rec', jurRec);
-      el('kpi-jur-nao', jurNao);
-      el('kpi-jur-valor', m(jurValor));
-
-      buildOpenPanel(openRows.sort((a,b)=> (b.valor-a.valor)));
-      buildTopOficinas(data);
-      buildTopCarros(data);
-      buildRankingJuridico(data);
-
-      if(chartTipo) chartTipo.destroy();
-      chartTipo = new Chart(document.getElementById('chart-tipo'), {
-        type:'doughnut',
-        data:{
-          labels:['Vidros','Roubo/Furto','Colisão','Outros'],
-          datasets:[{
-            data:[cVid, cRou, cCol, cOut],
-            backgroundColor:['#06b6d4','#a855f7','#f59e0b','#64748b'],
-            borderWidth:0
-          }]
-        },
-        options:{
-          responsive:true,
-          maintainAspectRatio:false,
-          plugins:{
-            legend:{position:'bottom', labels:{font:{size:11,weight:'bold'}, padding:12}},
-            tooltip:{backgroundColor:'rgba(0,0,0,0.8)', padding:12, bodyFont:{size:13}}
-          },
-          animation:{animateRotate:true, animateScale:true, duration:800}
-        }
-      });
-
-      if(chartJuridico) chartJuridico.destroy();
-      const jLabs = Object.keys(jurStatusCounts);
-      const jVals = Object.values(jurStatusCounts);
-      chartJuridico = new Chart(document.getElementById('chart-juridico'), {
-        type:'pie',
-        data:{
-          labels: jLabs.length? jLabs : ['Sem dados'],
-          datasets:[{
-            data: jLabs.length? jVals : [1],
-            backgroundColor:['#6366f1','#10b981','#f43f5e','#eab308','#64748b','#06b6d4'],
-            borderWidth:0
-          }]
-        },
-        options:{
-          responsive:true,
-          maintainAspectRatio:false,
-          plugins:{
-            legend:{position:'bottom', labels:{font:{size:11,weight:'bold'}, padding:12}},
-            tooltip:{backgroundColor:'rgba(0,0,0,0.8)', padding:12, bodyFont:{size:13}}
-          },
-          animation:{animateRotate:true, animateScale:true, duration:800}
-        }
-      });
-
-      if(chartCustos) chartCustos.destroy();
-      chartCustos = new Chart(document.getElementById('chart-custos'), {
-        type:'bar',
-        data:{
-          labels:['Vidros','Roubo/Furto','Colisão','Outros'],
-          datasets:[{
-            label:'Custo Total (R$)',
-            data:[$Vid, $Rou, $Col, $Out],
-            backgroundColor:['#06b6d4','#a855f7','#f59e0b','#64748b'],
-            borderRadius:8
-          }]
-        },
-        options:{
-          responsive:true,
-          maintainAspectRatio:false,
-          plugins:{
-            legend:{display:false},
-            tooltip:{backgroundColor:'rgba(0,0,0,0.8)', padding:12, bodyFont:{size:13}, callbacks:{label:ctx=> 'R$ '+ctx.parsed.y.toLocaleString('pt-BR',{minimumFractionDigits:2})}}
-          },
-          scales:{
-            y:{beginAtZero:true, ticks:{callback:v=>'R$ '+v.toLocaleString('pt-BR'), font:{size:10}}}
-          },
-          animation:{duration:800, easing:'easeInOutQuart'}
-        }
-      });
-    }
-
-    function filterJuridicoView(){
-      const data = hot.getData() || [];
-      const rows = data.map((r, idx)=>({r, idx})).filter(x=> isTerceiroCausadorRow(x.r));
-      const wrap = document.getElementById('juridico-table');
-      if(!wrap) return;
-      if(!rows.length){ wrap.innerHTML = '<div class="text-gray-400">Sem eventos com CAUSADOR = TERCEIRO neste mês.</div>'; return; }
-      const head = ['PLACA','EVENTO TIPO','BENEFICIÁRIO','VEÍCULO','SITUAÇÃO','STATUS JURÍDICO','VALOR RECUP.','OBS'];
-      wrap.innerHTML = `
-        <div class="overflow-auto">
-          <table class="min-w-full text-xs">
-            <thead><tr>${head.map(h=>`<th class="text-left p-2 bg-gray-100 border">${h}</th>`).join('')}</tr></thead>
-            <tbody>
-              ${rows.map(x=>{
-                const r = x.r;
-                const placa = normalizePlaca(r[4]);
-                const valRec = parseFloat(r[16])||0;
-                return `<tr class="border-b hover:bg-gray-50 open-panel-item" onclick="openRow(${x.idx})">
-                  <td class="p-2 font-extrabold">${placa||''}</td>
-                  <td class="p-2 font-bold">${(r[2]||'')}</td>
-                  <td class="p-2">${(r[1]||'')}</td>
-                  <td class="p-2">${(r[3]||'')}</td>
-                  <td class="p-2">${(r[12]||'')}</td>
-                  <td class="p-2 font-bold">${(r[14]||'')}</td>
-                  <td class="p-2">${valRec? valRec.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : ''}</td>
-                  <td class="p-2">${(r[17]||'')}</td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>`;
-    }
-
-    // Initialize
-    setTimeout(()=>{ 
-      loadOficinas();
-      initFirebase();
-      setBadge(); 
-      saveCurrentMonth(); 
-      fillMonthSwitch();
-      updateHotOficinaDropdown();
-      updateDashboard(); 
-    }, 200);
-  </script>
+  <script src="assets/app.js"></script>
 </body>
 </html>

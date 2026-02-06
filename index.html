@@ -241,8 +241,13 @@
               <button onclick="importBackupFile(); closeConfigModal()" class="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-lg font-bold text-left flex items-center gap-3">
                 <span>📂</span> Restaurar backup
               </button>
-              <button onclick="syncToFirebase(); closeConfigModal()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-lg font-bold text-left flex items-center gap-3">
-                <span>☁️</span> Sincronizar nuvem
+              <hr class="border-gray-300">
+              <div class="text-xs text-gray-600 font-bold uppercase tracking-wide px-2">☁️ Sincronização Nuvem</div>
+              <button onclick="downloadFromFirebase(); closeConfigModal()" class="w-full bg-sky-500 hover:bg-sky-600 text-white px-4 py-3 rounded-lg font-bold text-left flex items-center gap-3">
+                <span>📥</span> Baixar da nuvem
+              </button>
+              <button onclick="uploadToFirebase(); closeConfigModal()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-lg font-bold text-left flex items-center gap-3">
+                <span>📤</span> Enviar para nuvem
               </button>
             </div>
           </div>
@@ -284,7 +289,7 @@
         document.getElementById('sync-status').innerHTML = '<span style="color:#10b981;">✓ Online</span>';
         console.log('✅ Firebase conectado automaticamente!');
         
-        // Auto-sync a cada 30 segundos
+        // Auto-sync a cada 30 segundos (apenas upload)
         setInterval(() => {
           if (firebaseDb) {
             const md = saveCurrentMonth();
@@ -300,13 +305,116 @@
       }
     }
 
-    function syncToFirebase() {
+    // ============ DOWNLOAD DA NUVEM (NOVO) ============
+    async function downloadFromFirebase() {
+      if (!firebaseDb) {
+        Swal.fire('Firebase não disponível', 'Conexão com nuvem não configurada.', 'warning');
+        return;
+      }
+
+      Swal.fire({
+        title: '📥 Baixando da nuvem...',
+        html: 'Aguarde enquanto buscamos seus dados do Firebase.',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+
+      try {
+        const snapshot = await firebaseDb.ref('months').once('value');
+        const cloudData = snapshot.val();
+
+        if (!cloudData || Object.keys(cloudData).length === 0) {
+          Swal.fire('⚠️ Nuvem vazia', 'Não há dados salvos na nuvem ainda. Use "Enviar para nuvem" primeiro.', 'info');
+          return;
+        }
+
+        // Mesclar dados da nuvem com dados locais
+        let downloadedCount = 0;
+        let updatedCount = 0;
+        let skippedCount = 0;
+
+        for (const [key, cloudMonth] of Object.entries(cloudData)) {
+          const localData = localStorage.getItem(key);
+          
+          if (!localData) {
+            // Não existe local - baixar
+            localStorage.setItem(key, JSON.stringify(cloudMonth));
+            downloadedCount++;
+          } else {
+            // Existe local - comparar datas
+            const localMonth = JSON.parse(localData);
+            const cloudDate = new Date(cloudMonth.saveDate || 0);
+            const localDate = new Date(localMonth.saveDate || 0);
+            
+            if (cloudDate > localDate) {
+              // Nuvem é mais recente - atualizar
+              localStorage.setItem(key, JSON.stringify(cloudMonth));
+              updatedCount++;
+            } else {
+              // Local é mais recente ou igual - manter
+              skippedCount++;
+            }
+          }
+        }
+
+        // Recarregar interface
+        fillMonthSwitch();
+        
+        // Carregar o mês mais recente
+        const months = getSavedMonths();
+        if (months.length > 0) {
+          const latest = months[0];
+          currentYear = latest.year;
+          currentMonth = latest.month;
+          hot.loadData(latest.data || []);
+          setBadge();
+          updateDashboard();
+        }
+
+        const html = `
+          <div class="text-left text-sm">
+            <p class="mb-2"><b>✅ Sincronização concluída!</b></p>
+            <ul class="space-y-1">
+              <li>🆕 <b>${downloadedCount}</b> mês(es) baixado(s)</li>
+              <li>🔄 <b>${updatedCount}</b> mês(es) atualizado(s)</li>
+              <li>✅ <b>${skippedCount}</b> mês(es) já atualizado(s)</li>
+            </ul>
+          </div>
+        `;
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Dados sincronizados!',
+          html: html,
+          confirmButtonText: 'OK'
+        });
+
+      } catch (error) {
+        console.error('Erro ao baixar da nuvem:', error);
+        Swal.fire('Erro', 'Falha ao baixar dados: ' + error.message, 'error');
+      }
+    }
+
+    // ============ UPLOAD PARA NUVEM (RENOMEADO) ============
+    function uploadToFirebase() {
       if (!firebaseDb) {
         Swal.fire('Firebase não disponível', 'Conexão com nuvem não configurada.', 'warning');
         return;
       }
       
       const months = getSavedMonths();
+      if (months.length === 0) {
+        Swal.fire('⚠️ Nenhum dado local', 'Adicione alguns eventos antes de enviar para a nuvem.', 'info');
+        return;
+      }
+
+      Swal.fire({
+        title: '📤 Enviando para nuvem...',
+        html: `Fazendo upload de ${months.length} mês(es)...`,
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+      
       const promises = months.map(m => 
         firebaseDb.ref('months/' + m.key).set({
           year: m.year,
@@ -318,8 +426,13 @@
       );
       
       Promise.all(promises)
-        .then(() => Swal.fire('✅ Sincronizado!', 'Todos os dados foram salvos na nuvem.', 'success'))
-        .catch(err => Swal.fire('Erro', 'Falha ao sincronizar: ' + err.message, 'error'));
+        .then(() => Swal.fire('✅ Enviado!', `${months.length} mês(es) salvos na nuvem com sucesso.`, 'success'))
+        .catch(err => Swal.fire('Erro', 'Falha ao enviar: ' + err.message, 'error'));
+    }
+
+    // Alias para compatibilidade
+    function syncToFirebase() {
+      uploadToFirebase();
     }
 
     // ============ PARSE DE DATAS DD/MM/YYYY (FIX JANEIRO) ============

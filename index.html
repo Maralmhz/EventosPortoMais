@@ -9,11 +9,17 @@
   <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <link href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" rel="stylesheet" />
   <link href="assets/styles.css" rel="stylesheet" />
 
   <style>
+    @keyframes shimmer { 0%,100%{background-position:200% center;} 50%{background-position:-200% center;} }
+    @keyframes pulse-glow { 0%,100%{box-shadow:0 0 20px rgba(59,130,246,0.3);} 50%{box-shadow:0 0 30px rgba(59,130,246,0.6);} }
+    @keyframes float { 0%,100%{transform:translateY(0px);} 50%{transform:translateY(-6px);} }
+    @keyframes countUp { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
     .layout { display: flex; height: 100vh; overflow: hidden; }
 
     .sidebar { width: 60px; background: linear-gradient(180deg, #002B5C 0%, #001b3a 100%); color: #fff; flex-shrink: 0; display: flex; flex-direction: column; position: relative; transition: width .2s ease; }
@@ -38,21 +44,32 @@
     .sidebar-toggle { position:absolute; right:-14px; top:16px; width:28px; height:28px; border-radius:999px; background:#111827; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; border: 2px solid rgba(255,255,255,.15); box-shadow: 0 10px 20px rgba(0,0,0,.18); transition: transform .2s ease; }
     .sidebar-toggle:hover { transform: scale(1.06); }
 
-    .content { flex:1; background:#f3f4f6; overflow:auto; }
+    .content { flex:1; background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%); overflow:auto; }
 
-    .topbar { position: sticky; top:0; z-index: 50; background: rgba(243,244,246,.92); backdrop-filter: blur(10px); border-bottom: 1px solid #e5e7eb; padding: 12px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    .badge { font-size: 12px; font-weight: 800; padding: 6px 10px; border-radius: 999px; background:#111827; color:#fff; }
+    .topbar { position: sticky; top:0; z-index: 50; background: rgba(255,255,255,.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(0,0,0,.06); padding: 14px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 2px 12px rgba(0,0,0,.04); }
+    .badge { font-size: 12px; font-weight: 800; padding: 6px 12px; border-radius: 999px; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; box-shadow:0 4px 12px rgba(102,126,234,.3); }
 
-    .page { display:none; padding: 18px; animation: pageIn .35s ease both; }
+    .page { display:none; padding: 24px; animation: pageIn .35s ease both; }
     .page.active { display:block; }
-    @keyframes pageIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+    @keyframes pageIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
 
-    .card, .kpi-card { transition: transform .18s ease, box-shadow .18s ease; }
-    .card:hover, .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 18px 30px rgba(0,0,0,.08); }
-    .kpi-card { cursor: pointer; user-select:none; }
+    .card { background:#fff; border-radius:16px; padding:20px; box-shadow:0 4px 20px rgba(0,0,0,.06); transition:transform .2s ease, box-shadow .2s ease; border:1px solid rgba(0,0,0,.04); }
+    .card:hover { transform:translateY(-3px); box-shadow:0 12px 30px rgba(0,0,0,.1); }
 
-    .open-panel-item { cursor:pointer; transition: transform .15s ease, background .15s ease; }
-    .open-panel-item:hover { background: #f9fafb; transform: translateY(-1px); }
+    .kpi-card { background:linear-gradient(135deg, #fff 0%, #f8f9ff 100%); border-radius:16px; padding:20px; cursor:pointer; user-select:none; transition:all .25s cubic-bezier(.4,0,.2,1); border-left:4px solid; position:relative; overflow:hidden; }
+    .kpi-card::before { content:''; position:absolute; top:0; right:0; width:80px; height:80px; background:radial-gradient(circle, rgba(255,255,255,.4) 0%, transparent 70%); border-radius:50%; transform:translate(30%,-30%); }
+    .kpi-card:hover { transform:translateY(-4px) scale(1.02); box-shadow:0 16px 40px rgba(0,0,0,.12); }
+    .kpi-card:active { transform:translateY(-2px) scale(1.01); }
+    .kpi-label { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#64748b; margin-bottom:8px; }
+    .kpi-value { font-size:32px; font-weight:900; margin-bottom:4px; background:linear-gradient(135deg, #1e293b 0%, #475569 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; animation:countUp .6s ease-out; }
+    .kpi-sub { font-size:11px; color:#94a3b8; font-weight:600; }
+
+    .chart-card { background:#fff; border-radius:20px; padding:24px; box-shadow:0 8px 30px rgba(0,0,0,.08); border:1px solid rgba(0,0,0,.04); animation:float 3s ease-in-out infinite; }
+
+    .open-panel-item { cursor:pointer; transition: all .2s ease; border-radius:12px; }
+    .open-panel-item:hover { background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); transform: translateX(4px); }
+
+    .sync-badge { display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; padding:6px 12px; border-radius:999px; font-size:11px; font-weight:800; box-shadow:0 4px 12px rgba(16,185,129,.3); animation:pulse-glow 2s infinite; }
   </style>
 </head>
 
@@ -79,6 +96,7 @@
         <div class="item" onclick="exportData()"><span>💾</span><span class="txt">Exportar CSV</span></div>
         <div class="item" onclick="exportAllBackup()"><span>🗄️</span><span class="txt">Gerar backup</span></div>
         <div class="item" onclick="importBackupFile()"><span>📂</span><span class="txt">Restaurar backup</span></div>
+        <div class="item" onclick="showCloudSyncModal()"><span>☁️</span><span class="txt">Sincronizar nuvem</span></div>
       </nav>
 
       <div class="footer">
@@ -86,7 +104,7 @@
           <span class="text-xs text-white/70">Mês selecionado</span>
           <span class="badge" id="badge-month">ATUAL</span>
         </div>
-        <button class="btn btn-warning" onclick="showStorageInfo()">💾 Armazenamento</button>
+        <div id="sync-status" class="text-xs text-white/50 text-center"></div>
       </div>
     </aside>
 
@@ -112,27 +130,32 @@
       </section>
 
       <section id="page-dash" class="page">
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-          <div class="kpi-card border-blue-500" onclick="kpiFilter('all')"><p class="kpi-label">Total de Eventos</p><p class="kpi-value text-blue-600" id="kpi-total">0</p><p class="kpi-sub">Todos registros</p></div>
-          <div class="kpi-card border-purple-500" onclick="kpiFilter('roubo')"><p class="kpi-label">Roubo / Furto</p><p class="kpi-value text-purple-600" id="kpi-roubo">0</p><p class="kpi-sub">Clique para filtrar</p></div>
-          <div class="kpi-card border-cyan-500" onclick="kpiFilter('vidros')"><p class="kpi-label">Vidros</p><p class="kpi-value text-cyan-600" id="kpi-vidros">0</p><p class="kpi-sub">Filtro: EVENTO TIPO</p></div>
-          <div class="kpi-card border-yellow-500" onclick="kpiFilter('acordos')"><p class="kpi-label">Acordos</p><p class="kpi-value text-yellow-600" id="kpi-acordos">0</p><p class="kpi-sub">Clique para filtrar</p></div>
-          <div class="kpi-card border-green-500" onclick="kpiFilter('finalizados')"><p class="kpi-label">Finalizados</p><p class="kpi-value text-green-600" id="kpi-finalizados">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <div class="kpi-card border-blue-500" onclick="kpiFilter('all')" style="border-image:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) 1;"><p class="kpi-label">Total de Eventos</p><p class="kpi-value" style="background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-total">0</p><p class="kpi-sub">Todos registros</p></div>
+          <div class="kpi-card border-purple-500" onclick="kpiFilter('roubo')" style="border-image:linear-gradient(135deg, #a855f7 0%, #9333ea 100%) 1;"><p class="kpi-label">Roubo / Furto</p><p class="kpi-value" style="background:linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-roubo">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+          <div class="kpi-card border-cyan-500" onclick="kpiFilter('vidros')" style="border-image:linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) 1;"><p class="kpi-label">Vidros</p><p class="kpi-value" style="background:linear-gradient(135deg, #06b6d4 0%, #0e7490 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-vidros">0</p><p class="kpi-sub">Filtro: EVENTO TIPO</p></div>
+          <div class="kpi-card border-yellow-500" onclick="kpiFilter('acordos')" style="border-image:linear-gradient(135deg, #eab308 0%, #ca8a04 100%) 1;"><p class="kpi-label">Acordos</p><p class="kpi-value" style="background:linear-gradient(135deg, #eab308 0%, #a16207 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-acordos">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+          <div class="kpi-card border-green-500" onclick="kpiFilter('finalizados')" style="border-image:linear-gradient(135deg, #22c55e 0%, #16a34a 100%) 1;"><p class="kpi-label">Finalizados</p><p class="kpi-value" style="background:linear-gradient(135deg, #22c55e 0%, #15803d 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-finalizados">0</p><p class="kpi-sub">Clique para filtrar</p></div>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <div class="kpi-card border-slate-500" onclick="kpiFilter('terceiroCausador')"><p class="kpi-label">3º causador</p><p class="kpi-value text-slate-700" id="kpi-terc-causador">0</p><p class="kpi-sub">Filtro: CAUSADOR</p></div>
-          <div class="kpi-card border-indigo-500" onclick="kpiFilter('jurEm')"><p class="kpi-label">Jurídico: Em cobrança</p><p class="kpi-value text-indigo-600" id="kpi-jur-em">0</p><p class="kpi-sub">Clique para filtrar</p></div>
-          <div class="kpi-card border-emerald-500" onclick="kpiFilter('jurRec')"><p class="kpi-label">Jurídico: Recuperado</p><p class="kpi-value text-emerald-600" id="kpi-jur-rec">0</p><p class="kpi-sub">Clique para filtrar</p></div>
-          <div class="kpi-card border-rose-500" onclick="kpiFilter('jurNao')"><p class="kpi-label">Jurídico: Não cobrar</p><p class="kpi-value text-rose-600" id="kpi-jur-nao">0</p><p class="kpi-sub">Encerrar sem cobrança</p></div>
-          <div class="kpi-card border-amber-500" onclick="kpiFilter('jurValor')"><p class="kpi-label">Valor a recuperar</p><p class="kpi-value text-amber-600" id="kpi-jur-valor">R$ 0,00</p><p class="kpi-sub">Clique para filtrar</p></div>
+          <div class="kpi-card border-slate-500" onclick="kpiFilter('terceiroCausador')" style="border-image:linear-gradient(135deg, #64748b 0%, #475569 100%) 1;"><p class="kpi-label">3º causador</p><p class="kpi-value" style="background:linear-gradient(135deg, #64748b 0%, #334155 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-terc-causador">0</p><p class="kpi-sub">Filtro: CAUSADOR</p></div>
+          <div class="kpi-card border-indigo-500" onclick="kpiFilter('jurEm')" style="border-image:linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) 1;"><p class="kpi-label">Jurídico: Em cobrança</p><p class="kpi-value" style="background:linear-gradient(135deg, #6366f1 0%, #4338ca 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-jur-em">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+          <div class="kpi-card border-emerald-500" onclick="kpiFilter('jurRec')" style="border-image:linear-gradient(135deg, #10b981 0%, #059669 100%) 1;"><p class="kpi-label">Jurídico: Recuperado</p><p class="kpi-value" style="background:linear-gradient(135deg, #10b981 0%, #047857 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-jur-rec">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+          <div class="kpi-card border-rose-500" onclick="kpiFilter('jurNao')" style="border-image:linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) 1;"><p class="kpi-label">Jurídico: Não cobrar</p><p class="kpi-value" style="background:linear-gradient(135deg, #f43f5e 0%, #be123c 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-jur-nao">0</p><p class="kpi-sub">Encerrar sem cobrança</p></div>
+          <div class="kpi-card border-amber-500" onclick="kpiFilter('jurValor')" style="border-image:linear-gradient(135deg, #f59e0b 0%, #d97706 100%) 1;"><p class="kpi-label">Valor a recuperar</p><p class="kpi-value" style="background:linear-gradient(135deg, #f59e0b 0%, #b45309 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-jur-valor">R$ 0,00</p><p class="kpi-sub">Clique para filtrar</p></div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-          <div class="card"><h3 class="font-bold text-gray-700 mb-3">⚖️ Status Jurídico</h3><div id="chart-juridico" style="height: 320px;"></div></div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="chart-card"><h3 class="font-bold text-gray-700 mb-4 text-lg">📊 Eventos por Tipo</h3><canvas id="chart-tipo" style="max-height:280px;"></canvas></div>
+          <div class="chart-card"><h3 class="font-bold text-gray-700 mb-4 text-lg">⚖️ Status Jurídico</h3><canvas id="chart-juridico" style="max-height:280px;"></canvas></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="chart-card"><h3 class="font-bold text-gray-700 mb-4 text-lg">💰 Custos por Categoria</h3><canvas id="chart-custos" style="max-height:280px;"></canvas></div>
           <div class="card">
             <div class="flex items-center justify-between mb-3">
-              <h3 class="font-bold text-gray-700">📌 Em aberto (eventos)</h3>
+              <h3 class="font-bold text-gray-700 text-lg">📌 Em aberto (eventos)</h3>
               <button class="btn btn-primary" onclick="kpiFilter('open')">Ver na planilha</button>
             </div>
             <div id="open-panel" class="text-sm text-gray-700"></div>
@@ -180,7 +203,7 @@
         </div>
       </section>
 
-      <div id="importModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div id="importModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
           <div class="p-4 border-b-2 border-[#002B5C] flex justify-between items-center bg-gradient-to-r from-[#002B5C] to-[#003d7a] rounded-t-lg">
             <h3 class="font-bold text-lg text-white">📋 Importar Dados do Excel</h3>
@@ -208,6 +231,33 @@
         </div>
       </div>
 
+      <div id="cloudSyncModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div class="p-6 border-b bg-gradient-to-r from-blue-500 to-purple-600 rounded-t-2xl">
+            <h3 class="font-bold text-xl text-white flex items-center gap-2">☁️ Sincronização na Nuvem</h3>
+            <p class="text-sm text-white/80 mt-1">Acesse seus dados de qualquer computador</p>
+          </div>
+          <div class="p-6">
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
+              <p class="text-sm text-gray-700"><b>🚧 Firebase não configurado ainda.</b></p>
+              <p class="text-xs text-gray-600 mt-2">Para habilitar sync na nuvem:<br/>1. Crie projeto no Firebase (gratuíto)<br/>2. Adicione configuração no código<br/>3. Seus dados serão salvos automaticamente</p>
+            </div>
+            <div class="text-xs text-gray-500 mb-4">
+              <p><b>O que você ganha:</b></p>
+              <ul class="list-disc list-inside mt-2 space-y-1">
+                <li>Acesso de qualquer computador</li>
+                <li>Backup automático em tempo real</li>
+                <li>Sincronização instantânea</li>
+                <li>100% gratuito (Firebase Spark)</li>
+              </ul>
+            </div>
+          </div>
+          <div class="p-4 bg-gray-50 rounded-b-2xl text-right">
+            <button onclick="closeCloudSyncModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-bold">Fechar</button>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -218,6 +268,7 @@
 
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth() + 1;
+    let chartTipo, chartJuridico, chartCustos;
 
     function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); }
 
@@ -281,11 +332,11 @@
 
     function isVidroRow(r){ return (r[2]||'').toString().toUpperCase().trim()==='VIDROS'; }
     function isRouboRow(r){ return (r[2]||'').toString().toUpperCase().trim()==='ROUBO/FURTO'; }
-    function isAcordoRow(r){ return (r[10]||'').toString().toUpperCase().trim()==='ACORDO'; }
-    function isFinalizadoRow(r){ return (r[10]||'').toString().toUpperCase().trim()==='FINALIZADO'; }
+    function isAcordoRow(r){ return (r[12]||'').toString().toUpperCase().trim()==='ACORDO'; }
+    function isFinalizadoRow(r){ return (r[12]||'').toString().toUpperCase().trim()==='FINALIZADO'; }
 
-    function isTerceiroCausadorRow(r){ return (r[11]||'').toString().toUpperCase().trim()==='TERCEIRO'; }
-    function isJuridicoStatus(r, statuses){ return statuses.includes((r[12]||'').toString().toUpperCase().trim()); }
+    function isTerceiroCausadorRow(r){ return (r[13]||'').toString().toUpperCase().trim()==='TERCEIRO'; }
+    function isJuridicoStatus(r, statuses){ return statuses.includes((r[14]||'').toString().toUpperCase().trim()); }
 
     function applyFilter(predicate){
       const data = hot.getData() || [];
@@ -313,12 +364,12 @@
       if(key==='roubo') return applyFilter(r=>isRouboRow(r));
       if(key==='acordos') return applyFilter(r=>isAcordoRow(r));
       if(key==='finalizados') return applyFilter(r=>isFinalizadoRow(r));
-      if(key==='open') return applyFilter(r=>isOpenStatus(r[10]));
+      if(key==='open') return applyFilter(r=>isOpenStatus(r[12]));
       if(key==='terceiroCausador') return applyFilter(r=>isTerceiroCausadorRow(r));
       if(key==='jurEm') return applyFilter(r=>isTerceiroCausadorRow(r) && isJuridicoStatus(r,['EM COBRANÇA','COBRADO']));
       if(key==='jurRec') return applyFilter(r=>isTerceiroCausadorRow(r) && isJuridicoStatus(r,['RECUPERADO']));
       if(key==='jurNao') return applyFilter(r=>isTerceiroCausadorRow(r) && isJuridicoStatus(r,['NÃO COBRAR']));
-      if(key==='jurValor') return applyFilter(r=>isTerceiroCausadorRow(r) && ((parseFloat(r[14])||0)>0));
+      if(key==='jurValor') return applyFilter(r=>isTerceiroCausadorRow(r) && ((parseFloat(r[16])||0)>0));
     }
 
     function buildOpenPanel(openRows){
@@ -330,15 +381,15 @@
           ${openRows.slice(0,12).map(item=>{
             const v = item.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
             return `
-              <div class="open-panel-item border rounded-lg p-2 bg-white" onclick="openRow(${item.rowIndex})">
+              <div class="open-panel-item border rounded-lg p-3 bg-white shadow-sm" onclick="openRow(${item.rowIndex})">
                 <div class="flex items-center justify-between">
-                  <div class="font-extrabold">${item.placa || '-'} <span class="text-xs text-gray-400">(${item.status || '-'})</span></div>
-                  <div class="text-sm font-bold text-gray-800">${v}</div>
+                  <div class="font-extrabold text-gray-800">${item.placa || '-'} <span class="text-xs text-gray-400 font-normal">(${item.status || '-'})</span></div>
+                  <div class="text-sm font-bold text-blue-600">${v}</div>
                 </div>
-                <div class="text-xs text-gray-600 mt-1">${item.eventoTipo || ''} • ${item.veiculo || ''} • ${item.oficina || ''}</div>
+                <div class="text-xs text-gray-500 mt-1">${item.eventoTipo || ''} • ${item.veiculo || ''} • ${item.oficina || ''}</div>
               </div>`;
           }).join('')}
-          ${openRows.length>12 ? `<div class="text-xs text-gray-500">Mostrando 12 de ${openRows.length}. Use “Ver na planilha” para ver todos.</div>` : ''}
+          ${openRows.length>12 ? `<div class="text-xs text-gray-400 text-center mt-3">Mostrando 12 de ${openRows.length}. Use “Ver na planilha” para ver todos.</div>` : ''}
         </div>`;
     }
 
@@ -352,8 +403,8 @@
         if(m.year===currentYear && m.month===currentMonth) continue;
         const rows = m.data || [];
         for(const r of rows){
-          const placaR = normalizePlaca(r[3]);
-          const st = r[10];
+          const placaR = normalizePlaca(r[4]);
+          const st = r[12];
           if(placaR===p && isOpenStatus(st)) return { monthLabel: m.monthLabel || monthLabel(m.year,m.month), key: m.key, status: st };
         }
       }
@@ -363,7 +414,7 @@
     async function saveCurrentMonthWithChecks(){
       const rows = hot.getData();
       const duplicates = [];
-      for(const r of rows){ if(!r[0]) continue; const found = findOpenPlateInOtherMonths(r[3]); if(found) duplicates.push({ placa: normalizePlaca(r[3]), found }); }
+      for(const r of rows){ if(!r[0]) continue; const found = findOpenPlateInOtherMonths(r[4]); if(found) duplicates.push({ placa: normalizePlaca(r[4]), found }); }
       if(duplicates.length){
         const first = duplicates[0];
         const html = `<div class="text-left text-sm">
@@ -417,14 +468,10 @@
       i.click();
     }
 
-    function showStorageInfo(){
-      const months = getSavedMonths();
-      let total=0; months.forEach(m=>{ total += JSON.stringify(m).length; });
-      const kb=(total/1024).toFixed(2);
-      Swal.fire('💾 Armazenamento', `Meses salvos: ${months.length}<br/>Tamanho aproximado: ${kb} KB`, 'info');
-    }
+    function showCloudSyncModal(){ document.getElementById('cloudSyncModal').classList.remove('hidden'); }
+    function closeCloudSyncModal(){ document.getElementById('cloudSyncModal').classList.add('hidden'); }
 
-    const initialData = [["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]];
+    const initialData = [["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]];
 
     const container = document.getElementById('spreadsheet');
     const hot = new Handsontable(container, {
@@ -506,8 +553,8 @@
         const base = r.slice(0,12);
         while(base.length<12) base.push('');
         const eventoTipo = inferEventoTipoFromRow12(base);
-        const row17 = [base[0], base[1], eventoTipo, base[2], base[3], base[4], base[5], base[6], base[7], base[8], base[9], base[10], base[11], 'NÃO IDENTIFICADO','NÃO INICIADO','','',''];
-        return row17;
+        const row18 = [base[0], base[1], eventoTipo, base[2], base[3], base[4], base[5], base[6], base[7], base[8], base[9], base[10], base[11], 'NÃO IDENTIFICADO','NÃO INICIADO','','',''];
+        return row18;
       });
 
       const kept=[];
@@ -532,8 +579,8 @@
     function updateDashboard(){
       let data=[]; try{ data = hot.getData(); }catch(e){}
 
-      let tEv=0, cVid=0, cRou=0;
-      let $Vid=0, $Rou=0;
+      let tEv=0, cVid=0, cRou=0, cCol=0, cOut=0, cAcor=0, cFin=0;
+      let $Vid=0, $Rou=0, $Col=0, $Out=0;
       let jurEm=0, jurRec=0, jurNao=0, jurValor=0, tercCaus=0;
       let jurStatusCounts = {};
       let openRows=[];
@@ -544,9 +591,15 @@
           tEv++;
 
           const val = (parseFloat(r[8])||0) + (parseFloat(r[9])||0) + (parseFloat(r[10])||0);
+          const tipo = (r[2]||'').toString().toUpperCase().trim();
 
-          if(isRouboRow(r)){ cRou++; $Rou+=val; }
-          if(isVidroRow(r)){ cVid++; $Vid+=val; }
+          if(tipo==='ROUBO/FURTO'){ cRou++; $Rou+=val; }
+          else if(tipo==='VIDROS'){ cVid++; $Vid+=val; }
+          else if(tipo==='COLISÃO'){ cCol++; $Col+=val; }
+          else { cOut++; $Out+=val; }
+
+          if(isAcordoRow(r)) cAcor++;
+          if(isFinalizadoRow(r)) cFin++;
 
           if(isOpenStatus(r[12])){
             openRows.push({ rowIndex: idx, placa: normalizePlaca(r[4]), veiculo: r[3]||'', oficina: r[6]||'', status: r[12]||'', valor: (parseFloat(r[11])||0), eventoTipo: r[2]||'' });
@@ -571,9 +624,8 @@
       el('kpi-total', tEv);
       el('kpi-roubo', cRou);
       el('kpi-vidros', cVid);
-      el('kpi-custo-roubo', m($Rou));
-      el('kpi-custo-vidros', m($Vid));
-
+      el('kpi-acordos', cAcor);
+      el('kpi-finalizados', cFin);
       el('kpi-terc-causador', tercCaus);
       el('kpi-jur-em', jurEm);
       el('kpi-jur-rec', jurRec);
@@ -582,11 +634,77 @@
 
       buildOpenPanel(openRows.sort((a,b)=> (b.valor-a.valor)));
 
-      try{
-        const labs = Object.keys(jurStatusCounts);
-        const vals = Object.values(jurStatusCounts);
-        Plotly.newPlot('chart-juridico',[{ labels: labs.length? labs : ['Sem dados'], values: labs.length? vals : [1], type:'pie', hole:.45 }],{ margin:{t:10,b:10,l:10,r:10} },{responsive:true});
-      }catch(e){}
+      if(chartTipo) chartTipo.destroy();
+      chartTipo = new Chart(document.getElementById('chart-tipo'), {
+        type:'doughnut',
+        data:{
+          labels:['Vidros','Roubo/Furto','Colisão','Outros'],
+          datasets:[{
+            data:[cVid, cRou, cCol, cOut],
+            backgroundColor:['#06b6d4','#a855f7','#f59e0b','#64748b'],
+            borderWidth:0
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{
+            legend:{position:'bottom', labels:{font:{size:11,weight:'bold'}, padding:12}},
+            tooltip:{backgroundColor:'rgba(0,0,0,0.8)', padding:12, bodyFont:{size:13}}
+          },
+          animation:{animateRotate:true, animateScale:true, duration:800}
+        }
+      });
+
+      if(chartJuridico) chartJuridico.destroy();
+      const jLabs = Object.keys(jurStatusCounts);
+      const jVals = Object.values(jurStatusCounts);
+      chartJuridico = new Chart(document.getElementById('chart-juridico'), {
+        type:'pie',
+        data:{
+          labels: jLabs.length? jLabs : ['Sem dados'],
+          datasets:[{
+            data: jLabs.length? jVals : [1],
+            backgroundColor:['#6366f1','#10b981','#f43f5e','#eab308','#64748b','#06b6d4'],
+            borderWidth:0
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{
+            legend:{position:'bottom', labels:{font:{size:11,weight:'bold'}, padding:12}},
+            tooltip:{backgroundColor:'rgba(0,0,0,0.8)', padding:12, bodyFont:{size:13}}
+          },
+          animation:{animateRotate:true, animateScale:true, duration:800}
+        }
+      });
+
+      if(chartCustos) chartCustos.destroy();
+      chartCustos = new Chart(document.getElementById('chart-custos'), {
+        type:'bar',
+        data:{
+          labels:['Vidros','Roubo/Furto','Colisão','Outros'],
+          datasets:[{
+            label:'Custo Total (R$)',
+            data:[$Vid, $Rou, $Col, $Out],
+            backgroundColor:['#06b6d4','#a855f7','#f59e0b','#64748b'],
+            borderRadius:8
+          }]
+        },
+        options:{
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{
+            legend:{display:false},
+            tooltip:{backgroundColor:'rgba(0,0,0,0.8)', padding:12, bodyFont:{size:13}, callbacks:{label:ctx=> 'R$ '+ctx.parsed.y.toLocaleString('pt-BR',{minimumFractionDigits:2})}}
+          },
+          scales:{
+            y:{beginAtZero:true, ticks:{callback:v=>'R$ '+v.toLocaleString('pt-BR'), font:{size:10}}}
+          },
+          animation:{duration:800, easing:'easeInOutQuart'}
+        }
+      });
     }
 
     function filterJuridicoView(){

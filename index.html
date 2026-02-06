@@ -26,12 +26,10 @@
 
     .layout { display: flex; height: 100vh; overflow: hidden; }
 
-    /* Menu reduzido - apenas 4 ícones */
+    /* Menu reduzido - apenas 4 ícones SEM LOGO */
     .sidebar { width: 60px; background: linear-gradient(180deg, #002B5C 0%, #001b3a 100%); color: #fff; flex-shrink: 0; display: flex; flex-direction: column; position: relative; transition: width .2s ease; }
-    .sidebar .logo { display:flex; align-items:center; justify-content:center; padding:18px; border-bottom: 1px solid rgba(255,255,255,.08); }
-    .sidebar .logo img { height: 40px; }
 
-    .sidebar .menu { padding: 10px; display:flex; flex-direction:column; gap:10px; overflow:auto; }
+    .sidebar .menu { padding: 10px; padding-top: 20px; display:flex; flex-direction:column; gap:10px; overflow:auto; }
     .sidebar .item { display:flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius: 12px; cursor:pointer; font-size:24px; color: rgba(255,255,255,.88); transition: all .15s ease; margin:0 auto; }
     .sidebar .item:hover { background: rgba(255,255,255,.10); transform: scale(1.1); }
     .sidebar .item.active { background: rgba(255,255,255,.16); color:#fff; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
@@ -83,10 +81,6 @@
 <body>
   <div class="layout">
     <aside class="sidebar" id="sidebar">
-      <div class="logo">
-        <img src="https://agi-prod-file-upload-public-main-use1.s3.amazonaws.com/cacca5b9-29da-4402-ace7-419b369140a7" alt="Porto Mais" title="Porto Mais - Gerenciador de Eventos" />
-      </div>
-
       <nav class="menu">
         <div class="item active" id="nav-dash" onclick="go('dash')" title="Dashboard"><span>📊</span></div>
         <div class="item" id="nav-data" onclick="go('data')" title="Editar Dados"><span>📝</span></div>

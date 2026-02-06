@@ -43,18 +43,27 @@ function handleImportFile(event) {
       
       let success = 0;
       backup.months.forEach(m => {
-        if (m.year && m.month && m.data) {
-          const key = monthKey(m.year, m.month);
-          localStorage.setItem(key, JSON.stringify(m));
+        if (m.year && (m.month || m.month_2026_undefined || m['month_2026_undefined.month'])) {
+          const month = m.month || m.month_2026_undefined || m['month_2026_undefined.month'] || 1;
+          const key = monthKey(m.year, month);
+          const monthData = {
+            year: m.year,
+            month: month,
+            monthLabel: m.monthLabel || monthLabel(m.year, month),
+            saveDate: m.saveDate || new Date().toLocaleString('pt-BR'),
+            data: m.data || [[""]]
+          };
+          localStorage.setItem(key, JSON.stringify(monthData));
           success++;
         }
       });
       
       if (backup.months.length > 0) {
         const latest = backup.months[0];
+        const month = latest.month || latest.month_2026_undefined || latest['month_2026_undefined.month'] || 1;
         currentYear = latest.year;
-        currentMonth = latest.month;
-        if (hot) hot.loadData(latest.data || [['']]);
+        currentMonth = month;
+        if (hot) hot.loadData(latest.data || [[""]]);
         setBadge();
         updateDashboard();
       }
@@ -104,7 +113,7 @@ function clearLocalCache() {
     if (result.isConfirmed) {
       localStorage.clear();
       oficinas = [];
-      if (hot) hot.loadData([['']]);
+      if (hot) hot.loadData([[""]]);
       Swal.fire('Limpo!', 'Cache removido. Recarregue a página.', 'success');
       setTimeout(() => location.reload(), 1500);
     }
@@ -1057,7 +1066,16 @@ function getSavedMonths(){
   const months = [];
   for(let i=0;i<localStorage.length;i++){
     const k = localStorage.key(i);
-    if(k && k.startsWith('month_')){ try{ months.push({ key:k, ...JSON.parse(localStorage.getItem(k)) }); }catch(e){} }
+    if(k && k.startsWith('month_')){ 
+      try{ 
+        const monthData = JSON.parse(localStorage.getItem(k));
+        if(monthData && monthData.year && monthData.month) {
+          months.push({ key:k, ...monthData });
+        }
+      }catch(e){
+        console.error('Erro ao ler mês:', k, e);
+      } 
+    }
   }
   return months.sort((a,b)=> (b.year-a.year) || (b.month-a.month));
 }

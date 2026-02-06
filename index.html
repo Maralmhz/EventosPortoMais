@@ -26,12 +26,10 @@
 
     .layout { display: flex; height: 100vh; overflow: hidden; }
 
-    /* Menu reduzido - apenas 4 ícones */
+    /* Menu com 5 ícones */
     .sidebar { width: 60px; background: linear-gradient(180deg, #002B5C 0%, #001b3a 100%); color: #fff; flex-shrink: 0; display: flex; flex-direction: column; position: relative; transition: width .2s ease; }
-    .sidebar .logo { display:flex; align-items:center; justify-content:center; padding:18px; border-bottom: 1px solid rgba(255,255,255,.08); }
-    .sidebar .logo img { height: 40px; }
 
-    .sidebar .menu { padding: 10px; display:flex; flex-direction:column; gap:10px; overflow:auto; }
+    .sidebar .menu { padding: 10px; padding-top: 20px; display:flex; flex-direction:column; gap:10px; overflow:auto; }
     .sidebar .item { display:flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius: 12px; cursor:pointer; font-size:24px; color: rgba(255,255,255,.88); transition: all .15s ease; margin:0 auto; }
     .sidebar .item:hover { background: rgba(255,255,255,.10); transform: scale(1.1); }
     .sidebar .item.active { background: rgba(255,255,255,.16); color:#fff; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
@@ -66,7 +64,7 @@
 
     .sync-badge { display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; padding:6px 12px; border-radius:999px; font-size:11px; font-weight:800; box-shadow:0 4px 12px rgba(16,185,129,.3); animation:pulse-glow 2s infinite; }
     
-    /* Top 5 Rankings Styles */
+    /* Rankings */
     .ranking-item { display:flex; align-items:center; gap:12px; padding:12px; background:#f8fafc; border-radius:8px; margin-bottom:8px; transition:all .2s ease; }
     .ranking-item:hover { background:#e2e8f0; transform:translateX(4px); }
     .ranking-pos { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; flex-shrink:0; }
@@ -77,20 +75,30 @@
     .ranking-name { font-weight:800; font-size:14px; color:#1e293b; }
     .ranking-details { font-size:11px; color:#64748b; margin-top:2px; }
     .ranking-value { font-weight:900; font-size:16px; color:#3b82f6; text-align:right; }
+
+    /* Oficinas - badges de categoria */
+    .category-badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:10px; font-weight:800; margin:2px; }
+    .cat-mecanica { background:#3b82f6; color:#fff; }
+    .cat-lanternagem { background:#f59e0b; color:#fff; }
+    .cat-lantmec { background:#8b5cf6; color:#fff; }
+    .cat-vidros { background:#06b6d4; color:#fff; }
+    .cat-arcond { background:#10b981; color:#fff; }
+    .cat-eletrica { background:#eab308; color:#fff; }
+    .cat-alinhamento { background:#ec4899; color:#fff; }
+    .cat-estofaria { background:#f43f5e; color:#fff; }
+    .cat-funilaria { background:#64748b; color:#fff; }
+    .cat-pintura { background:#a855f7; color:#fff; }
   </style>
 </head>
 
 <body>
   <div class="layout">
     <aside class="sidebar" id="sidebar">
-      <div class="logo">
-        <img src="https://agi-prod-file-upload-public-main-use1.s3.amazonaws.com/cacca5b9-29da-4402-ace7-419b369140a7" alt="Porto Mais" title="Porto Mais - Gerenciador de Eventos" />
-      </div>
-
       <nav class="menu">
         <div class="item active" id="nav-dash" onclick="go('dash')" title="Dashboard"><span>📊</span></div>
         <div class="item" id="nav-data" onclick="go('data')" title="Editar Dados"><span>📝</span></div>
         <div class="item" id="nav-juridico" onclick="go('juridico')" title="Jurídico"><span>⚖️</span></div>
+        <div class="item" id="nav-oficinas" onclick="go('oficinas')" title="Oficinas"><span>🏪</span></div>
         <div class="item" id="nav-config" onclick="showConfigMenu()" title="Configurações"><span>⚙️</span></div>
       </nav>
 
@@ -150,7 +158,6 @@
           </div>
         </div>
 
-        <!-- TOP 5 OFICINAS E CARROS -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div class="card">
             <h3 class="font-bold text-gray-700 mb-4 text-lg">🏆 Top 5 Oficinas (mais carros)</h3>
@@ -162,7 +169,6 @@
           </div>
         </div>
 
-        <!-- RANKING JURÍDICO -->
         <div class="card mb-6">
           <h3 class="font-bold text-gray-700 mb-4 text-lg">⚖️ Ranking Jurídico - Maiores valores a recuperar</h3>
           <div id="ranking-juridico"></div>
@@ -193,7 +199,103 @@
         </div>
       </section>
 
-      <!-- MODAIS -->
+      <!-- OFICINAS PAGE (NOVO) -->
+      <section id="page-oficinas" class="page">
+        <div class="card mb-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-extrabold text-gray-800">🏪 Cadastro de Oficinas</h2>
+              <p class="text-sm text-gray-600 mt-1">Gerencie oficinas parceiras e suas especialidades</p>
+            </div>
+            <button class="btn btn-primary" onclick="showAddOficinaModal()">➕ Nova Oficina</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <div class="kpi-card border-blue-500" onclick="filterOficinasByCategory('')" style="border-image:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) 1;"><p class="kpi-label">Total</p><p class="kpi-value" style="background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-total">0</p><p class="kpi-sub">Todas oficinas</p></div>
+          <div class="kpi-card border-cyan-500" onclick="filterOficinasByCategory('Mecânica')" style="border-image:linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) 1;"><p class="kpi-label">Mecânica</p><p class="kpi-value" style="background:linear-gradient(135deg, #06b6d4 0%, #0e7490 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-mec">0</p><p class="kpi-sub">Filtrar</p></div>
+          <div class="kpi-card border-orange-500" onclick="filterOficinasByCategory('Lanternagem')" style="border-image:linear-gradient(135deg, #f59e0b 0%, #ea580c 100%) 1;"><p class="kpi-label">Lanternagem</p><p class="kpi-value" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-lant">0</p><p class="kpi-sub">Filtrar</p></div>
+          <div class="kpi-card border-purple-500" onclick="filterOficinasByCategory('Lanternagem+Mecânica')" style="border-image:linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) 1;"><p class="kpi-label">Lant+Mec</p><p class="kpi-value" style="background:linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-lantmec">0</p><p class="kpi-sub">Filtrar</p></div>
+          <div class="kpi-card border-emerald-500" onclick="filterOficinasByCategory('Vidros')" style="border-image:linear-gradient(135deg, #10b981 0%, #059669 100%) 1;"><p class="kpi-label">Vidros</p><p class="kpi-value" style="background:linear-gradient(135deg, #10b981 0%, #047857 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-vidros">0</p><p class="kpi-sub">Filtrar</p></div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="flex gap-3 flex-wrap">
+            <input type="text" id="search-oficina" placeholder="🔍 Buscar por nome ou CNPJ..." class="flex-1 border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" oninput="renderOficinasList()">
+            <select id="filter-categoria" onchange="renderOficinasList()" class="border-2 border-gray-300 rounded-lg px-4 py-2">
+              <option value="">Todas categorias</option>
+              <option value="Mecânica">Mecânica</option>
+              <option value="Lanternagem">Lanternagem</option>
+              <option value="Lanternagem+Mecânica">Lanternagem+Mecânica</option>
+              <option value="Vidros">Vidros</option>
+              <option value="Ar-Condicionado">Ar-Condicionado</option>
+              <option value="Elétrica">Elétrica</option>
+              <option value="Alinhamento/Balanceamento">Alinhamento/Balanceamento</option>
+              <option value="Estofaria">Estofaria</option>
+              <option value="Funilaria">Funilaria</option>
+              <option value="Pintura">Pintura</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="oficinas-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </section>
+
+      <!-- MODAL ADD/EDIT OFICINA -->
+      <div id="oficinaModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+          <div class="p-6 border-b bg-gradient-to-r from-orange-500 to-red-600 rounded-t-2xl">
+            <h3 class="font-bold text-xl text-white" id="oficina-modal-title">🏪 Nova Oficina</h3>
+          </div>
+          <div class="p-6">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Nome da Oficina *</label>
+                <input type="text" id="of-nome" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2" placeholder="Ex: Auto Center Silva">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-1">CNPJ</label>
+                  <input type="text" id="of-cnpj" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2" placeholder="00.000.000/0000-00">
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-1">Telefone</label>
+                  <input type="text" id="of-telefone" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2" placeholder="(00) 0000-0000">
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">E-mail</label>
+                <input type="email" id="of-email" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2" placeholder="contato@oficina.com">
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Endereço</label>
+                <textarea id="of-endereco" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2" rows="2" placeholder="Rua, Número, Bairro, Cidade - UF"></textarea>
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">Categorias de Serviço *</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <label class="flex items-center gap-2"><input type="checkbox" class="of-categoria" value="Mecânica"> Mecânica</label>
+                  <label class="flex items-center gap-2"><input type="checkbox" class="of-categoria" value="Lanternagem"> Lanternagem</label>
+                  <label class="flex items-center gap-2"><input type="checkbox" class="of-categoria" value="Lanternagem+Mecânica"> Lanternagem+Mecânica</label>
+                  <label class="flex items-center gap-2"><input type="checkbox" class="of-categoria" value="Vidros"> Vidros</label>
+                  <label class="flex items-center gap-2"><input type="checkbox" class="of-categoria" value="Ar-Condicionado"> Ar-Condicionado</label>
+                  <label class="flex items-center gap-2"><input type="checkbox" class="of-categoria" value="Elétrica"> Elétrica</label>
+                  <label class="flex items-center gap-2"><input type="checkbox" class="of-categoria" value="Alinhamento/Balanceamento"> Alinhamento/Balanceamento</label>
+                  <label class="flex items-center gap-2"><input type="checkbox" class="of-categoria" value="Estofaria"> Estofaria</label>
+                  <label class="flex items-center gap-2"><input type="checkbox" class="of-categoria" value="Funilaria"> Funilaria</label>
+                  <label class="flex items-center gap-2"><input type="checkbox" class="of-categoria" value="Pintura"> Pintura</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="p-4 bg-gray-50 rounded-b-2xl flex gap-2 justify-end">
+            <button onclick="closeOficinaModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-bold">Cancelar</button>
+            <button onclick="saveOficina()" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-bold">💾 Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAIS ANTERIORES -->
       <div id="importModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
           <div class="p-4 border-b-2 border-[#002B5C] flex justify-between items-center bg-gradient-to-r from-[#002B5C] to-[#003d7a] rounded-t-lg">
@@ -241,8 +343,13 @@
               <button onclick="importBackupFile(); closeConfigModal()" class="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-lg font-bold text-left flex items-center gap-3">
                 <span>📂</span> Restaurar backup
               </button>
-              <button onclick="syncToFirebase(); closeConfigModal()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-lg font-bold text-left flex items-center gap-3">
-                <span>☁️</span> Sincronizar nuvem
+              <hr class="border-gray-300">
+              <div class="text-xs text-gray-600 font-bold uppercase tracking-wide px-2">☁️ Sincronização Nuvem</div>
+              <button onclick="downloadFromFirebase(); closeConfigModal()" class="w-full bg-sky-500 hover:bg-sky-600 text-white px-4 py-3 rounded-lg font-bold text-left flex items-center gap-3">
+                <span>📥</span> Baixar da nuvem
+              </button>
+              <button onclick="uploadToFirebase(); closeConfigModal()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-lg font-bold text-left flex items-center gap-3">
+                <span>📤</span> Enviar para nuvem
               </button>
             </div>
           </div>
@@ -259,11 +366,234 @@
     const JURIDICO_STATUS = ['NÃO INICIADO','EM COBRANÇA','COBRADO','ACORDO','NÃO COBRAR','RECUPERADO'];
     const CAUSADOR_OPTS = ['ASSOCIADO','TERCEIRO','NÃO IDENTIFICADO'];
     const EVENTO_TIPO_OPTS = ['VIDROS','ROUBO/FURTO','COLISÃO','OUTROS'];
+    const OFICINA_CATEGORIAS = [
+      'Mecânica', 'Lanternagem', 'Lanternagem+Mecânica', 'Vidros', 'Ar-Condicionado',
+      'Elétrica', 'Alinhamento/Balanceamento', 'Estofaria', 'Funilaria', 'Pintura'
+    ];
 
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth() + 1;
     let chartTipo, chartJuridico, chartCustos;
     let firebaseDb = null;
+    let oficinas = [];
+    let currentOficinaId = null;
+
+    // ============ OFICINAS MANAGEMENT ============
+    function loadOficinas() {
+      const stored = localStorage.getItem('oficinas');
+      oficinas = stored ? JSON.parse(stored) : [];
+    }
+
+    function saveOficinasToStorage() {
+      localStorage.setItem('oficinas', JSON.stringify(oficinas));
+      if (firebaseDb) {
+        firebaseDb.ref('oficinas').set(oficinas)
+          .then(() => console.log('🏪 Oficinas sincronizadas'))
+          .catch(err => console.error('Erro sync oficinas:', err));
+      }
+    }
+
+    function getOficinasList() {
+      return oficinas.map(o => o.nome).sort();
+    }
+
+    function updateHotOficinaDropdown() {
+      if (!hot) return;
+      const list = getOficinasList();
+      hot.updateSettings({
+        columns: [
+          { type:'text' },
+          { type:'dropdown', source:['ASSOCIADO','TERCEIRO'] },
+          { type:'dropdown', source: EVENTO_TIPO_OPTS },
+          { type:'text' },
+          { type:'text' },
+          { type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true },
+          { type:'dropdown', source: list },
+          { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
+          { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
+          { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
+          { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
+          { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' }, readOnly:true },
+          { type:'dropdown', source:['FINALIZADO','EM ANDAMENTO','NEGADO','PENDENTE','ACORDO'] },
+          { type:'dropdown', source: CAUSADOR_OPTS },
+          { type:'dropdown', source: JURIDICO_STATUS },
+          { type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true },
+          { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
+          { type:'text' }
+        ]
+      });
+    }
+
+    function showAddOficinaModal() {
+      currentOficinaId = null;
+      document.getElementById('oficina-modal-title').innerText = '🏪 Nova Oficina';
+      document.getElementById('of-nome').value = '';
+      document.getElementById('of-cnpj').value = '';
+      document.getElementById('of-telefone').value = '';
+      document.getElementById('of-email').value = '';
+      document.getElementById('of-endereco').value = '';
+      document.querySelectorAll('.of-categoria').forEach(cb => cb.checked = false);
+      document.getElementById('oficinaModal').classList.remove('hidden');
+    }
+
+    function editOficina(id) {
+      const of = oficinas.find(o => o.id === id);
+      if (!of) return;
+      currentOficinaId = id;
+      document.getElementById('oficina-modal-title').innerText = '✏️ Editar Oficina';
+      document.getElementById('of-nome').value = of.nome;
+      document.getElementById('of-cnpj').value = of.cnpj || '';
+      document.getElementById('of-telefone').value = of.telefone || '';
+      document.getElementById('of-email').value = of.email || '';
+      document.getElementById('of-endereco').value = of.endereco || '';
+      document.querySelectorAll('.of-categoria').forEach(cb => {
+        cb.checked = of.categorias.includes(cb.value);
+      });
+      document.getElementById('oficinaModal').classList.remove('hidden');
+    }
+
+    function deleteOficina(id) {
+      Swal.fire({
+        title: 'Excluir oficina?',
+        text: 'Esta ação não pode ser desfeita.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, excluir',
+        cancelButtonText: 'Cancelar'
+      }).then(result => {
+        if (result.isConfirmed) {
+          oficinas = oficinas.filter(o => o.id !== id);
+          saveOficinasToStorage();
+          renderOficinasList();
+          updateOficinaKPIs();
+          updateHotOficinaDropdown();
+          Swal.fire('Excluída!', 'Oficina removida com sucesso.', 'success');
+        }
+      });
+    }
+
+    function closeOficinaModal() {
+      document.getElementById('oficinaModal').classList.add('hidden');
+    }
+
+    function saveOficina() {
+      const nome = document.getElementById('of-nome').value.trim();
+      if (!nome) {
+        Swal.fire('Atenção', 'Nome da oficina é obrigatório.', 'warning');
+        return;
+      }
+
+      const categorias = Array.from(document.querySelectorAll('.of-categoria:checked')).map(cb => cb.value);
+      if (categorias.length === 0) {
+        Swal.fire('Atenção', 'Selecione ao menos uma categoria de serviço.', 'warning');
+        return;
+      }
+
+      const oficina = {
+        id: currentOficinaId || Date.now(),
+        nome: nome,
+        cnpj: document.getElementById('of-cnpj').value.trim(),
+        telefone: document.getElementById('of-telefone').value.trim(),
+        email: document.getElementById('of-email').value.trim(),
+        endereco: document.getElementById('of-endereco').value.trim(),
+        categorias: categorias
+      };
+
+      if (currentOficinaId) {
+        const idx = oficinas.findIndex(o => o.id === currentOficinaId);
+        if (idx !== -1) oficinas[idx] = oficina;
+      } else {
+        oficinas.push(oficina);
+      }
+
+      saveOficinasToStorage();
+      closeOficinaModal();
+      renderOficinasList();
+      updateOficinaKPIs();
+      updateHotOficinaDropdown();
+      Swal.fire('Salvo!', 'Oficina cadastrada com sucesso.', 'success');
+    }
+
+    function getCategoriaClass(cat) {
+      const map = {
+        'Mecânica': 'cat-mecanica',
+        'Lanternagem': 'cat-lanternagem',
+        'Lanternagem+Mecânica': 'cat-lantmec',
+        'Vidros': 'cat-vidros',
+        'Ar-Condicionado': 'cat-arcond',
+        'Elétrica': 'cat-eletrica',
+        'Alinhamento/Balanceamento': 'cat-alinhamento',
+        'Estofaria': 'cat-estofaria',
+        'Funilaria': 'cat-funilaria',
+        'Pintura': 'cat-pintura'
+      };
+      return map[cat] || 'cat-mecanica';
+    }
+
+    function renderOficinasList() {
+      const search = document.getElementById('search-oficina').value.toLowerCase();
+      const catFilter = document.getElementById('filter-categoria').value;
+
+      let filtered = oficinas;
+      if (search) {
+        filtered = filtered.filter(o => 
+          o.nome.toLowerCase().includes(search) || 
+          (o.cnpj && o.cnpj.toLowerCase().includes(search))
+        );
+      }
+      if (catFilter) {
+        filtered = filtered.filter(o => o.categorias.includes(catFilter));
+      }
+
+      const wrap = document.getElementById('oficinas-list');
+      if (filtered.length === 0) {
+        wrap.innerHTML = '<div class="col-span-full text-center text-gray-400 py-8">Nenhuma oficina encontrada</div>';
+        return;
+      }
+
+      wrap.innerHTML = filtered.map(of => `
+        <div class="card">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex-1">
+              <h3 class="font-extrabold text-lg text-gray-800">${of.nome}</h3>
+              ${of.cnpj ? `<p class="text-xs text-gray-500">CNPJ: ${of.cnpj}</p>` : ''}
+            </div>
+            <div class="flex gap-2">
+              <button onclick="editOficina(${of.id})" class="text-blue-600 hover:text-blue-800" title="Editar">✏️</button>
+              <button onclick="deleteOficina(${of.id})" class="text-red-600 hover:text-red-800" title="Excluir">🗑️</button>
+            </div>
+          </div>
+          <div class="space-y-2 text-sm text-gray-600 mb-3">
+            ${of.telefone ? `<p>📞 ${of.telefone}</p>` : ''}
+            ${of.email ? `<p>📧 ${of.email}</p>` : ''}
+            ${of.endereco ? `<p>📍 ${of.endereco}</p>` : ''}
+          </div>
+          <div class="flex flex-wrap gap-1">
+            ${of.categorias.map(cat => `<span class="category-badge ${getCategoriaClass(cat)}">${cat}</span>`).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateOficinaKPIs() {
+      const total = oficinas.length;
+      const mec = oficinas.filter(o => o.categorias.includes('Mecânica')).length;
+      const lant = oficinas.filter(o => o.categorias.includes('Lanternagem')).length;
+      const lantmec = oficinas.filter(o => o.categorias.includes('Lanternagem+Mecânica')).length;
+      const vidros = oficinas.filter(o => o.categorias.includes('Vidros')).length;
+
+      const el = (id, val) => { const e = document.getElementById(id); if (e) e.innerText = val; };
+      el('kpi-of-total', total);
+      el('kpi-of-mec', mec);
+      el('kpi-of-lant', lant);
+      el('kpi-of-lantmec', lantmec);
+      el('kpi-of-vidros', vidros);
+    }
+
+    function filterOficinasByCategory(cat) {
+      document.getElementById('filter-categoria').value = cat;
+      renderOficinasList();
+    }
 
     // ============ FIREBASE AUTO-CONNECT ============
     function initFirebase() {
@@ -294,19 +624,119 @@
           }
         }, 30000);
         
+        // Baixar oficinas do Firebase
+        firebaseDb.ref('oficinas').once('value', snapshot => {
+          const cloudOficinas = snapshot.val();
+          if (cloudOficinas && Array.isArray(cloudOficinas) && cloudOficinas.length > 0) {
+            oficinas = cloudOficinas;
+            saveOficinasToStorage();
+            updateHotOficinaDropdown();
+            console.log('🏪 Oficinas baixadas do Firebase');
+          }
+        });
+        
       } catch (error) {
         console.warn('Firebase não configurado:', error);
         document.getElementById('sync-status').innerHTML = '<span style="color:#64748b;">Offline</span>';
       }
     }
 
-    function syncToFirebase() {
+    // ============ DOWNLOAD/UPLOAD FIREBASE ============
+    async function downloadFromFirebase() {
+      if (!firebaseDb) {
+        Swal.fire('Firebase não disponível', 'Conexão com nuvem não configurada.', 'warning');
+        return;
+      }
+
+      Swal.fire({
+        title: '📥 Baixando da nuvem...',
+        html: 'Aguarde enquanto buscamos seus dados do Firebase.',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+
+      try {
+        const snapshot = await firebaseDb.ref('months').once('value');
+        const cloudData = snapshot.val();
+
+        if (!cloudData || Object.keys(cloudData).length === 0) {
+          Swal.fire('⚠️ Nuvem vazia', 'Não há dados salvos na nuvem ainda. Use "Enviar para nuvem" primeiro.', 'info');
+          return;
+        }
+
+        let downloadedCount = 0;
+        let updatedCount = 0;
+        let skippedCount = 0;
+
+        for (const [key, cloudMonth] of Object.entries(cloudData)) {
+          const localData = localStorage.getItem(key);
+          
+          if (!localData) {
+            localStorage.setItem(key, JSON.stringify(cloudMonth));
+            downloadedCount++;
+          } else {
+            const localMonth = JSON.parse(localData);
+            const cloudDate = new Date(cloudMonth.saveDate || 0);
+            const localDate = new Date(localMonth.saveDate || 0);
+            
+            if (cloudDate > localDate) {
+              localStorage.setItem(key, JSON.stringify(cloudMonth));
+              updatedCount++;
+            } else {
+              skippedCount++;
+            }
+          }
+        }
+
+        fillMonthSwitch();
+        const months = getSavedMonths();
+        if (months.length > 0) {
+          const latest = months[0];
+          currentYear = latest.year;
+          currentMonth = latest.month;
+          hot.loadData(latest.data || []);
+          setBadge();
+          updateDashboard();
+        }
+
+        const html = `
+          <div class="text-left text-sm">
+            <p class="mb-2"><b>✅ Sincronização concluída!</b></p>
+            <ul class="space-y-1">
+              <li>🆕 <b>${downloadedCount}</b> mês(es) baixado(s)</li>
+              <li>🔄 <b>${updatedCount}</b> mês(es) atualizado(s)</li>
+              <li>✅ <b>${skippedCount}</b> mês(es) já atualizado(s)</li>
+            </ul>
+          </div>
+        `;
+
+        Swal.fire({ icon: 'success', title: 'Dados sincronizados!', html: html, confirmButtonText: 'OK' });
+
+      } catch (error) {
+        console.error('Erro ao baixar da nuvem:', error);
+        Swal.fire('Erro', 'Falha ao baixar dados: ' + error.message, 'error');
+      }
+    }
+
+    function uploadToFirebase() {
       if (!firebaseDb) {
         Swal.fire('Firebase não disponível', 'Conexão com nuvem não configurada.', 'warning');
         return;
       }
       
       const months = getSavedMonths();
+      if (months.length === 0) {
+        Swal.fire('⚠️ Nenhum dado local', 'Adicione alguns eventos antes de enviar para a nuvem.', 'info');
+        return;
+      }
+
+      Swal.fire({
+        title: '📤 Enviando para nuvem...',
+        html: `Fazendo upload de ${months.length} mês(es)...`,
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+      
       const promises = months.map(m => 
         firebaseDb.ref('months/' + m.key).set({
           year: m.year,
@@ -318,48 +748,47 @@
       );
       
       Promise.all(promises)
-        .then(() => Swal.fire('✅ Sincronizado!', 'Todos os dados foram salvos na nuvem.', 'success'))
-        .catch(err => Swal.fire('Erro', 'Falha ao sincronizar: ' + err.message, 'error'));
+        .then(() => Swal.fire('✅ Enviado!', `${months.length} mês(es) salvos na nuvem com sucesso.`, 'success'))
+        .catch(err => Swal.fire('Erro', 'Falha ao enviar: ' + err.message, 'error'));
     }
 
-    // ============ PARSE DE DATAS DD/MM/YYYY (FIX JANEIRO) ============
+    function syncToFirebase() {
+      uploadToFirebase();
+    }
+
+    // ============ PARSE DE DATAS ============
     function parseDateDDMMYYYY(dateStr) {
       if (!dateStr) return null;
-      
       const str = dateStr.toString().trim();
-      
-      // Formato DD/MM/YYYY
       const match = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
       if (match) {
         const day = parseInt(match[1]);
-        const month = parseInt(match[2]) - 1; // JS months são 0-indexed
+        const month = parseInt(match[2]) - 1;
         const year = parseInt(match[3]);
-        
-        // FIX: Validar se mês é válido (0-11)
         if (month >= 0 && month <= 11) {
           return new Date(year, month, day);
         }
       }
-      
       return null;
     }
 
     // ============ NAVIGATION ============
     function go(page){
-      const pages = ['data','dash','juridico'];
+      const pages = ['data','dash','juridico','oficinas'];
       pages.forEach(p=>{
         const el = document.getElementById('page-'+p);
         const nav = document.getElementById('nav-'+p);
         if(el) el.classList.toggle('active', p===page);
         if(nav) nav.classList.toggle('active', p===page);
       });
-      const titleMap = { data:'Editar dados', dash:'Dashboard', juridico:'Jurídico (3º causador)' };
-      const subMap = { data:'Tabela principal do mês selecionado', dash:'KPIs, gráficos e rankings do mês', juridico:'Cobrança e status jurídico (3º causador)' };
+      const titleMap = { data:'Editar dados', dash:'Dashboard', juridico:'Jurídico (3º causador)', oficinas:'Cadastro de Oficinas' };
+      const subMap = { data:'Tabela principal do mês selecionado', dash:'KPIs, gráficos e rankings do mês', juridico:'Cobrança e status jurídico (3º causador)', oficinas:'Gerencie oficinas parceiras e especialidades' };
       document.getElementById('page-title').innerText = titleMap[page] || 'Gerenciador';
       document.getElementById('page-sub').innerText = subMap[page] || '';
       if(page==='dash') updateDashboard();
       if(page==='juridico') filterJuridicoView();
       if(page==='data') setTimeout(()=>hot.render(), 50);
+      if(page==='oficinas') { renderOficinasList(); updateOficinaKPIs(); }
     }
 
     function showConfigMenu() {
@@ -473,7 +902,6 @@
         </div>`;
     }
 
-    // ============ TOP 5 OFICINAS (MAIS CARROS) ============
     function buildTopOficinas(data) {
       const wrap = document.getElementById('top-oficinas');
       if (!wrap) return;
@@ -511,13 +939,12 @@
       }).join('');
     }
 
-    // ============ TOP 5 CARROS MAIS CAROS ============
     function buildTopCarros(data) {
       const wrap = document.getElementById('top-carros');
       if (!wrap) return;
       
       const carros = data
-        .filter(r => r[0] && r[4]) // Tem associação e placa
+        .filter(r => r[0] && r[4])
         .map((r, idx) => ({
           placa: normalizePlaca(r[4]),
           veiculo: r[3] || 'N/D',
@@ -547,7 +974,6 @@
       }).join('');
     }
 
-    // ============ RANKING JURÍDICO (VALOR A RECUPERAR) ============
     function buildRankingJuridico(data) {
       const wrap = document.getElementById('ranking-juridico');
       if (!wrap) return;
@@ -625,7 +1051,6 @@
       }
       saveCurrentMonth(); fillMonthSwitch(); setBadge(); 
       
-      // Auto-sync com Firebase se disponível
       if (firebaseDb) {
         const md = saveCurrentMonth();
         firebaseDb.ref('months/' + monthKey(currentYear, currentMonth)).set(md)
@@ -689,7 +1114,7 @@
         { type:'text' },
         { type:'text' },
         { type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true },
-        { type:'text' },
+        { type:'dropdown', source: [] },
         { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
         { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
         { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
@@ -945,10 +1370,12 @@
 
     // Initialize
     setTimeout(()=>{ 
+      loadOficinas();
       initFirebase();
       setBadge(); 
       saveCurrentMonth(); 
-      fillMonthSwitch(); 
+      fillMonthSwitch();
+      updateHotOficinaDropdown();
       updateDashboard(); 
     }, 200);
   </script>

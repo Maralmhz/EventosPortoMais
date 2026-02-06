@@ -16,25 +16,24 @@
   <style>
     .layout { display: flex; height: 100vh; overflow: hidden; }
 
-    .sidebar { width: 270px; background: linear-gradient(180deg, #002B5C 0%, #001b3a 100%); color: #fff; flex-shrink: 0; display: flex; flex-direction: column; position: relative; transition: width .28s cubic-bezier(.2,.9,.2,1); }
-    .sidebar.collapsed { width: 74px; }
+    .sidebar { width: 60px; background: linear-gradient(180deg, #002B5C 0%, #001b3a 100%); color: #fff; flex-shrink: 0; display: flex; flex-direction: column; position: relative; transition: width .2s ease; }
+    .sidebar.open { width: 270px; }
     .sidebar .logo { display:flex; align-items:center; gap:12px; padding:18px; border-bottom: 1px solid rgba(255,255,255,.08); }
-    .sidebar .logo img { height: 40px; transition: transform .28s cubic-bezier(.2,.9,.2,1); }
-    .sidebar.collapsed .logo img { transform: scale(.95); }
-    .sidebar .logo h1 { font-size: 16px; font-weight: 800; line-height: 1.1; }
-    .sidebar.collapsed .logo h1, .sidebar.collapsed .logo .text-xs { display:none; }
+    .sidebar .logo img { height: 40px; transition: opacity .2s ease; }
+    .sidebar:not(.open) .logo img { opacity: 0; width: 0; }
+    .sidebar .logo h1 { font-size: 16px; font-weight: 800; line-height: 1.1; transition: opacity .2s ease; }
+    .sidebar:not(.open) .logo h1, .sidebar:not(.open) .logo .text-xs { opacity:0; width:0; overflow:hidden; }
 
     .sidebar .menu { padding: 10px; display:flex; flex-direction:column; gap:6px; overflow:auto; }
-    .sidebar .item { display:flex; align-items:center; gap:10px; padding: 10px 12px; border-radius: 12px; cursor:pointer; font-weight:800; color: rgba(255,255,255,.88); transition: transform .18s ease, background .18s ease, box-shadow .18s ease; }
-    .sidebar .item:hover { background: rgba(255,255,255,.10); transform: translateY(-1px); }
-    .sidebar .item:active { transform: translateY(0px) scale(.99); }
+    .sidebar .item { display:flex; align-items:center; gap:10px; padding: 10px 12px; border-radius: 12px; cursor:pointer; font-weight:800; color: rgba(255,255,255,.88); transition: background .15s ease; }
+    .sidebar .item:hover { background: rgba(255,255,255,.10); }
     .sidebar .item.active { background: rgba(255,255,255,.16); color:#fff; }
-    .sidebar .item .txt { white-space: nowrap; }
-    .sidebar.collapsed .item { justify-content:center; }
-    .sidebar.collapsed .item .txt { display:none; }
+    .sidebar .item .txt { white-space: nowrap; transition: opacity .2s ease; }
+    .sidebar:not(.open) .item { justify-content:center; }
+    .sidebar:not(.open) .item .txt { opacity:0; width:0; overflow:hidden; }
 
-    .sidebar .footer { margin-top:auto; padding: 12px 12px 16px; border-top: 1px solid rgba(255,255,255,.08); display:flex; flex-direction:column; gap:8px; }
-    .sidebar.collapsed .footer { display:none; }
+    .sidebar .footer { margin-top:auto; padding: 12px 12px 16px; border-top: 1px solid rgba(255,255,255,.08); display:flex; flex-direction:column; gap:8px; transition: opacity .2s ease; }
+    .sidebar:not(.open) .footer { opacity:0; height:0; overflow:hidden; padding:0; }
 
     .sidebar-toggle { position:absolute; right:-14px; top:16px; width:28px; height:28px; border-radius:999px; background:#111827; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; border: 2px solid rgba(255,255,255,.15); box-shadow: 0 10px 20px rgba(0,0,0,.18); transition: transform .2s ease; }
     .sidebar-toggle:hover { transform: scale(1.06); }
@@ -59,7 +58,7 @@
 
 <body>
   <div class="layout">
-    <aside class="sidebar collapsed" id="sidebar">
+    <aside class="sidebar" id="sidebar">
       <div class="sidebar-toggle" onclick="toggleSidebar()" title="Menu">☰</div>
       <div class="logo">
         <img src="https://agi-prod-file-upload-public-main-use1.s3.amazonaws.com/cacca5b9-29da-4402-ace7-419b369140a7" alt="Porto Mais" />
@@ -108,7 +107,7 @@
       </div>
 
       <section id="page-data" class="page active">
-        <div class="alert alert-info">💡 <b>Dicas:</b> “EVENTO TIPO” é o tipo do dano (VIDROS, ROUBO/FURTO...). Já “CAUSADOR” define quem causou (TERCEIRO/ASSOCIADO). Jurídico usa CAUSADOR.</div>
+        <div class="alert alert-info">💡 <b>EVENTO TIPO</b> (VIDROS/ROUBO etc.) define o que aparece no Dashboard. <b>CAUSADOR</b> define quem causou (TERCEIRO entra no Jurídico).</div>
         <div class="card"><div id="spreadsheet"></div></div>
       </section>
 
@@ -220,7 +219,7 @@
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth() + 1;
 
-    function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('collapsed'); }
+    function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); }
 
     function monthKey(y, m){ return `month_${y}_${String(m).padStart(2,'0')}`; }
     function monthLabel(y,m){ const d = new Date(y, m-1); return d.toLocaleString('pt-BR',{month:'long',year:'numeric'}).toUpperCase(); }
@@ -280,14 +279,13 @@
     function normalizePlaca(v){ return (v||'').toString().toUpperCase().replace(/[^A-Z0-9]/g,'').trim(); }
     function isOpenStatus(status){ const s = (status||'').toString().toUpperCase().trim(); return !(s==='FINALIZADO' || s==='NEGADO'); }
 
-    // EVENTO TIPO is the official source for category filters
-    function isVidroRow(r){ return (r[17]||'').toString().toUpperCase().trim()==='VIDROS'; }
-    function isRouboRow(r){ return (r[17]||'').toString().toUpperCase().trim()==='ROUBO/FURTO'; }
-    function isAcordoRow(r){ return (r[11]||'').toString().toUpperCase().trim()==='ACORDO'; }
-    function isFinalizadoRow(r){ return (r[11]||'').toString().toUpperCase().trim()==='FINALIZADO'; }
+    function isVidroRow(r){ return (r[2]||'').toString().toUpperCase().trim()==='VIDROS'; }
+    function isRouboRow(r){ return (r[2]||'').toString().toUpperCase().trim()==='ROUBO/FURTO'; }
+    function isAcordoRow(r){ return (r[10]||'').toString().toUpperCase().trim()==='ACORDO'; }
+    function isFinalizadoRow(r){ return (r[10]||'').toString().toUpperCase().trim()==='FINALIZADO'; }
 
-    function isTerceiroCausadorRow(r){ return (r[12]||'').toString().toUpperCase().trim()==='TERCEIRO'; }
-    function isJuridicoStatus(r, statuses){ return statuses.includes((r[13]||'').toString().toUpperCase().trim()); }
+    function isTerceiroCausadorRow(r){ return (r[11]||'').toString().toUpperCase().trim()==='TERCEIRO'; }
+    function isJuridicoStatus(r, statuses){ return statuses.includes((r[12]||'').toString().toUpperCase().trim()); }
 
     function applyFilter(predicate){
       const data = hot.getData() || [];
@@ -315,12 +313,12 @@
       if(key==='roubo') return applyFilter(r=>isRouboRow(r));
       if(key==='acordos') return applyFilter(r=>isAcordoRow(r));
       if(key==='finalizados') return applyFilter(r=>isFinalizadoRow(r));
-      if(key==='open') return applyFilter(r=>isOpenStatus(r[11]));
+      if(key==='open') return applyFilter(r=>isOpenStatus(r[10]));
       if(key==='terceiroCausador') return applyFilter(r=>isTerceiroCausadorRow(r));
       if(key==='jurEm') return applyFilter(r=>isTerceiroCausadorRow(r) && isJuridicoStatus(r,['EM COBRANÇA','COBRADO']));
       if(key==='jurRec') return applyFilter(r=>isTerceiroCausadorRow(r) && isJuridicoStatus(r,['RECUPERADO']));
       if(key==='jurNao') return applyFilter(r=>isTerceiroCausadorRow(r) && isJuridicoStatus(r,['NÃO COBRAR']));
-      if(key==='jurValor') return applyFilter(r=>isTerceiroCausadorRow(r) && ((parseFloat(r[15])||0)>0));
+      if(key==='jurValor') return applyFilter(r=>isTerceiroCausadorRow(r) && ((parseFloat(r[14])||0)>0));
     }
 
     function buildOpenPanel(openRows){
@@ -355,7 +353,7 @@
         const rows = m.data || [];
         for(const r of rows){
           const placaR = normalizePlaca(r[3]);
-          const st = r[11];
+          const st = r[10];
           if(placaR===p && isOpenStatus(st)) return { monthLabel: m.monthLabel || monthLabel(m.year,m.month), key: m.key, status: st };
         }
       }
@@ -426,20 +424,20 @@
       Swal.fire('💾 Armazenamento', `Meses salvos: ${months.length}<br/>Tamanho aproximado: ${kb} KB`, 'info');
     }
 
-    const initialData = [["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]];
+    const initialData = [["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]];
 
     const container = document.getElementById('spreadsheet');
     const hot = new Handsontable(container, {
       data: initialData,
       colHeaders: [
-        'ASSOCIAÇÃO','BENEFICIÁRIO','VEÍCULO','PLACA','DATA OFICINA','OFICINA',
+        'ASSOCIAÇÃO','BENEFICIÁRIO','EVENTO TIPO','VEÍCULO','PLACA','DATA OFICINA','OFICINA',
         'COTA','MÃO DE OBRA','PEÇAS','OUTRAS DESPESAS','GASTOS TOTAIS','SITUAÇÃO',
-        'CAUSADOR','JURÍDICO STATUS','DT ENVIO JURÍDICO','VALOR A RECUPERAR','OBS JURÍDICO',
-        'EVENTO TIPO'
+        'CAUSADOR','JURÍDICO STATUS','DT ENVIO JURÍDICO','VALOR A RECUPERAR','OBS JURÍDICO'
       ],
       columns: [
         { type:'text' },
         { type:'dropdown', source:['ASSOCIADO','TERCEIRO'] },
+        { type:'dropdown', source: EVENTO_TIPO_OPTS },
         { type:'text' },
         { type:'text' },
         { type:'date', dateFormat:'DD/MM/YYYY' },
@@ -454,8 +452,7 @@
         { type:'dropdown', source: JURIDICO_STATUS },
         { type:'date', dateFormat:'DD/MM/YYYY' },
         { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
-        { type:'text' },
-        { type:'dropdown', source: EVENTO_TIPO_OPTS }
+        { type:'text' }
       ],
       rowHeaders: true,
       width:'100%',
@@ -470,12 +467,12 @@
       afterChange(changes, source){
         if(!changes || source==='source') return;
         changes.forEach(([row, col])=>{
-          if([6,7,8,9].includes(col)){
-            const cota=parseFloat(this.getDataAtCell(row,6))||0;
-            const mao=parseFloat(this.getDataAtCell(row,7))||0;
-            const pecas=parseFloat(this.getDataAtCell(row,8))||0;
-            const outras=parseFloat(this.getDataAtCell(row,9))||0;
-            this.setDataAtCell(row,10, cota+mao+pecas+outras, 'source');
+          if([7,8,9,10].includes(col)){
+            const cota=parseFloat(this.getDataAtCell(row,7))||0;
+            const mao=parseFloat(this.getDataAtCell(row,8))||0;
+            const pecas=parseFloat(this.getDataAtCell(row,9))||0;
+            const outras=parseFloat(this.getDataAtCell(row,10))||0;
+            this.setDataAtCell(row,11, cota+mao+pecas+outras, 'source');
           }
         });
         saveCurrentMonth(); fillMonthSwitch(); setBadge();
@@ -509,15 +506,15 @@
         const base = r.slice(0,12);
         while(base.length<12) base.push('');
         const eventoTipo = inferEventoTipoFromRow12(base);
-        const extra = ['NÃO IDENTIFICADO','NÃO INICIADO','','','', eventoTipo];
-        return [...base, ...extra];
+        const row17 = [base[0], base[1], eventoTipo, base[2], base[3], base[4], base[5], base[6], base[7], base[8], base[9], base[10], base[11], 'NÃO IDENTIFICADO','NÃO INICIADO','','',''];
+        return row17;
       });
 
       const kept=[];
       const blocked=[];
       for(const r of normalized){
-        const found = findOpenPlateInOtherMonths(r[3]);
-        if(found) blocked.push({placa: normalizePlaca(r[3]), month: found.monthLabel});
+        const found = findOpenPlateInOtherMonths(r[4]);
+        if(found) blocked.push({placa: normalizePlaca(r[4]), month: found.monthLabel});
         else kept.push(r);
       }
 
@@ -546,18 +543,18 @@
           if(!r[0]) return;
           tEv++;
 
-          const val = (parseFloat(r[7])||0) + (parseFloat(r[8])||0) + (parseFloat(r[9])||0);
+          const val = (parseFloat(r[8])||0) + (parseFloat(r[9])||0) + (parseFloat(r[10])||0);
 
           if(isRouboRow(r)){ cRou++; $Rou+=val; }
           if(isVidroRow(r)){ cVid++; $Vid+=val; }
 
-          if(isOpenStatus(r[11])){
-            openRows.push({ rowIndex: idx, placa: normalizePlaca(r[3]), veiculo: r[2]||'', oficina: r[5]||'', status: r[11]||'', valor: (parseFloat(r[10])||0), eventoTipo: r[17]||'' });
+          if(isOpenStatus(r[12])){
+            openRows.push({ rowIndex: idx, placa: normalizePlaca(r[4]), veiculo: r[3]||'', oficina: r[6]||'', status: r[12]||'', valor: (parseFloat(r[11])||0), eventoTipo: r[2]||'' });
           }
 
           if(isTerceiroCausadorRow(r)){
-            const jur = (r[13]||'').toString().toUpperCase().trim();
-            const valRec = parseFloat(r[15]) || 0;
+            const jur = (r[14]||'').toString().toUpperCase().trim();
+            const valRec = parseFloat(r[16]) || 0;
             tercCaus++;
             if(jur) jurStatusCounts[jur] = (jurStatusCounts[jur]||0)+1;
             if(jur==='EM COBRANÇA' || jur==='COBRADO') jurEm++;
@@ -606,17 +603,17 @@
             <tbody>
               ${rows.map(x=>{
                 const r = x.r;
-                const placa = normalizePlaca(r[3]);
-                const valRec = parseFloat(r[15])||0;
+                const placa = normalizePlaca(r[4]);
+                const valRec = parseFloat(r[16])||0;
                 return `<tr class="border-b hover:bg-gray-50 open-panel-item" onclick="openRow(${x.idx})">
                   <td class="p-2 font-extrabold">${placa||''}</td>
-                  <td class="p-2 font-bold">${(r[17]||'')}</td>
+                  <td class="p-2 font-bold">${(r[2]||'')}</td>
                   <td class="p-2">${(r[1]||'')}</td>
-                  <td class="p-2">${(r[2]||'')}</td>
-                  <td class="p-2">${(r[11]||'')}</td>
-                  <td class="p-2 font-bold">${(r[13]||'')}</td>
+                  <td class="p-2">${(r[3]||'')}</td>
+                  <td class="p-2">${(r[12]||'')}</td>
+                  <td class="p-2 font-bold">${(r[14]||'')}</td>
                   <td class="p-2">${valRec? valRec.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : ''}</td>
-                  <td class="p-2">${(r[16]||'')}</td>
+                  <td class="p-2">${(r[17]||'')}</td>
                 </tr>`;
               }).join('')}
             </tbody>

@@ -12,11 +12,380 @@ const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
 let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth() + 1;
 let navigatorYear = currentYear;
-let chartTipo, chartJuridico, chartCustos;
+let compareSelectorYear = currentYear;
+let selectedMonthsForComparison = [];
+let chartTipo, chartJuridico, chartCustos, chartCompareEventos, chartCompareCustos;
 let firebaseDb = null;
 let oficinas = [];
 let currentOficinaId = null;
 let hot = null;
+
+// ============ COMPARISON FUNCTIONS ============
+function showCompareSelector() {
+  compareSelectorYear = currentYear;
+  selectedMonthsForComparison = [];
+  renderCompareCalendar();
+  updateSelectedMonthsBadges();
+  document.getElementById('compareSelectorModal').classList.remove('hidden');
+}
+
+function closeCompareSelector() {
+  document.getElementById('compareSelectorModal').classList.add('hidden');
+}
+
+function changeCompareSelectorYear(delta) {
+  compareSelectorYear += delta;
+  renderCompareCalendar();
+}
+
+function renderCompareCalendar() {
+  document.getElementById('compare-year').innerText = compareSelectorYear;
+  
+  const savedMonths = getSavedMonths();
+  const savedKeys = new Set(savedMonths.map(m => monthKey(m.year, m.month)));
+  
+  const calendar = document.getElementById('compare-calendar');
+  calendar.innerHTML = MONTH_NAMES.map((name, idx) => {
+    const month = idx + 1;
+    const key = monthKey(compareSelectorYear, month);
+    const hasData = savedKeys.has(key);
+    const isSelected = selectedMonthsForComparison.some(s => s.year === compareSelectorYear && s.month === month);
+    
+    let classes = 'month-cell';
+    if (isSelected) classes += ' selected';
+    else if (hasData) classes += ' has-data';
+    else classes += ' opacity-40 cursor-not-allowed';
+    
+    const onclick = hasData ? `toggleMonthSelection(${compareSelectorYear}, ${month})` : '';
+    
+    return `<div class="${classes}" onclick="${onclick}">${name}</div>`;
+  }).join('');
+}
+
+function toggleMonthSelection(year, month) {
+  const idx = selectedMonthsForComparison.findIndex(s => s.year === year && s.month === month);
+  
+  if (idx >= 0) {
+    selectedMonthsForComparison.splice(idx, 1);
+  } else {
+    const key = monthKey(year, month);
+    const md = JSON.parse(localStorage.getItem(key) || 'null');
+    if (md && md.data) {
+      selectedMonthsForComparison.push({ year, month, monthLabel: monthLabel(year, month), data: md.data });
+    }
+  }
+  
+  renderCompareCalendar();
+  updateSelectedMonthsBadges();
+}
+
+function updateSelectedMonthsBadges() {
+  const count = document.getElementById('selected-count');
+  const badges = document.getElementById('selected-months-badges');
+  
+  if (count) count.innerText = selectedMonthsForComparison.length;
+  
+  if (badges) {
+    if (selectedMonthsForComparison.length === 0) {
+      badges.innerHTML = '<span class="text-xs text-gray-400">Nenhum mês selecionado ainda</span>';
+    } else {
+      badges.innerHTML = selectedMonthsForComparison
+        .sort((a, b) => (a.year - b.year) || (a.month - b.month))
+        .map(m => `
+          <span class="inline-flex items-center gap-1 px-3 py-1 bg-purple-500 text-white rounded-full text-xs font-bold">
+            ${m.monthLabel}
+            <button onclick="toggleMonthSelection(${m.year}, ${m.month})" class="hover:bg-purple-600 rounded-full px-1">×</button>
+          </span>
+        `).join('');
+    }
+  }
+}
+
+function generateComparison() {
+  if (selectedMonthsForComparison.length < 2) {
+    Swal.fire('Atenção', 'Selecione ao menos 2 meses para comparar.', 'warning');
+    return;
+  }
+  
+  closeCompareSelector();
+  go('compare');
+  
+  setTimeout(() => {
+    renderComparisonCharts();
+    renderComparisonTable();
+  }, 100);
+}
+
+function calculateMonthMetrics(data) {
+  let total = 0, vidros = 0, roubo = 0, colisao = 0, outros = 0;
+  let custoTotal = 0, custoVidros = 0, custoRoubo = 0, custoColisao = 0, custoOutros = 0;
+  let finalizados = 0, acordos = 0, emAberto = 0;
+  let terceiroCausador = 0, jurValor = 0;
+  
+  if (!data || !data.length) return {
+    total, vidros, roubo, colisao, outros,
+    custoTotal, custoVidros, custoRoubo, custoColisao, custoOutros,
+    finalizados, acordos, emAberto, terceiroCausador, jurValor
+  };
+  
+  data.forEach(r => {
+    if (!r[0]) return;
+    total++;
+    
+    const tipo = (r[2] || '').toString().toUpperCase().trim();
+    const custo = parseFloat(r[11]) || 0;
+    const status = (r[12] || '').toString().toUpperCase().trim();
+    const causador = (r[13] || '').toString().toUpperCase().trim();
+    const valorRecup = parseFloat(r[16]) || 0;
+    
+    custoTotal += custo;
+    
+    if (tipo === 'VIDROS') { vidros++; custoVidros += custo; }
+    else if (tipo === 'ROUBO/FURTO') { roubo++; custoRoubo += custo; }
+    else if (tipo === 'COLISÃO') { colisao++; custoColisao += custo; }
+    else { outros++; custoOutros += custo; }
+    
+    if (status === 'FINALIZADO') finalizados++;
+    if (status === 'ACORDO') acordos++;
+    if (isOpenStatus(status)) emAberto++;
+    
+    if (causador === 'TERCEIRO') {
+      terceiroCausador++;
+      jurValor += valorRecup;
+    }
+  });
+  
+  return {
+    total, vidros, roubo, colisao, outros,
+    custoTotal, custoVidros, custoRoubo, custoColisao, custoOutros,
+    finalizados, acordos, emAberto, terceiroCausador, jurValor
+  };
+}
+
+function renderComparisonCharts() {
+  const display = document.getElementById('compare-months-display');
+  if (display) {
+    display.innerHTML = `
+      <div class="card">
+        <p class="text-sm text-gray-700">
+          <b>📋 Comparando ${selectedMonthsForComparison.length} meses:</b> 
+          ${selectedMonthsForComparison.map(m => `<span class="font-bold text-purple-600">${m.monthLabel}</span>`).join(', ')}
+        </p>
+      </div>
+    `;
+  }
+  
+  const monthsData = selectedMonthsForComparison.map(m => ({
+    label: m.monthLabel,
+    metrics: calculateMonthMetrics(m.data)
+  }));
+  
+  // Chart: Total de Eventos
+  if (chartCompareEventos) chartCompareEventos.destroy();
+  chartCompareEventos = new Chart(document.getElementById('chart-compare-eventos'), {
+    type: 'bar',
+    data: {
+      labels: monthsData.map(m => m.label),
+      datasets: [
+        {
+          label: 'Vidros',
+          data: monthsData.map(m => m.metrics.vidros),
+          backgroundColor: '#06b6d4'
+        },
+        {
+          label: 'Roubo/Furto',
+          data: monthsData.map(m => m.metrics.roubo),
+          backgroundColor: '#a855f7'
+        },
+        {
+          label: 'Colisão',
+          data: monthsData.map(m => m.metrics.colisao),
+          backgroundColor: '#f59e0b'
+        },
+        {
+          label: 'Outros',
+          data: monthsData.map(m => m.metrics.outros),
+          backgroundColor: '#64748b'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11, weight: 'bold' }, padding: 8 } },
+        tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', padding: 10, bodyFont: { size: 12 } }
+      },
+      scales: {
+        x: { stacked: true, ticks: { font: { size: 10, weight: 'bold' } } },
+        y: { stacked: true, beginAtZero: true, ticks: { font: { size: 10 } } }
+      },
+      animation: { duration: 800, easing: 'easeInOutQuart' }
+    }
+  });
+  
+  // Chart: Custos Totais
+  if (chartCompareCustos) chartCompareCustos.destroy();
+  chartCompareCustos = new Chart(document.getElementById('chart-compare-custos'), {
+    type: 'line',
+    data: {
+      labels: monthsData.map(m => m.label),
+      datasets: [
+        {
+          label: 'Custo Total (R$)',
+          data: monthsData.map(m => m.metrics.custoTotal),
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 6,
+          pointHoverRadius: 8
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11, weight: 'bold' }, padding: 8 } },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          padding: 10,
+          bodyFont: { size: 12 },
+          callbacks: {
+            label: ctx => 'R$ ' + ctx.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: v => 'R$ ' + v.toLocaleString('pt-BR'),
+            font: { size: 10 }
+          }
+        }
+      },
+      animation: { duration: 800, easing: 'easeInOutQuart' }
+    }
+  });
+}
+
+function renderComparisonTable() {
+  const table = document.getElementById('compare-table');
+  if (!table) return;
+  
+  const monthsData = selectedMonthsForComparison.map(m => ({
+    label: m.monthLabel,
+    metrics: calculateMonthMetrics(m.data)
+  }));
+  
+  const metrics = [
+    { key: 'total', label: 'Total de Eventos' },
+    { key: 'vidros', label: 'Vidros' },
+    { key: 'roubo', label: 'Roubo/Furto' },
+    { key: 'colisao', label: 'Colisão' },
+    { key: 'outros', label: 'Outros' },
+    { key: 'custoTotal', label: 'Custo Total', isCurrency: true },
+    { key: 'finalizados', label: 'Finalizados' },
+    { key: 'acordos', label: 'Acordos' },
+    { key: 'emAberto', label: 'Em Aberto' },
+    { key: 'terceiroCausador', label: '3º Causador' },
+    { key: 'jurValor', label: 'Valor a Recuperar', isCurrency: true }
+  ];
+  
+  const formatValue = (val, isCurrency) => {
+    if (isCurrency) return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    return val;
+  };
+  
+  const calculateDelta = (current, previous, isCurrency) => {
+    if (previous === 0) return '';
+    const diff = current - previous;
+    const pct = ((diff / previous) * 100).toFixed(1);
+    const sign = diff >= 0 ? '+' : '';
+    const cls = diff >= 0 ? 'delta-positive' : 'delta-negative';
+    return `<span class="${cls}">${sign}${pct}%</span>`;
+  };
+  
+  let html = '<thead><tr><th>Métrica</th>';
+  monthsData.forEach(m => {
+    html += `<th>${m.label}</th>`;
+  });
+  html += '<th>Variação</th></tr></thead><tbody>';
+  
+  metrics.forEach(metric => {
+    html += '<tr>';
+    html += `<td class="metric-label">${metric.label}</td>`;
+    
+    monthsData.forEach((m, idx) => {
+      const val = m.metrics[metric.key];
+      html += `<td>${formatValue(val, metric.isCurrency)}</td>`;
+    });
+    
+    if (monthsData.length >= 2) {
+      const lastVal = monthsData[monthsData.length - 1].metrics[metric.key];
+      const prevVal = monthsData[monthsData.length - 2].metrics[metric.key];
+      html += `<td>${calculateDelta(lastVal, prevVal, metric.isCurrency)}</td>`;
+    } else {
+      html += '<td>-</td>';
+    }
+    
+    html += '</tr>';
+  });
+  
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+async function exportComparison() {
+  if (selectedMonthsForComparison.length < 2) {
+    Swal.fire('Atenção', 'Selecione ao menos 2 meses para exportar a comparação.', 'warning');
+    return;
+  }
+  
+  Swal.fire({
+    title: '📥 Exportar Comparação',
+    html: '<p class="text-sm">Capturando gráficos e tabelas...</p>',
+    allowOutsideClick: false,
+    didOpen: () => { Swal.showLoading(); }
+  });
+  
+  try {
+    // Usando html2canvas para capturar a tela
+    const pageCompare = document.getElementById('page-compare');
+    
+    // Importa dinamicamente html2canvas
+    if (!window.html2canvas) {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+      document.head.appendChild(script);
+      await new Promise(resolve => { script.onload = resolve; });
+    }
+    
+    const canvas = await html2canvas(pageCompare, {
+      scale: 2,
+      backgroundColor: '#f5f7fa',
+      logging: false,
+      useCORS: true
+    });
+    
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `comparacao_${selectedMonthsForComparison.map(m => m.monthLabel.replace(/ /g, '_')).join('_vs_')}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      Swal.fire('✅ Exportado!', 'Comparação salva como PNG.', 'success');
+    });
+  } catch (error) {
+    console.error('Erro ao exportar:', error);
+    Swal.fire('Erro', 'Falha ao exportar comparação: ' + error.message, 'error');
+  }
+}
 
 // ============ OFICINAS MANAGEMENT ============
 function loadOficinas() {
@@ -303,7 +672,7 @@ function loadMonthFromNavigator(year, month) {
       if (result.isConfirmed) {
         currentYear = year;
         currentMonth = month;
-        hot.loadData([[""]]); // Empty month
+        hot.loadData([[""]]);
         saveCurrentMonth();
         setBadge();
         updateDashboard();
@@ -383,7 +752,6 @@ function initFirebase() {
     document.getElementById('sync-status').innerHTML = '<span style="color:#10b981;">✓ Online</span>';
     console.log('✅ Firebase conectado automaticamente!');
     
-    // Auto-sync a cada 30 segundos
     setInterval(() => {
       if (firebaseDb) {
         const md = saveCurrentMonth();
@@ -393,7 +761,6 @@ function initFirebase() {
       }
     }, 30000);
     
-    // Baixar oficinas do Firebase
     firebaseDb.ref('oficinas').once('value', snapshot => {
       const cloudOficinas = snapshot.val();
       if (cloudOficinas && Array.isArray(cloudOficinas) && cloudOficinas.length > 0) {
@@ -554,18 +921,31 @@ function parseDateDDMMYYYY(dateStr) {
 }
 
 function go(page){
-  const pages = ['data','dash','juridico','oficinas'];
+  const pages = ['data','dash','compare','juridico','oficinas'];
   pages.forEach(p=>{
     const el = document.getElementById('page-'+p);
     const nav = document.getElementById('nav-'+p);
     if(el) el.classList.toggle('active', p===page);
     if(nav) nav.classList.toggle('active', p===page);
   });
-  const titleMap = { data:'Editar dados', dash:'Dashboard', juridico:'Jurídico (3º causador)', oficinas:'Cadastro de Oficinas' };
-  const subMap = { data:'Tabela principal do mês selecionado', dash:'KPIs, gráficos e rankings do mês', juridico:'Cobrança e status jurídico (3º causador)', oficinas:'Gerencie oficinas parceiras e especialidades' };
+  const titleMap = { 
+    data:'Editar dados', 
+    dash:'Dashboard', 
+    compare:'Comparação de Meses',
+    juridico:'Jurídico (3º causador)', 
+    oficinas:'Cadastro de Oficinas' 
+  };
+  const subMap = { 
+    data:'Tabela principal do mês selecionado', 
+    dash:'KPIs, gráficos e rankings do mês', 
+    compare:'Compare métricas entre diferentes períodos',
+    juridico:'Cobrança e status jurídico (3º causador)', 
+    oficinas:'Gerencie oficinas parceiras e especialidades' 
+  };
   document.getElementById('page-title').innerText = titleMap[page] || 'Gerenciador';
   document.getElementById('page-sub').innerText = subMap[page] || '';
   if(page==='dash') updateDashboard();
+  if(page==='compare' && selectedMonthsForComparison.length >= 2) { renderComparisonCharts(); renderComparisonTable(); }
   if(page==='juridico') filterJuridicoView();
   if(page==='data') setTimeout(()=>hot.render(), 50);
   if(page==='oficinas') { renderOficinasList(); updateOficinaKPIs(); }

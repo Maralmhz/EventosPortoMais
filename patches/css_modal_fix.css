@@ -1,0 +1,64 @@
+/* ============================================
+   PATCH CSS: Correção do Modal de Configurações
+   Adicione este código no <style> do index.html
+   Localização: Antes de </style>
+   ============================================ */
+
+/* Limitar altura do modal */
+#configModal .bg-white {
+  max-height: 80vh !important;
+  overflow-y: auto !important;
+}
+
+/* Scroll interno no conteúdo */
+#configModal .space-y-6 {
+  max-height: calc(80vh - 180px) !important;
+  overflow-y: auto !important;
+}
+
+/* Reduzir padding dos cards */
+#configModal .card {
+  padding: 12px !important;
+}
+
+/* Reduzir tamanho dos títulos */
+#configModal h4 {
+  font-size: 14px !important;
+  margin-bottom: 6px !important;
+}
+
+/* Reduzir tamanho dos textos */
+#configModal p {
+  font-size: 12px !important;
+  margin-bottom: 8px !important;
+}
+
+/* Reduzir tamanho dos botões */
+#configModal button {
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+}
+
+/* Garantir que o modal não ultrapasse a tela */
+#configModal {
+  padding: 20px !important;
+}
+
+/* Scroll suave */
+#configModal .space-y-6::-webkit-scrollbar {
+  width: 6px;
+}
+
+#configModal .space-y-6::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+#configModal .space-y-6::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 10px;
+}
+
+#configModal .space-y-6::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}

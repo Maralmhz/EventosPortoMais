@@ -1,0 +1,105 @@
+<!-- 
+  PATCH: Modal de Configurações
+  Adicione este código no arquivo index.html
+  LOCALIZAÇÃO: Antes da tag </main>
+  DEPOIS DE: <!-- MONTH NAVIGATOR MODAL -->
+-->
+
+<!-- CONFIG MODAL -->
+<div id="configModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+    <div class="p-6 border-b bg-gradient-to-r from-blue-600 to-indigo-600 rounded-t-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-2xl text-white flex items-center gap-2">
+          ⚙️ Configurações e Backup
+        </h3>
+        <button onclick="closeConfigModal()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
+      </div>
+    </div>
+    
+    <div class="p-6 space-y-6">
+      <!-- Salvar Atual -->
+      <div class="card p-4 bg-blue-50 border-2 border-blue-200">
+        <h4 class="font-bold text-blue-900 mb-2 flex items-center gap-2">
+          💾 Salvar Mês Atual
+        </h4>
+        <p class="text-sm text-blue-800 mb-3">
+          Salva o mês atual no navegador (LocalStorage) e sincroniza com nuvem (Firebase)
+        </p>
+        <button onclick="saveCurrentMonthWithChecks(); closeConfigModal();" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold transition">
+          💾 Salvar Agora
+        </button>
+      </div>
+
+      <!-- Exportar Backup -->
+      <div class="card p-4 bg-purple-50 border-2 border-purple-200">
+        <h4 class="font-bold text-purple-900 mb-2 flex items-center gap-2">
+          📥 Exportar Backup
+        </h4>
+        <p class="text-sm text-purple-800 mb-3">
+          Baixa todos os meses salvos em arquivo JSON (recomendado fazer semanalmente)
+        </p>
+        <button onclick="exportBackup(); closeConfigModal();" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-bold transition">
+          📥 Exportar JSON
+        </button>
+      </div>
+
+      <!-- Importar Backup -->
+      <div class="card p-4 bg-green-50 border-2 border-green-200">
+        <h4 class="font-bold text-green-900 mb-2 flex items-center gap-2">
+          📤 Importar Backup
+        </h4>
+        <p class="text-sm text-green-800 mb-3">
+          Restaura dados de um arquivo JSON de backup previamente exportado
+        </p>
+        <input 
+          type="file" 
+          id="import-file-input" 
+          accept=".json" 
+          class="hidden" 
+          onchange="handleImportFile(event)"
+        >
+        <button onclick="document.getElementById('import-file-input').click()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-bold transition">
+          📤 Selecionar Arquivo JSON
+        </button>
+      </div>
+
+      <!-- Sincronização Firebase -->
+      <div class="card p-4 bg-amber-50 border-2 border-amber-200">
+        <h4 class="font-bold text-amber-900 mb-2 flex items-center gap-2">
+          ☁️ Sincronização em Nuvem
+        </h4>
+        <p class="text-sm text-amber-800 mb-3">
+          Sincroniza automaticamente com Firebase quando conectado à internet
+        </p>
+        <div class="flex gap-2">
+          <button onclick="syncWithFirebase(); closeConfigModal();" class="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-lg font-bold transition">
+            🔄 Sincronizar Agora
+          </button>
+          <button onclick="checkFirebaseStatus(); closeConfigModal();" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white px-4 py-3 rounded-lg font-bold transition">
+            🔍 Ver Status
+          </button>
+        </div>
+      </div>
+
+      <!-- Limpar Cache -->
+      <div class="card p-4 bg-red-50 border-2 border-red-200">
+        <h4 class="font-bold text-red-900 mb-2 flex items-center gap-2">
+          🗑️ Limpar Cache Local
+        </h4>
+        <p class="text-sm text-red-800 mb-3">
+          ⚠️ Remove TODOS os dados salvos localmente (não afeta Firebase)
+        </p>
+        <button onclick="clearLocalCache()" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-bold transition">
+          🗑️ Limpar Tudo
+        </button>
+      </div>
+    </div>
+
+    <div class="p-4 bg-gray-50 rounded-b-2xl flex justify-end">
+      <button onclick="closeConfigModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-bold">
+        Fechar
+      </button>
+    </div>
+  </div>
+</div>

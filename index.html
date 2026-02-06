@@ -1,778 +1,822 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Eventos - Porto Mais</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" rel="stylesheet">
-    
-    <style>
-        body { background-color: #f3f4f6; font-family: 'Segoe UI', sans-serif; }
-        .tab-btn { padding: 10px 20px; font-weight: 600; color: #4b5563; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.3s; }
-        .tab-btn.active { color: #2563eb; border-bottom: 2px solid #2563eb; }
-        .tab-btn:hover { color: #1e40af; }
-        #spreadsheet { width: 100%; height: 65vh; overflow: hidden; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .handsontable th { font-weight: bold; background-color: #1e3a8a; color: white; text-align: center; }
-        .btn-cloud { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.3s; }
-        .btn-cloud:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
-        
-        /* Estilo para os KPIs */
-        .kpi-card { display: flex; flex-direction: column; justify-content: space-between; height: 100px; border-left: 5px solid; background: white; padding: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .kpi-label { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #6b7280; letter-spacing: 0.05em; }
-        .kpi-value { font-size: 1.5rem; font-weight: 800; margin-top: 5px; }
-        .kpi-sub { font-size: 0.7rem; color: #9ca3af; margin-top: auto; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gerenciador de Eventos - Porto Mais</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <link href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" rel="stylesheet" />
+  <link href="assets/styles.css" rel="stylesheet" />
+
+  <style>
+    /* Sidebar quick styles (kept minimal; rest in assets/styles.css) */
+    .layout { display: flex; height: 100vh; overflow: hidden; }
+    .sidebar { width: 270px; background: linear-gradient(180deg, #002B5C 0%, #001b3a 100%); color: #fff; flex-shrink: 0; display: flex; flex-direction: column; }
+    .sidebar .logo { display:flex; align-items:center; gap:12px; padding:18px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .sidebar .logo img { height: 40px; }
+    .sidebar .logo h1 { font-size: 16px; font-weight: 800; line-height: 1.1; }
+    .sidebar .menu { padding: 10px; display:flex; flex-direction:column; gap:6px; overflow:auto; }
+    .sidebar .item { display:flex; align-items:center; gap:10px; padding: 10px 12px; border-radius: 10px; cursor:pointer; font-weight:700; color: rgba(255,255,255,.86); }
+    .sidebar .item:hover { background: rgba(255,255,255,.10); }
+    .sidebar .item.active { background: rgba(255,255,255,.16); color:#fff; }
+    .sidebar .footer { margin-top:auto; padding: 12px 12px 16px; border-top: 1px solid rgba(255,255,255,.08); display:flex; flex-direction:column; gap:8px; }
+    .content { flex:1; background:#f3f4f6; overflow:auto; }
+
+    .topbar { position: sticky; top:0; z-index: 50; background: rgba(243,244,246,.92); backdrop-filter: blur(10px); border-bottom: 1px solid #e5e7eb; padding: 12px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .badge { font-size: 12px; font-weight: 800; padding: 6px 10px; border-radius: 999px; background:#111827; color:#fff; }
+
+    /* Pages */
+    .page { display:none; padding: 18px; }
+    .page.active { display:block; }
+  </style>
 </head>
-<body class="h-screen flex flex-col">
 
-    <!-- Navbar -->
-    <nav class="bg-gradient-to-r from-[#002B5C] to-[#003d7a] shadow-lg px-6 py-4 flex justify-between items-center z-10 flex-wrap gap-3">
+<body>
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="https://agi-prod-file-upload-public-main-use1.s3.amazonaws.com/cacca5b9-29da-4402-ace7-419b369140a7" alt="Porto Mais" />
+        <div>
+          <h1>Gerenciador<br/>de Eventos</h1>
+          <div class="text-xs font-semibold text-white/70">Apresentação mensal</div>
+        </div>
+      </div>
+
+      <nav class="menu">
+        <div class="item active" id="nav-data" onclick="go('data')">📝 Editar dados</div>
+        <div class="item" id="nav-dash" onclick="go('dash')">📊 Dashboard</div>
+        <div class="item" id="nav-juridico" onclick="go('juridico')">⚖️ Terceiro causador</div>
+        <div class="item" id="nav-compare" onclick="go('compare')">📈 Comparar meses</div>
+
+        <div class="mt-2 px-2 text-xs font-extrabold tracking-wider text-white/60">AÇÕES</div>
+        <div class="item" onclick="openImportModal()">📋 Colar Excel</div>
+        <div class="item" onclick="exportData()">💾 Exportar CSV</div>
+        <div class="item" onclick="exportAllBackup()">🗄️ Gerar backup</div>
+        <div class="item" onclick="importBackupFile()">📂 Restaurar backup</div>
+
+        <div class="mt-2 px-2 text-xs font-extrabold tracking-wider text-white/60">NUVEM</div>
+        <div class="item" onclick="saveToCloudReal()">☁️ GitHub salvar</div>
+        <div class="item" onclick="loadFromCloudReal()">📥 GitHub baixar</div>
+        <div class="item" onclick="configureCloud()">🔐 Login</div>
+      </nav>
+
+      <div class="footer">
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-white/70">Mês selecionado</span>
+          <span class="badge" id="badge-month">ATUAL</span>
+        </div>
+        <button class="btn btn-warning" onclick="showStorageInfo()">💾 Armazenamento</button>
+      </div>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="content">
+      <div class="topbar">
         <div class="flex items-center gap-3">
-            <img src="https://agi-prod-file-upload-public-main-use1.s3.amazonaws.com/cacca5b9-29da-4402-ace7-419b369140a7" alt="Porto Mais" class="h-12">
-            <h1 class="text-2xl font-bold text-white">Gerenciador de Eventos</h1>
-        </div>
-        
-        <div class="flex gap-3">
-            <button onclick="switchTab('data')" id="btn-data" class="tab-btn text-white active">📝 Editar Dados</button>
-            <button onclick="updateDashboard(); switchTab('dash')" id="btn-dash" class="tab-btn text-white">📊 Dashboard</button>
-            <button onclick="switchTab('compare')" id="btn-compare" class="tab-btn text-white">📈 Comparar Meses</button>
-        </div>
-        
-        <div class="flex gap-2 flex-wrap">
-            <button onclick="openImportModal()" class="bg-[#FF6B35] hover:bg-[#e55a24] text-white px-4 py-2 rounded text-sm font-semibold transition">
-                📋 Colar Excel
-            </button>
-            <button onclick="exportData()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm font-medium transition">
-                💾 Exportar CSV
-            </button>
-<button onclick="saveToCloudReal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded text-sm font-bold transition flex items-center gap-1">☁️ GitHub Salvar</button><button onclick="loadFromCloudReal()" class="bg-pink-600 hover:bg-pink-700 text-white px-3 py-2 rounded text-sm font-bold transition flex items-center gap-1">📥 GitHub Baixar</button><div class="h-6 w-px bg-blue-400 mx-1"></div><button onclick="importBackupFile()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm font-bold transition flex items-center gap-1">📂 Restaurar Arquivo</button><button onclick="configureCloud()" class="bg-gray-700 hover:bg-gray-800 text-white px-3 py-2 rounded text-sm font-medium transition">🔐 Login</button></div>
-    </nav>
-
-    <!-- Conteúdo Principal -->
-    <div class="flex-1 overflow-hidden relative">
-        
-        <!-- TABA 1: TABELA DE DADOS -->
-        <div id="tab-data" class="p-6 h-full w-full overflow-hidden absolute inset-0 bg-gray-50 z-0">
-            <div class="bg-white p-2 rounded shadow h-full flex flex-col">
-                <div class="text-sm text-gray-600 mb-3 px-2 bg-blue-50 py-2 rounded flex justify-between items-center">
-                    <span>💡 <strong>Dicas:</strong> Clique duas vezes para editar | Use "ACORDO" na situação | "VIDRO" na oficina é contado automaticamente.</span>
-                </div>
-                <div id="spreadsheet" class="flex-1"></div>
-            </div>
+          <div class="text-lg font-extrabold text-gray-800" id="page-title">Editar dados</div>
+          <div class="text-xs font-bold text-gray-500" id="page-sub">Tabela principal do mês atual</div>
         </div>
 
-        <!-- TABA 2: DASHBOARD ATUALIZADO -->
-        
-        <!-- TABA 2: DASHBOARD (MODERNO COM COTAS) -->
-        <div id="tab-dash" class="p-6 h-full w-full overflow-y-auto absolute inset-0 bg-gray-100 hidden">
-            <!-- LINHA 1: KPIs QUANTITATIVOS -->
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-                <div class="kpi-card border-blue-500"><p class="kpi-label">Total de Eventos</p><p class="kpi-value text-blue-600" id="kpi-total">0</p><p class="kpi-sub">Todos registros</p></div>
-                <div class="kpi-card border-purple-500"><p class="kpi-label">Roubo / Furto</p><p class="kpi-value text-purple-600" id="kpi-roubo">0</p><p class="kpi-sub">Quantidade</p></div>
-                <div class="kpi-card border-cyan-500"><p class="kpi-label">Vidros</p><p class="kpi-value text-cyan-600" id="kpi-vidros">0</p><p class="kpi-sub">Quantidade</p></div>
-                <div class="kpi-card border-yellow-500"><p class="kpi-label">Acordos</p><p class="kpi-value text-yellow-600" id="kpi-acordos">0</p><p class="kpi-sub">Quantidade</p></div>
-                <div class="kpi-card border-green-500"><p class="kpi-label">Finalizados</p><p class="kpi-value text-green-600" id="kpi-finalizados">0</p><p class="kpi-sub">Sucesso</p></div>
-            </div>
-
-            <!-- LINHA 2: FINANCEIRO DETALHADO (6 CARDS COM COTA) -->
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-                <!-- 1. BRUTO -->
-                <div class="kpi-card border-gray-600 bg-gray-50">
-                    <p class="kpi-label">Custo Bruto</p>
-                    <p class="kpi-value text-gray-700" id="kpi-custo-total">R$ 0,00</p>
-                    <p class="kpi-sub">Total Geral</p>
-                </div>
-                <!-- 2. COTAS (O QUE FALTAVA) -->
-                <div class="kpi-card border-blue-600 bg-blue-50">
-                    <p class="kpi-label text-blue-800">Total Cotas</p>
-                    <p class="kpi-value text-blue-700" id="kpi-total-cotas">R$ 0,00</p>
-                    <p class="kpi-sub">Associado</p>
-                </div>
-                <!-- 3. REAL -->
-                <div class="kpi-card border-emerald-600 bg-emerald-50 relative overflow-hidden">
-                    <div class="absolute right-0 top-0 bg-emerald-200 text-emerald-800 text-xs font-bold px-2 py-1 rounded-bl">REAL</div>
-                    <p class="kpi-label text-emerald-800">Gastos Reais</p>
-                    <p class="kpi-value text-emerald-700" id="kpi-reais">R$ 0,00</p>
-                    <p class="kpi-sub font-bold text-emerald-600">Bruto - Cotas</p>
-                </div>
-                <!-- 4. ROUBOS -->
-                <div class="kpi-card border-purple-600 bg-purple-50">
-                    <p class="kpi-label text-purple-800">Custo Roubos</p>
-                    <p class="kpi-value text-purple-700" id="kpi-custo-roubo">R$ 0,00</p>
-                    <p class="kpi-sub">Indenizações</p>
-                </div>
-                <!-- 5. ACORDOS -->
-                <div class="kpi-card border-yellow-600 bg-yellow-50">
-                    <p class="kpi-label text-yellow-800">Custo Acordos</p>
-                    <p class="kpi-value text-yellow-700" id="kpi-custo-acordos">R$ 0,00</p>
-                    <p class="kpi-sub">Pago em Acordos</p>
-                </div>
-                <!-- 6. VIDROS -->
-                <div class="kpi-card border-cyan-600 bg-cyan-50">
-                    <p class="kpi-label text-cyan-800">Custo Vidros</p>
-                    <p class="kpi-value text-cyan-700" id="kpi-custo-vidros">R$ 0,00</p>
-                    <p class="kpi-sub">Pago em Vidros</p>
-                </div>
-            </div>
-
-            <!-- GRÁFICOS -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div class="card"><h3 class="font-bold text-gray-700 mb-3">💎 Maiores Eventos</h3><div id="chart-top-eventos" style="height: 350px;"></div></div>
-                <div class="card"><h3 class="font-bold text-gray-700 mb-3">🏭 Top Oficinas</h3><div id="chart-oficinas" style="height: 350px;"></div></div>
-            </div>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-                <div class="card"><h3 class="font-bold text-gray-700 mb-3">📊 Custos</h3><div id="chart-custos-breakdown" style="height: 300px;"></div></div>
-                <div class="card"><h3 class="font-bold text-gray-700 mb-3">👥 Beneficiários</h3><div id="chart-tipo-beneficiario" style="height: 300px;"></div></div>
-                <div class="card"><h3 class="font-bold text-gray-700 mb-3">📈 Status</h3><div id="chart-pizza" style="height: 300px;"></div></div>
-            </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <div class="month-selector" style="margin:0; padding:0; box-shadow:none; background:transparent;">
+            <select id="month-switch" onchange="handleMonthSwitch()"></select>
+          </div>
+          <button class="btn btn-primary" onclick="saveCurrentMonthWithChecks()">💾 Salvar mês</button>
+          <button class="btn btn-success" onclick="updateDashboard(); go('dash')">📊 Atualizar dashboard</button>
         </div>
-<!-- TABA 3: COMPARAR MESES (Mantida igual) -->
-        <div id="tab-compare" class="p-6 h-full w-full overflow-y-auto absolute inset-0 bg-gray-100 hidden">
+      </div>
+
+      <!-- PAGE: DATA -->
+      <section id="page-data" class="page active">
+        <div class="alert alert-info">💡 <b>Dicas:</b> Clique duas vezes para editar | Use "ACORDO" na situação | "VIDRO" na oficina é contado automaticamente.</div>
+        <div class="card"><div id="spreadsheet"></div></div>
+      </section>
+
+      <!-- PAGE: DASH -->
+      <section id="page-dash" class="page">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+          <div class="kpi-card border-blue-500"><p class="kpi-label">Total de Eventos</p><p class="kpi-value text-blue-600" id="kpi-total">0</p><p class="kpi-sub">Todos registros</p></div>
+          <div class="kpi-card border-purple-500"><p class="kpi-label">Roubo / Furto</p><p class="kpi-value text-purple-600" id="kpi-roubo">0</p><p class="kpi-sub">Quantidade</p></div>
+          <div class="kpi-card border-cyan-500"><p class="kpi-label">Vidros</p><p class="kpi-value text-cyan-600" id="kpi-vidros">0</p><p class="kpi-sub">Quantidade</p></div>
+          <div class="kpi-card border-yellow-500"><p class="kpi-label">Acordos</p><p class="kpi-value text-yellow-600" id="kpi-acordos">0</p><p class="kpi-sub">Quantidade</p></div>
+          <div class="kpi-card border-green-500"><p class="kpi-label">Finalizados</p><p class="kpi-value text-green-600" id="kpi-finalizados">0</p><p class="kpi-sub">Sucesso</p></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+          <div class="kpi-card border-gray-600 bg-gray-50"><p class="kpi-label">Custo Bruto</p><p class="kpi-value text-gray-700" id="kpi-custo-total">R$ 0,00</p><p class="kpi-sub">Total Geral</p></div>
+          <div class="kpi-card border-blue-600 bg-blue-50"><p class="kpi-label text-blue-800">Total Cotas</p><p class="kpi-value text-blue-700" id="kpi-total-cotas">R$ 0,00</p><p class="kpi-sub">Associado</p></div>
+          <div class="kpi-card border-emerald-600 bg-emerald-50 relative overflow-hidden"><div class="absolute right-0 top-0 bg-emerald-200 text-emerald-800 text-xs font-bold px-2 py-1 rounded-bl">REAL</div><p class="kpi-label text-emerald-800">Gastos Reais</p><p class="kpi-value text-emerald-700" id="kpi-reais">R$ 0,00</p><p class="kpi-sub font-bold text-emerald-600">Bruto - Cotas</p></div>
+          <div class="kpi-card border-purple-600 bg-purple-50"><p class="kpi-label text-purple-800">Custo Roubos</p><p class="kpi-value text-purple-700" id="kpi-custo-roubo">R$ 0,00</p><p class="kpi-sub">Indenizações</p></div>
+          <div class="kpi-card border-yellow-600 bg-yellow-50"><p class="kpi-label text-yellow-800">Custo Acordos</p><p class="kpi-value text-yellow-700" id="kpi-custo-acordos">R$ 0,00</p><p class="kpi-sub">Pago em Acordos</p></div>
+          <div class="kpi-card border-cyan-600 bg-cyan-50"><p class="kpi-label text-cyan-800">Custo Vidros</p><p class="kpi-value text-cyan-700" id="kpi-custo-vidros">R$ 0,00</p><p class="kpi-sub">Pago em Vidros</p></div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <div class="kpi-card border-slate-500"><p class="kpi-label">Terceiro causador</p><p class="kpi-value text-slate-700" id="kpi-terc-causador">0</p><p class="kpi-sub">Qtde registros</p></div>
+          <div class="kpi-card border-indigo-500"><p class="kpi-label">Jurídico: Em cobrança</p><p class="kpi-value text-indigo-600" id="kpi-jur-em">0</p><p class="kpi-sub">Acompanhamento</p></div>
+          <div class="kpi-card border-emerald-500"><p class="kpi-label">Jurídico: Recuperado</p><p class="kpi-value text-emerald-600" id="kpi-jur-rec">0</p><p class="kpi-sub">Fechado</p></div>
+          <div class="kpi-card border-rose-500"><p class="kpi-label">Jurídico: Não cobrar</p><p class="kpi-value text-rose-600" id="kpi-jur-nao">0</p><p class="kpi-sub">Decisão</p></div>
+          <div class="kpi-card border-amber-500"><p class="kpi-label">Valor a recuperar</p><p class="kpi-value text-amber-600" id="kpi-jur-valor">R$ 0,00</p><p class="kpi-sub">Estimativa</p></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="card"><h3 class="font-bold text-gray-700 mb-3">💎 Maiores Eventos</h3><div id="chart-top-eventos" style="height: 350px;"></div></div>
+          <div class="card"><h3 class="font-bold text-gray-700 mb-3">🏭 Top Oficinas</h3><div id="chart-oficinas" style="height: 350px;"></div></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+          <div class="card"><h3 class="font-bold text-gray-700 mb-3">📊 Custos</h3><div id="chart-custos-breakdown" style="height: 300px;"></div></div>
+          <div class="card"><h3 class="font-bold text-gray-700 mb-3">👥 Beneficiários</h3><div id="chart-tipo-beneficiario" style="height: 300px;"></div></div>
+          <div class="card"><h3 class="font-bold text-gray-700 mb-3">📈 Status</h3><div id="chart-pizza" style="height: 300px;"></div></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+          <div class="card"><h3 class="font-bold text-gray-700 mb-3">⚖️ Status Jurídico</h3><div id="chart-juridico" style="height: 320px;"></div></div>
+          <div class="card"><h3 class="font-bold text-gray-700 mb-3">📌 Em aberto (placas)</h3><div id="open-list" class="text-sm text-gray-700"></div></div>
+        </div>
+      </section>
+
+      <!-- PAGE: JURIDICO -->
+      <section id="page-juridico" class="page">
+        <div class="card mb-4">
+          <h2 class="text-2xl font-extrabold text-gray-800">⚖️ Terceiro causador (Jurídico)</h2>
+          <p class="text-sm text-gray-600 mt-1">Controle de cobrança do terceiro causador e status com o time jurídico.</p>
+        </div>
+
+        <div class="card">
+          <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+            <div class="text-sm font-bold text-gray-700">Somente registros com TIPO = TERCEIRO</div>
+            <button class="btn btn-primary" onclick="filterJuridicoView()">🔎 Atualizar lista</button>
+          </div>
+          <div id="juridico-table" class="text-sm"></div>
+        </div>
+      </section>
+
+      <!-- PAGE: COMPARE -->
+      <section id="page-compare" class="page">
+        <div class="card mb-6">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4">📈 Comparação de Meses</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">Selecione o Mês 1:</label>
+              <select id="month1-select" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500">
+                <option value="">-- Selecione um mês --</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">Selecione o Mês 2:</label>
+              <select id="month2-select" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500">
+                <option value="">-- Selecione um mês --</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button onclick="compareMonths()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold">🔄 Comparar</button>
+            </div>
+          </div>
+
+          <div id="compare-results" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div class="border-l-4 border-blue-500 bg-blue-50 p-4 rounded">
+                <p class="text-sm text-gray-700"><strong>Mês 1:</strong> <span id="comp-month1-label">-</span></p>
+                <p class="text-2xl font-bold text-blue-600 mt-2" id="comp-month1-total">R$ 0,00</p>
+                <p class="text-xs text-gray-600 mt-2">Eventos: <span id="comp-month1-count">0</span></p>
+              </div>
+              <div class="border-l-4 border-green-500 bg-green-50 p-4 rounded">
+                <p class="text-sm text-gray-700"><strong>Mês 2:</strong> <span id="comp-month2-label">-</span></p>
+                <p class="text-2xl font-bold text-green-600 mt-2" id="comp-month2-total">R$ 0,00</p>
+                <p class="text-xs text-gray-600 mt-2">Eventos: <span id="comp-month2-count">0</span></p>
+              </div>
+            </div>
+
             <div class="card mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">📈 Comparação de Meses</h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Selecione o Mês 1:</label>
-                        <select id="month1-select" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500">
-                            <option value="">-- Selecione um mês --</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Selecione o Mês 2:</label>
-                        <select id="month2-select" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500">
-                            <option value="">-- Selecione um mês --</option>
-                        </select>
-                    </div>
-                    <div class="flex items-end">
-                        <button onclick="compareMonths()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold">
-                            🔄 Comparar
-                        </button>
-                    </div>
-                </div>
-
-                <div id="compare-results" class="hidden">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div class="border-l-4 border-blue-500 bg-blue-50 p-4 rounded">
-                            <p class="text-sm text-gray-700"><strong>Mês 1:</strong> <span id="comp-month1-label">-</span></p>
-                            <p class="text-2xl font-bold text-blue-600 mt-2" id="comp-month1-total">R$ 0,00</p>
-                            <p class="text-xs text-gray-600 mt-2">Eventos: <span id="comp-month1-count">0</span></p>
-                        </div>
-                        <div class="border-l-4 border-green-500 bg-green-50 p-4 rounded">
-                            <p class="text-sm text-gray-700"><strong>Mês 2:</strong> <span id="comp-month2-label">-</span></p>
-                            <p class="text-2xl font-bold text-green-600 mt-2" id="comp-month2-total">R$ 0,00</p>
-                            <p class="text-xs text-gray-600 mt-2">Eventos: <span id="comp-month2-count">0</span></p>
-                        </div>
-                    </div>
-
-                    <div class="card mb-6">
-                        <h3 class="font-bold text-gray-700 mb-3">📊 Comparação de Gastos</h3>
-                        <div id="chart-compare" style="height: 350px;"></div>
-                    </div>
-
-                    <div class="card">
-                        <h3 class="font-bold text-gray-700 mb-3">🏆 Oficinas Comparadas</h3>
-                        <div id="chart-compare-oficinas" style="height: 350px;"></div>
-                    </div>
-                </div>
+              <h3 class="font-bold text-gray-700 mb-3">📊 Comparação de Gastos</h3>
+              <div id="chart-compare" style="height: 350px;"></div>
             </div>
+
+            <div class="card">
+              <h3 class="font-bold text-gray-700 mb-3">🏆 Oficinas Comparadas</h3>
+              <div id="chart-compare-oficinas" style="height: 350px;"></div>
+            </div>
+          </div>
         </div>
+      </section>
 
-    </div>
-
-    <!-- MODAL IMPORTAÇÃO -->
-    <div id="importModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+      <!-- MODAL IMPORTAÇÃO -->
+      <div id="importModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
-            <div class="p-4 border-b-2 border-[#002B5C] flex justify-between items-center bg-gradient-to-r from-[#002B5C] to-[#003d7a] rounded-t-lg">
-                <h3 class="font-bold text-lg text-white">📋 Importar Dados do Excel</h3>
-                <button onclick="closeImportModal()" class="text-white hover:text-orange-300 font-bold text-2xl">&times;</button>
+          <div class="p-4 border-b-2 border-[#002B5C] flex justify-between items-center bg-gradient-to-r from-[#002B5C] to-[#003d7a] rounded-t-lg">
+            <h3 class="font-bold text-lg text-white">📋 Importar Dados do Excel</h3>
+            <button onclick="closeImportModal()" class="text-white hover:text-orange-300 font-bold text-2xl">&times;</button>
+          </div>
+          <div class="p-4 flex-1 overflow-y-auto">
+            <div class="bg-blue-50 border-l-4 border-[#002B5C] p-3 mb-4 rounded text-xs">
+              <p class="font-bold text-[#002B5C] mb-2">✅ PASSO A PASSO:</p>
+              <ol class="list-decimal list-inside text-gray-700 space-y-1">
+                <li>No Excel, selecione <b>SEM O CABEÇALHO</b> (apenas os dados)</li>
+                <li>Pressione <b>Ctrl+C</b> para copiar</li>
+                <li>Cole na caixa abaixo <b>Ctrl+V</b></li>
+                <li>Clique em <b>Processar Dados</b></li>
+              </ol>
             </div>
-            <div class="p-4 flex-1 overflow-y-auto">
-                <div class="bg-blue-50 border-l-4 border-[#002B5C] p-3 mb-4 rounded text-xs">
-                    <p class="font-bold text-[#002B5C] mb-2">✅ PASSO A PASSO:</p>
-                    <ol class="list-decimal list-inside text-gray-700 space-y-1">
-                        <li>No Excel, selecione <b>SEM O CABEÇALHO</b> (apenas os dados)</li>
-                        <li>Pressione <b>Ctrl+C</b> para copiar</li>
-                        <li>Cole na caixa abaixo <b>Ctrl+V</b></li>
-                        <li>Clique em <b>Processar Dados</b></li>
-                    </ol>
-                </div>
-                <p class="text-xs font-bold text-gray-700 mb-2">📍 ORDEM EXATA DAS COLUNAS (12):</p>
-                <div class="bg-gray-100 p-3 rounded text-xs font-mono text-gray-800 mb-4 overflow-x-auto">
-                    1.Assoc | 2.Tipo | 3.Veículo | 4.Placa | 5.Data | 6.Oficina | 7.Cota | 8.MO | 9.Peças | 10.Outras | 11.TOTAL | 12.Situação
-                </div>
-                <textarea id="pasteArea" class="w-full border-2 border-[#002B5C] rounded p-3 text-xs font-mono h-48 resize-none" placeholder="Cole seus dados aqui (Ctrl+V)..."></textarea>
+            <p class="text-xs font-bold text-gray-700 mb-2">📍 ORDEM EXATA DAS COLUNAS (12):</p>
+            <div class="bg-gray-100 p-3 rounded text-xs font-mono text-gray-800 mb-4 overflow-x-auto">
+              1.Assoc | 2.Tipo | 3.Veículo | 4.Placa | 5.Data | 6.Oficina | 7.Cota | 8.MO | 9.Peças | 10.Outras | 11.TOTAL | 12.Situação
             </div>
-            <div class="p-4 border-t-2 border-[#002B5C] bg-gray-50 rounded-b-lg text-right">
-                <button onclick="processPaste()" class="bg-[#FF6B35] hover:bg-[#e55a24] text-white px-6 py-2 rounded font-bold text-sm">✔️ Processar Dados</button>
-            </div>
+            <textarea id="pasteArea" class="w-full border-2 border-[#002B5C] rounded p-3 text-xs font-mono h-48 resize-none" placeholder="Cole seus dados aqui (Ctrl+V)..."></textarea>
+          </div>
+          <div class="p-4 border-t-2 border-[#002B5C] bg-gray-50 rounded-b-lg text-right">
+            <button onclick="processPaste()" class="bg-[#FF6B35] hover:bg-[#e55a24] text-white px-6 py-2 rounded font-bold text-sm">✔️ Processar Dados</button>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <!-- MODAL SALVAR NA NUVEM -->
-    <div id="cloudModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
-            <div class="p-4 border-b-2 border-purple-600 flex justify-between items-center bg-gradient-to-r from-purple-600 to-purple-800 rounded-t-lg">
-                <h3 class="font-bold text-lg text-white">☁️ Salvar na Nuvem (Google Drive)</h3>
-                <button onclick="closeCloudModal()" class="text-white hover:text-yellow-300 font-bold text-2xl">&times;</button>
-            </div>
-            <div class="p-6 flex-1 overflow-y-auto">
-                <div class="bg-purple-50 border-l-4 border-purple-600 p-4 rounded mb-4">
-                    <p class="font-bold text-purple-700 mb-2">✅ COMO SALVAR NA NUVEM:</p>
-                    <ol class="list-decimal list-inside text-gray-700 space-y-2 text-sm">
-                        <li>Clique no botão <b>"1️⃣ Gerar Backup"</b> abaixo</li>
-                        <li>Seu backup será <b>baixado como arquivo .json</b></li>
-                        <li>Abra o <b>Google Drive</b> no seu navegador</li>
-                        <li>Crie uma pasta <b>"BACKUP_PORTO_MAIS"</b></li>
-                        <li>Faça upload do arquivo <b>.json baixado</b> para essa pasta</li>
-                        <li>Pronto! Seus dados estão salvos na nuvem 🎉</li>
-                    </ol>
-                </div>
+    </main>
+  </div>
 
-                <div class="bg-yellow-50 border-l-4 border-yellow-600 p-4 rounded mb-4">
-                    <p class="font-bold text-yellow-700 mb-2">📥 COMO RESTAURAR:</p>
-                    <ol class="list-decimal list-inside text-gray-700 space-y-2 text-sm">
-                        <li>No Google Drive, abra a pasta <b>"BACKUP_PORTO_MAIS"</b></li>
-                        <li>Clique com botão direito no arquivo <b>.json</b></li>
-                        <li>Selecione <b>"Fazer download"</b></li>
-                        <li>Clique no botão <b>"2️⃣ Restaurar Backup"</b> abaixo e selecione o arquivo baixado</li>
-                        <li>Seus dados serão restaurados automaticamente! ✨</li>
-                    </ol>
-                </div>
+  <script src="js/firebase-config.js"></script>
 
-                <div class="bg-blue-50 border-l-4 border-blue-600 p-4 rounded">
-                    <p class="text-sm text-blue-700">
-                        <strong>💡 Dica:</strong> Salve um backup novo toda semana para estar seguro. 
-                        Use o formato de data no nome: <code class="bg-white px-2 py-1 rounded">backup_portoMais_14jan2026.json</code>
-                    </p>
-                </div>
-            </div>
-            <div class="p-4 border-t-2 border-purple-600 bg-gray-50 rounded-b-lg flex gap-3 justify-between">
-                <button onclick="exportAllBackup()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded font-bold text-sm">
-                    1️⃣ Gerar Backup
-                </button>
-                <button onclick="importBackupFile()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-bold text-sm">
-                    2️⃣ Restaurar Backup
-                </button>
-                <button onclick="closeCloudModal()" class="bg-gray-400 hover:bg-gray-500 text-white px-6 py-2 rounded font-bold text-sm">
-                    ✖️ Fechar
-                </button>
-            </div>
-        </div>
-    </div>
+  <script>
+    const JURIDICO_STATUS = ['NÃO INICIADO','EM COBRANÇA','COBRADO','ACORDO','NÃO COBRAR','RECUPERADO'];
 
-    <script>
-        // ============= FUNÇÕES DE ARMAZENAMENTO (localStorage) =============
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth() + 1;
 
-        // Salvar dados do mês atual
-        function saveCurrentMonth() {
-            const data = hot.getData();
-            const today = new Date();
-            const monthLabel = today.toLocaleString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase();
-            const monthKey = `month_${today.getFullYear()}_${String(today.getMonth() + 1).padStart(2, '0')}`;
+    function monthKey(y, m){ return `month_${y}_${String(m).padStart(2,'0')}`; }
+    function monthLabel(y,m){ const d = new Date(y, m-1); return d.toLocaleString('pt-BR',{month:'long',year:'numeric'}).toUpperCase(); }
 
-            const monthData = {
-                year: today.getFullYear(),
-                month: today.getMonth() + 1,
-                monthLabel: monthLabel,
-                saveDate: today.toLocaleString('pt-BR'),
-                data: data
-            };
+    function setBadge(){ const b = document.getElementById('badge-month'); if(b) b.innerText = monthLabel(currentYear, currentMonth); }
 
-            localStorage.setItem(monthKey, JSON.stringify(monthData));
+    function go(page){
+      const pages = ['data','dash','juridico','compare'];
+      pages.forEach(p=>{
+        const el = document.getElementById('page-'+p);
+        const nav = document.getElementById('nav-'+p);
+        if(el) el.classList.toggle('active', p===page);
+        if(nav) nav.classList.toggle('active', p===page);
+      });
+
+      const titleMap = { data:'Editar dados', dash:'Dashboard', juridico:'Terceiro causador', compare:'Comparar meses' };
+      const subMap = { data:'Tabela principal do mês selecionado', dash:'KPIs e gráficos do mês selecionado', juridico:'Cobrança e status jurídico (Terceiro)', compare:'Comparação de custos e oficinas entre meses' };
+      document.getElementById('page-title').innerText = titleMap[page] || 'Gerenciador';
+      document.getElementById('page-sub').innerText = subMap[page] || '';
+
+      if(page==='dash') updateDashboard();
+      if(page==='compare') updateCompareSelects();
+      if(page==='juridico') filterJuridicoView();
+      if(page==='data') setTimeout(()=>hot.render(), 50);
+    }
+
+    function getSavedMonths(){
+      const months = [];
+      for(let i=0;i<localStorage.length;i++){
+        const k = localStorage.key(i);
+        if(k && k.startsWith('month_')){
+          try{
+            const md = JSON.parse(localStorage.getItem(k));
+            months.push({ key:k, ...md });
+          }catch(e){}
         }
+      }
+      return months.sort((a,b)=> (b.year-a.year) || (b.month-a.month));
+    }
 
-        // Obter todos os meses salvos
-        function getSavedMonths() {
-            const months = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key.startsWith('month_')) {
-                    const monthData = JSON.parse(localStorage.getItem(key));
-                    months.push({
-                        key: key,
-                        monthLabel: monthData.monthLabel,
-                        year: monthData.year,
-                        month: monthData.month,
-                        saveDate: monthData.saveDate,
-                        data: monthData.data
-                    });
-                }
-            }
-            return months.sort((a, b) => b.year - a.year || b.month - a.month);
+    function fillMonthSwitch(){
+      const sel = document.getElementById('month-switch');
+      const months = getSavedMonths();
+      const keyNow = monthKey(currentYear, currentMonth);
+      const existsNow = months.some(m=>m.key===keyNow);
+      const list = existsNow ? months : [{key:keyNow, year:currentYear, month:currentMonth, monthLabel:monthLabel(currentYear,currentMonth), data: hot ? hot.getData(): []}, ...months];
+      sel.innerHTML = list.map(m=>`<option value="${m.key}">${m.monthLabel || monthLabel(m.year,m.month)}</option>`).join('');
+      sel.value = keyNow;
+    }
+
+    function handleMonthSwitch(){
+      const key = document.getElementById('month-switch').value;
+      const md = JSON.parse(localStorage.getItem(key) || 'null');
+      if(md && md.data){
+        currentYear = md.year; currentMonth = md.month;
+        hot.loadData(md.data);
+        setBadge();
+        updateDashboard();
+      }
+    }
+
+    function saveCurrentMonth(){
+      const data = hot.getData();
+      const k = monthKey(currentYear, currentMonth);
+      const md = { year: currentYear, month: currentMonth, monthLabel: monthLabel(currentYear,currentMonth), saveDate: new Date().toLocaleString('pt-BR'), data };
+      localStorage.setItem(k, JSON.stringify(md));
+      return md;
+    }
+
+    function normalizePlaca(v){ return (v||'').toString().toUpperCase().replace(/[^A-Z0-9]/g,'').trim(); }
+    function isOpenStatus(status){ const s = (status||'').toString().toUpperCase().trim(); return !(s==='FINALIZADO' || s==='NEGADO'); }
+
+    function findOpenPlateInOtherMonths(placa){
+      const p = normalizePlaca(placa);
+      if(!p) return null;
+      const months = getSavedMonths();
+      for(const m of months){
+        if(m.year===currentYear && m.month===currentMonth) continue;
+        const rows = m.data || [];
+        for(const r of rows){
+          const placaR = normalizePlaca(r[3]);
+          const st = r[11];
+          if(placaR===p && isOpenStatus(st)){
+            return { monthLabel: m.monthLabel || monthLabel(m.year,m.month), key: m.key, status: st };
+          }
         }
+      }
+      return null;
+    }
 
-        // Atualizar dropdowns de comparação
-        function updateCompareSelects() {
-            const months = getSavedMonths();
-            const html = months.map(m => `<option value="${m.key}">${m.monthLabel}</option>`).join('');
-            
-            document.getElementById('month1-select').innerHTML = '<option value="">-- Selecione um mês --</option>' + html;
-            document.getElementById('month2-select').innerHTML = '<option value="">-- Selecione um mês --</option>' + html;
-        }
+    async function saveCurrentMonthWithChecks(){
+      const rows = hot.getData();
+      const duplicates = [];
+      for(const r of rows){
+        if(!r[0]) continue;
+        const found = findOpenPlateInOtherMonths(r[3]);
+        if(found) duplicates.push({ placa: normalizePlaca(r[3]), found });
+      }
 
-        // ============= FUNÇÕES DE BACKUP & RESTORE =============
+      if(duplicates.length){
+        const first = duplicates[0];
+        const html = `<div class="text-left text-sm">
+          <p><b>Encontramos placa(s) já em aberto em outro mês.</b></p>
+          <p class="mt-2">Exemplo: <b>${first.placa}</b> está em <b>${first.found.monthLabel}</b> (status: ${first.found.status||'-'}).</p>
+          <p class="mt-2 text-xs text-gray-500">O sistema não vai duplicar para outro mês. Vá no mês onde está aberto e finalize/negue antes.</p>
+        </div>`;
 
-        function exportAllBackup() {
-            const months = getSavedMonths();
-            
-            if (months.length === 0) {
-                Swal.fire({
-                    title: '❌ Nenhum Backup',
-                    text: 'Nenhum mês foi salvo ainda. Edite os dados e clique em "Salvar Mês".',
-                    icon: 'error',
-                    confirmButtonColor: '#ef4444'
-                });
-                return;
-            }
-
-            const backupData = {
-                exportDate: new Date().toLocaleString('pt-BR'),
-                totalMonths: months.length,
-                months: months.map(m => ({
-                    monthLabel: m.monthLabel,
-                    year: m.year,
-                    saveDate: m.saveDate,
-                    data: m.data
-                }))
-            };
-
-            const dataStr = JSON.stringify(backupData, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            
-            link.href = url;
-            link.download = `backup_portoMais_${new Date().getTime()}.json`;
-            link.click();
-            
-            URL.revokeObjectURL(url);
-            
-            Swal.fire({
-                title: '✅ Backup Exportado!',
-                text: `${months.length} meses salvos foram exportados com sucesso! Salve este arquivo no seu Google Drive.`,
-                icon: 'success',
-                confirmButtonColor: '#10b981'
-            });
-        }
-
-        function importBackupFile() { const i = document.createElement('input'); i.type = 'file'; i.accept = '.json'; i.onchange = (e) => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (ev) => { try { const d = JSON.parse(ev.target.result); if(!d.months) throw new Error('Inválido'); hot.loadData(d.months[0].data); updateDashboard(); d.months.forEach(m => localStorage.setItem(`month_${m.year}_${String(m.month).padStart(2,'0')}`, JSON.stringify(m))); Swal.fire('Carregado!', 'Dados restaurados.', 'success'); } catch(err) { alert('Erro: ' + err.message); } }; r.readAsText(f); }; i.click(); }
-
-        function showStorageInfo() {
-            const months = getSavedMonths();
-            
-            let totalSize = 0;
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key.startsWith('month_')) {
-                    const value = localStorage.getItem(key);
-                    totalSize += key.length + value.length;
-                }
-            }
-            
-            const sizeInKB = (totalSize / 1024).toFixed(2);
-            const sizePercentage = ((totalSize / (5 * 1024 * 1024)) * 100).toFixed(1);
-            
-            let detailsHTML = `
-                <div class="text-left text-sm">
-                    <div class="bg-blue-50 p-3 rounded mb-4 border-l-4 border-blue-500">
-                        <p class="font-bold text-blue-700">📊 Uso de Armazenamento</p>
-                        <p class="text-xs text-gray-700 mt-2"><strong>${sizeInKB} KB</strong> de 5,120 KB usados</p>
-                        <div class="w-full bg-gray-300 rounded h-2 mt-2">
-                            <div class="bg-green-500 rounded h-2" style="width: ${sizePercentage}%"></div>
-                        </div>
-                        <p class="text-xs text-gray-600 mt-1">${sizePercentage}% da capacidade</p>
-                    </div>
-                    
-                    <p class="font-bold text-gray-700 mb-2">📅 Meses Salvos: ${months.length}</p>
-                    <div class="max-h-40 overflow-y-auto space-y-1">
-                        ${months.map(m => {
-                            const monthSize = (JSON.stringify(m.data).length / 1024).toFixed(2);
-                            return `
-                                <div class="bg-gray-100 p-2 rounded text-xs">
-                                    <span class="font-bold">${m.monthLabel}</span>
-                                    <span class="float-right text-gray-600">${monthSize} KB</span>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                    
-                    <div class="bg-yellow-50 p-3 rounded mt-4 border-l-4 border-yellow-500 text-xs">
-                        <p class="font-bold text-yellow-700">💡 Dicas:</p>
-                        <ul class="list-disc list-inside text-gray-700 mt-2 space-y-1">
-                            <li>Seus dados ficam salvos <strong>neste navegador</strong></li>
-                            <li>Clique em <strong>"Salvar Backup"</strong> para exportar para Google Drive</li>
-                            <li><strong>Não limpe o cache do navegador</strong> senão perde os dados</li>
-                            <li>Exporte regularmente para ter cópia de segurança na nuvem</li>
-                        </ul>
-                    </div>
-                </div>
-            `;
-            
-            Swal.fire({
-                title: '💾 Informações de Armazenamento',
-                html: detailsHTML,
-                icon: 'info',
-                confirmButtonText: 'Fechar',
-                confirmButtonColor: '#2563eb',
-                width: '500px'
-            });
-        }
-
-        function saveToCloudSimple() {
-            document.getElementById('cloudModal').classList.remove('hidden');
-        }
-
-        function loadFromCloudSimple() {
-            importBackupFile();
-        }
-
-        function closeCloudModal() {
-            document.getElementById('cloudModal').classList.add('hidden');
-        }
-
-        // ============= TABELA E DASHBOARD =============
-
-        const initialData = [["", "", "", "", "", "", "", "", "", "", "", ""]];
-
-        const container = document.getElementById('spreadsheet');
-        const hot = new Handsontable(container, {
-            data: initialData,
-            colHeaders: [
-                'ASSOCIAÇÃO',
-                'TIPO',
-                'VEÍCULO',
-                'PLACA',
-                'DATA OFICINA',
-                'OFICINA',
-                'COTA',
-                'MÃO DE OBRA',
-                'PEÇAS',
-                'OUTRAS DESPESAS',
-                'GASTOS TOTAIS',
-                'SITUAÇÃO / COMENTÁRIO'
-            ],
-            columns: [
-                { type: 'text', validator: /^.+$/ },
-                { type: 'dropdown', source: ['ASSOCIADO', 'TERCEIRO'] },
-                { type: 'text' },
-                { type: 'text' },
-                { type: 'date', dateFormat: 'DD/MM/YYYY' },
-                { type: 'text' },
-                { type: 'numeric', numericFormat: { pattern: '0,0.00', culture: 'pt-BR' } },
-                { type: 'numeric', numericFormat: { pattern: '0,0.00', culture: 'pt-BR' } },
-                { type: 'numeric', numericFormat: { pattern: '0,0.00', culture: 'pt-BR' } },
-                { type: 'numeric', numericFormat: { pattern: '0,0.00', culture: 'pt-BR' } },
-                { type: 'numeric', numericFormat: { pattern: '0,0.00', culture: 'pt-BR' }, readOnly: true },
-                { type: 'dropdown', source: ['FINALIZADO', 'EM ANDAMENTO', 'NEGADO', 'PENDENTE', 'ACORDO'] }
-            ],
-            rowHeaders: true,
-            width: '100%',
-            height: '100%',
-            licenseKey: 'non-commercial-and-evaluation',
-            minSpareRows: 1,
-            contextMenu: ['row_above', 'row_below', 'remove_row', 'undo', 'redo'],
-            filters: true,
-            dropdownMenu: true,
-            manualColumnResize: true,
-            autoWrapRow: true,
-            stretchH: 'all',
-            
-            afterChange(changes) {
-                if (!changes) return;
-                changes.forEach(([row, col]) => {
-                    if ([6, 7, 8, 9].includes(col)) {
-                        const cota = parseFloat(this.getDataAtCell(row, 6)) || 0;
-                        const mao = parseFloat(this.getDataAtCell(row, 7)) || 0;
-                        const pecas = parseFloat(this.getDataAtCell(row, 8)) || 0;
-                        const outras = parseFloat(this.getDataAtCell(row, 9)) || 0;
-                        const total = cota + mao + pecas + outras;
-                        this.setDataAtCell(row, 10, total, 'source');
-                    }
-                });
-                saveCurrentMonth();
-            }
+        const res = await Swal.fire({
+          title: '⚠️ Placa já em aberto',
+          html,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Ir para o mês',
+          cancelButtonText: 'Cancelar'
         });
 
-        function switchTab(tab) {
-            document.getElementById('tab-data').classList.add('hidden');
-            document.getElementById('tab-dash').classList.add('hidden');
-            document.getElementById('tab-compare').classList.add('hidden');
-            document.getElementById('btn-data').classList.remove('active');
-            document.getElementById('btn-dash').classList.remove('active');
-            document.getElementById('btn-compare').classList.remove('active');
-
-            document.getElementById('tab-' + tab).classList.remove('hidden');
-            document.getElementById('btn-' + tab).classList.add('active');
-            
-            if(tab === 'data') setTimeout(() => hot.render(), 100);
-            if(tab === 'compare') updateCompareSelects();
+        if(res.isConfirmed){
+          const md = JSON.parse(localStorage.getItem(first.found.key));
+          if(md){
+            currentYear = md.year; currentMonth = md.month;
+            hot.loadData(md.data);
+            fillMonthSwitch();
+            setBadge();
+            go('data');
+          }
         }
+        return;
+      }
 
-        
-        function updateDashboard() {
-            let data=[]; if(hot) try{data=hot.getData()}catch(e){}
-            let tEv=0, cFin=0, cVid=0, cAc=0, cRou=0, tCust=0, tCot=0, tPec=0, tMao=0, tOut=0, $Ac=0, $Vid=0, $Rou=0;
-            let ofis={}, sts={}, ben={}, top=[];
+      saveCurrentMonth();
+      fillMonthSwitch();
+      setBadge();
+      Swal.fire('✅ Salvo!', 'Mês salvo com sucesso.', 'success');
+    }
 
-            if(data.length){
-                data.forEach(r=>{
-                    if(!r[0])return; tEv++;
-                    let v=(r[2]||"").toUpperCase(), o=(r[5]||"").toUpperCase(), s=(r[11]||"").toUpperCase();
+    function exportAllBackup(){
+      const months = getSavedMonths();
+      if(!months.length){ Swal.fire('❌ Nenhum Backup','Nenhum mês salvo ainda.','error'); return; }
+      const backup = { exportDate: new Date().toLocaleString('pt-BR'), totalMonths: months.length, months: months.map(m=>({monthLabel:m.monthLabel, year:m.year, month:m.month, saveDate:m.saveDate, data:m.data})) };
+      const blob = new Blob([JSON.stringify(backup,null,2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_portoMais_${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
 
-                    let cota = parseFloat(r[6]) || 0;
-                    let mao = parseFloat(r[7]) || 0;
-                    let pecas = parseFloat(r[8]) || 0;
-                    let outras = parseFloat(r[9]) || 0;
-                    let val = mao + pecas + outras;
-
-                    tCust+=val; tCot+=cota; 
-                    tPec+=pecas; tMao+=mao; tOut+=outras;
-
-                    if(v.includes("ROUBO")||v.includes("FURTO")||o.includes("INDENIZA")||s.includes("INDENIZA")){cRou++; $Rou+=val;}
-                    else if(o.includes("VIDRO")||v.includes("VIDRO")||o.includes("CARGLASS")||o.includes("AUTO GLASS")){cVid++; $Vid+=val;}
-                    else if(s==="ACORDO"){cAc++; $Ac+=val;}
-                    if(s==="FINALIZADO") cFin++;
-
-                    ofis[o]=(ofis[o]||0)+val; sts[s]=(sts[s]||0)+1; ben[(r[1]||"").toUpperCase()]=(ben[(r[1]||"").toUpperCase()]||0)+1;
-                    if(val>0) top.push({l:`${r[3]}-${v}`,v:val});
-                });
-            }
-            const el=(i,v)=>document.getElementById(i)?document.getElementById(i).innerText=v:null;
-            const m=(v)=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-
-            el('kpi-total',tEv); el('kpi-roubo',cRou); el('kpi-vidros',cVid); el('kpi-acordos',cAc); el('kpi-finalizados',cFin);
-
-            el('kpi-custo-total',m(tCust)); 
-            el('kpi-total-cotas',m(tCot)); // COTA!
-            el('kpi-reais',m(tCust-tCot));
-
-            el('kpi-custo-roubo',m($Rou)); el('kpi-custo-acordos',m($Ac)); el('kpi-custo-vidros',m($Vid)); 
-
-            try{Plotly.newPlot('chart-top-eventos',[{y:top.sort((a,b)=>b.v-a.v).slice(0,5).reverse().map(x=>x.l),x:top.map(x=>x.v),type:'bar',orientation:'h',marker:{color:'#ef4444'}}],{margin:{t:10,b:30,l:150,r:10}});}catch(e){}
-            try{Plotly.newPlot('chart-oficinas',[{y:Object.keys(ofis).sort((a,b)=>ofis[b]-ofis[a]).slice(0,8),x:Object.values(ofis).sort((a,b)=>b-a).slice(0,8),type:'bar',orientation:'h',marker:{color:'#6366f1'}}],{margin:{t:10,b:30,l:200,r:10},yaxis:{automargin:true}});}catch(e){}
-            try{Plotly.newPlot('chart-custos-breakdown',[{labels:['Peças','Mão','Outros'],values:[tPec,tMao,tOut],type:'pie',hole:.4}],{margin:{t:10,b:10,l:10,r:10}});}catch(e){}
-            try{Plotly.newPlot('chart-tipo-beneficiario',[{labels:Object.keys(ben),values:Object.values(ben),type:'pie'}],{margin:{t:10,b:10,l:10,r:10}});}catch(e){}
-            try{Plotly.newPlot('chart-pizza',[{labels:Object.keys(sts),values:Object.values(sts),type:'pie',hole:.4}],{margin:{t:10,b:10,l:10,r:10},showlegend:false});}catch(e){}
-
-            const role = localStorage.getItem('portoMais_role');
-            if(role === 'admin') forceSaveCurrentMonth();
-        }
-
-
-        function compareMonths() {
-            const month1Key = document.getElementById('month1-select').value;
-            const month2Key = document.getElementById('month2-select').value;
-
-            if (!month1Key || !month2Key) {
-                Swal.fire({
-                    title: '⚠️ Selecione dois meses',
-                    text: 'Escolha dois meses diferentes para comparar.',
-                    icon: 'warning',
-                    confirmButtonColor: '#f59e0b'
-                });
-                return;
-            }
-
-            const month1 = JSON.parse(localStorage.getItem(month1Key));
-            const month2 = JSON.parse(localStorage.getItem(month2Key));
-
-            // Calcula totais do mês 1
-            let m1Total = 0, m1Count = 0, m1Oficinas = {}, m1Pecas = 0, m1Mao = 0;
-            month1.data.forEach(row => {
-                if (!row[0] || row[0].trim() === '') return;
-                m1Count++;
-                const total = parseFloat(row[10]) || 0;
-                m1Total += total;
-                m1Pecas += parseFloat(row[8]) || 0;
-                m1Mao += parseFloat(row[7]) || 0;
-                const oficina = (row[5] || "NÃO INFORMADO").trim();
-                m1Oficinas[oficina] = (m1Oficinas[oficina] || 0) + total;
-            });
-
-            // Calcula totais do mês 2
-            let m2Total = 0, m2Count = 0, m2Oficinas = {}, m2Pecas = 0, m2Mao = 0;
-            month2.data.forEach(row => {
-                if (!row[0] || row[0].trim() === '') return;
-                m2Count++;
-                const total = parseFloat(row[10]) || 0;
-                m2Total += total;
-                m2Pecas += parseFloat(row[8]) || 0;
-                m2Mao += parseFloat(row[7]) || 0;
-                const oficina = (row[5] || "NÃO INFORMADO").trim();
-                m2Oficinas[oficina] = (m2Oficinas[oficina] || 0) + total;
-            });
-
-            // Atualiza interface
-            document.getElementById('comp-month1-label').innerText = month1.monthLabel;
-            document.getElementById('comp-month1-total').innerText = m1Total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById('comp-month1-count').innerText = m1Count;
-
-            document.getElementById('comp-month2-label').innerText = month2.monthLabel;
-            document.getElementById('comp-month2-total').innerText = m2Total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById('comp-month2-count').innerText = m2Count;
-
-            document.getElementById('compare-results').classList.remove('hidden');
-
-            // Gráfico comparação
-            Plotly.newPlot('chart-compare', [
-                { x: ['Cota', 'Mão de Obra', 'Peças'], y: [parseFloat(month1.data[0]?.[6]) || 0, m1Mao, m1Pecas], name: month1.monthLabel, type: 'bar', marker: { color: '#3b82f6' } },
-                { x: ['Cota', 'Mão de Obra', 'Peças'], y: [parseFloat(month2.data[0]?.[6]) || 0, m2Mao, m2Pecas], name: month2.monthLabel, type: 'bar', marker: { color: '#10b981' } }
-            ], { barmode: 'group', margin: { t: 10, b: 30, l: 50, r: 10 }, yaxis: { title: 'Valor (R$)' } });
-
-            // Gráfico oficinas
-            const allOficinas = new Set([...Object.keys(m1Oficinas), ...Object.keys(m2Oficinas)]);
-            const oficinasArray = Array.from(allOficinas).sort();
-            
-            Plotly.newPlot('chart-compare-oficinas', [
-                { y: oficinasArray, x: oficinasArray.map(o => m1Oficinas[o] || 0), name: month1.monthLabel, type: 'bar', orientation: 'h', marker: { color: '#3b82f6' } },
-                { y: oficinasArray, x: oficinasArray.map(o => m2Oficinas[o] || 0), name: month2.monthLabel, type: 'bar', orientation: 'h', marker: { color: '#10b981' } }
-            ], { barmode: 'group', margin: { t: 10, b: 30, l: 200, r: 10 }, xaxis: { title: 'Gastos (R$)' } });
-        }
-
-        function openImportModal() { document.getElementById('importModal').classList.remove('hidden'); }
-        function closeImportModal() { document.getElementById('importModal').classList.add('hidden'); }
-        
-        function processPaste() {
-            const raw = document.getElementById('pasteArea').value.trim();
-            if (!raw) { alert("Cole dados primeiro!"); return; }
-            
-            const rows = raw.split('\n').map(line => {
-                let parts = line.split('\t');
-                if (parts.length === 1) parts = line.split(',');
-                if (parts.length === 1) parts = line.split(/\s{2,}/);
-                return parts.map(p => p.trim());
-            });
-            
-            hot.populateFromArray(0, 0, rows);
-            closeImportModal();
-            document.getElementById('pasteArea').value = '';
-            Swal.fire({
-                title: '✅ Sucesso!',
-                text: `${rows.length} linhas importadas com sucesso!`,
-                icon: 'success',
-                confirmButtonColor: '#10b981'
-            });
-            saveCurrentMonth();
-        }
-
-        function exportData() {
-            const exportPlugin = hot.getPlugin('exportFile');
-            exportPlugin.downloadFile('csv', {
-                filename: 'Eventos_PortoMais',
-                columnHeaders: true,
-                bom: true
-            });
-        }
-
-        setTimeout(() => { hot.render(); updateCompareSelects(); }, 300);
-
-    </script>
-<script>function forceSaveCurrentMonth(){if(!hot)return false;const d=hot.getData();const c=d.filter(r=>r.some(v=>v!==null&&v!==''));const y=(typeof currentYear!=='undefined')?currentYear:2026;const m=(typeof currentMonth!=='undefined')?currentMonth:1;const k=`month_${y}_${String(m).padStart(2,'0')}`;const p={year:y,month:m,monthLabel:`${String(m).padStart(2,'0')}/${y}`,data:d,saveDate:new Date().toISOString()};localStorage.setItem(k,JSON.stringify(p));return{count:c.length,key:k};}function forceGetSavedMonths(){const ms=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('month_')){try{ms.push(JSON.parse(localStorage.getItem(k)));}catch(e){}}}return ms;}</script>
-
-    <script>
-        // =================================================================
-        // 🔐 SISTEMA DE ACESSO (V20 - DEFINITIVO)
-        // =================================================================
-        const CHAVES_FIXAS = {
-            t: "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",
-            g: "5e27a4effa4367a686cee607fa5dd7ed"
+    function importBackupFile(){
+      const i = document.createElement('input');
+      i.type='file'; i.accept='.json';
+      i.onchange=(e)=>{
+        const f=e.target.files[0]; if(!f) return;
+        const r=new FileReader();
+        r.onload=(ev)=>{
+          try{
+            const d=JSON.parse(ev.target.result);
+            if(!d.months) throw new Error('Inválido');
+            d.months.forEach(m=> localStorage.setItem(monthKey(m.year, m.month), JSON.stringify(m)));
+            const first=d.months[0];
+            currentYear=first.year; currentMonth=first.month;
+            hot.loadData(first.data);
+            fillMonthSwitch();
+            setBadge();
+            updateDashboard();
+            Swal.fire('✅ Carregado!','Backup restaurado.','success');
+          }catch(err){
+            Swal.fire('Erro','Falha ao importar: '+err.message,'error');
+          }
         };
+        r.readAsText(f);
+      };
+      i.click();
+    }
 
-        const USUARIOS = {
-            "porto":  { senha: "1234", permissao: "admin" }, // SALVA E LÊ
-            "equipe": { senha: "1111", permissao: "leitor"}  // SÓ LÊ
-        };
+    function showStorageInfo(){
+      const months = getSavedMonths();
+      let total=0; months.forEach(m=>{ total += JSON.stringify(m).length; });
+      const kb=(total/1024).toFixed(2);
+      Swal.fire('💾 Armazenamento', `Meses salvos: ${months.length}<br/>Tamanho aproximado: ${kb} KB`, 'info');
+    }
 
-        function getCloudConfig() { return { t: localStorage.getItem('portoMais_ghToken')||'', g: localStorage.getItem('portoMais_gistId')||'' }; }
-        function getUserRole() { return localStorage.getItem('portoMais_role') || 'leitor'; }
+    const initialData = [["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""]];
 
-        async function configureCloud() {
-            const { value: form } = await Swal.fire({
-                title: '🔐 Login Porto Mais',
-                html: `<p class="text-sm text-gray-500 mb-2">Digite suas credenciais</p>
-                       <input id="u" class="swal2-input" placeholder="Usuário" value="porto">
-                       <input id="p" class="swal2-input" type="password" placeholder="Senha">`,
-                focusConfirm:false, showCancelButton:true, confirmButtonText:'Entrar', 
-                preConfirm: () => [document.getElementById('u').value.toLowerCase(), document.getElementById('p').value]
-            });
-
-            if (form) {
-                const [u, p] = form;
-                const user = USUARIOS[u];
-
-                if (user && user.senha === p) {
-                    localStorage.setItem('portoMais_ghToken', CHAVES_FIXAS.t);
-                    localStorage.setItem('portoMais_gistId', CHAVES_FIXAS.g);
-                    localStorage.setItem('portoMais_role', user.permissao);
-
-                    let msg = (user.permissao === 'admin') ? '👑 ADMIN (Edição Liberada)' : '👀 EQUIPE (Apenas Leitura)';
-
-                    Swal.fire({
-                        title: '✅ Conectado!',
-                        text: msg,
-                        icon: 'success',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                } else { 
-                    Swal.fire('Erro', 'Dados incorretos.', 'error'); 
-                }
+    const container = document.getElementById('spreadsheet');
+    const hot = new Handsontable(container, {
+      data: initialData,
+      colHeaders: [
+        'ASSOCIAÇÃO','TIPO','VEÍCULO','PLACA','DATA OFICINA','OFICINA',
+        'COTA','MÃO DE OBRA','PEÇAS','OUTRAS DESPESAS','GASTOS TOTAIS','SITUAÇÃO',
+        'TERCEIRO CAUSADOR?','JURÍDICO STATUS','DT ENVIO JURÍDICO','VALOR A RECUPERAR','OBS JURÍDICO'
+      ],
+      columns: [
+        { type:'text' },
+        { type:'dropdown', source:['ASSOCIADO','TERCEIRO'] },
+        { type:'text' },
+        { type:'text' },
+        { type:'date', dateFormat:'DD/MM/YYYY' },
+        { type:'text' },
+        { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
+        { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
+        { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
+        { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
+        { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' }, readOnly:true },
+        { type:'dropdown', source:['FINALIZADO','EM ANDAMENTO','NEGADO','PENDENTE','ACORDO'] },
+        { type:'dropdown', source:['SIM','NÃO'] },
+        { type:'dropdown', source: JURIDICO_STATUS },
+        { type:'date', dateFormat:'DD/MM/YYYY' },
+        { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
+        { type:'text' }
+      ],
+      rowHeaders: true,
+      width:'100%',
+      height:'65vh',
+      licenseKey:'non-commercial-and-evaluation',
+      minSpareRows: 1,
+      filters:true,
+      dropdownMenu:true,
+      manualColumnResize:true,
+      autoWrapRow:true,
+      stretchH:'all',
+      afterChange(changes, source){
+        if(!changes || source==='source') return;
+        changes.forEach(([row, col])=>{
+          if([6,7,8,9].includes(col)){
+            const cota=parseFloat(this.getDataAtCell(row,6))||0;
+            const mao=parseFloat(this.getDataAtCell(row,7))||0;
+            const pecas=parseFloat(this.getDataAtCell(row,8))||0;
+            const outras=parseFloat(this.getDataAtCell(row,9))||0;
+            this.setDataAtCell(row,10, cota+mao+pecas+outras, 'source');
+          }
+          if(col===1){
+            const tipo = (this.getDataAtCell(row,1)||'').toString().toUpperCase();
+            if(tipo!=='TERCEIRO'){
+              this.setDataAtCell(row,12,'','source');
+              this.setDataAtCell(row,13,'','source');
+              this.setDataAtCell(row,14,'','source');
+              this.setDataAtCell(row,15,'','source');
+              this.setDataAtCell(row,16,'','source');
             }
+          }
+        });
+        saveCurrentMonth();
+        fillMonthSwitch();
+        setBadge();
+      }
+    });
+
+    function openImportModal(){ document.getElementById('importModal').classList.remove('hidden'); }
+    function closeImportModal(){ document.getElementById('importModal').classList.add('hidden'); }
+
+    function processPaste(){
+      const raw = (document.getElementById('pasteArea').value||'').trim();
+      if(!raw){ Swal.fire('⚠️ Atenção','Cole os dados primeiro.','warning'); return; }
+
+      const rows = raw.split('\n').map(line=>{
+        let parts = line.split('\t');
+        if(parts.length===1) parts=line.split(',');
+        if(parts.length===1) parts=line.split(/\s{2,}/);
+        return parts.map(p=>p.trim());
+      });
+
+      const normalized = rows.map(r=>{
+        const base = r.slice(0,12);
+        while(base.length<12) base.push('');
+        const extra = ['','NÃO INICIADO','','',''];
+        return [...base, ...extra];
+      });
+
+      const kept=[];
+      const blocked=[];
+      for(const r of normalized){
+        const found = findOpenPlateInOtherMonths(r[3]);
+        if(found) blocked.push({placa: normalizePlaca(r[3]), month: found.monthLabel});
+        else kept.push(r);
+      }
+
+      hot.populateFromArray(0,0, kept);
+      closeImportModal();
+      document.getElementById('pasteArea').value='';
+      saveCurrentMonth();
+      fillMonthSwitch();
+      setBadge();
+
+      if(blocked.length) Swal.fire('⚠️ Alguns registros foram bloqueados', `${blocked.length} placa(s) já estavam em aberto em outro mês e não foram importadas.`, 'warning');
+      else Swal.fire('✅ Sucesso!', `${kept.length} linhas importadas com sucesso!`, 'success');
+    }
+
+    function exportData(){
+      const exportPlugin = hot.getPlugin('exportFile');
+      exportPlugin.downloadFile('csv', { filename:'Eventos_PortoMais', columnHeaders:true, bom:true });
+    }
+
+    function updateDashboard(){
+      let data=[]; try{ data = hot.getData(); }catch(e){}
+
+      let tEv=0, cFin=0, cVid=0, cAc=0, cRou=0;
+      let tCust=0, tCot=0, tPec=0, tMao=0, tOut=0;
+      let $Ac=0, $Vid=0, $Rou=0;
+      let ofis={}, sts={}, ben={}, top=[];
+
+      let tercCaus=0, jurEm=0, jurRec=0, jurNao=0, jurValor=0;
+      let jurStatusCounts = {};
+      let openPlates=[];
+
+      if(data && data.length){
+        data.forEach(r=>{
+          if(!r[0]) return;
+          tEv++;
+
+          const v=(r[2]||"").toUpperCase();
+          const o=(r[5]||"").toUpperCase();
+          const s=(r[11]||"").toUpperCase();
+          const tipo=(r[1]||"").toUpperCase();
+
+          const cota = parseFloat(r[6]) || 0;
+          const mao = parseFloat(r[7]) || 0;
+          const pecas = parseFloat(r[8]) || 0;
+          const outras = parseFloat(r[9]) || 0;
+          const val = mao + pecas + outras;
+
+          tCust += val;
+          tCot += cota;
+          tPec += pecas;
+          tMao += mao;
+          tOut += outras;
+
+          if(v.includes('ROUBO') || v.includes('FURTO') || o.includes('INDENIZA') || s.includes('INDENIZA')){ cRou++; $Rou+=val; }
+          else if(o.includes('VIDRO') || v.includes('VIDRO') || o.includes('CARGLASS') || o.includes('AUTO GLASS')){ cVid++; $Vid+=val; }
+          else if(s==='ACORDO'){ cAc++; $Ac+=val; }
+          if(s==='FINALIZADO') cFin++;
+
+          ofis[o]=(ofis[o]||0)+val;
+          sts[s]=(sts[s]||0)+1;
+          ben[tipo]=(ben[tipo]||0)+1;
+          if(val>0) top.push({ l:`${r[3]}-${v}`, v: val });
+
+          if(isOpenStatus(s)){
+            const p = normalizePlaca(r[3]);
+            if(p) openPlates.push(p);
+          }
+
+          if(tipo==='TERCEIRO'){
+            const caus = (r[12]||'').toString().toUpperCase().trim();
+            const jur = (r[13]||'').toString().toUpperCase().trim();
+            const valRec = parseFloat(r[15]) || 0;
+
+            if(caus==='SIM') tercCaus++;
+            if(jur) jurStatusCounts[jur] = (jurStatusCounts[jur]||0)+1;
+
+            if(jur==='EM COBRANÇA' || jur==='COBRADO') jurEm++;
+            if(jur==='RECUPERADO') jurRec++;
+            if(jur==='NÃO COBRAR') jurNao++;
+            jurValor += valRec;
+          }
+        });
+      }
+
+      const el=(i,v)=>{ const e=document.getElementById(i); if(e) e.innerText=v; };
+      const m=(v)=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+      el('kpi-total', tEv);
+      el('kpi-roubo', cRou);
+      el('kpi-vidros', cVid);
+      el('kpi-acordos', cAc);
+      el('kpi-finalizados', cFin);
+
+      el('kpi-custo-total', m(tCust));
+      el('kpi-total-cotas', m(tCot));
+      el('kpi-reais', m(tCust - tCot));
+      el('kpi-custo-roubo', m($Rou));
+      el('kpi-custo-acordos', m($Ac));
+      el('kpi-custo-vidros', m($Vid));
+
+      el('kpi-terc-causador', tercCaus);
+      el('kpi-jur-em', jurEm);
+      el('kpi-jur-rec', jurRec);
+      el('kpi-jur-nao', jurNao);
+      el('kpi-jur-valor', m(jurValor));
+
+      const openUnique = Array.from(new Set(openPlates)).sort();
+      const openDiv = document.getElementById('open-list');
+      if(openDiv) openDiv.innerHTML = openUnique.length ? `<div class="flex flex-wrap gap-2">${openUnique.map(p=>`<span class="px-2 py-1 rounded bg-gray-100 border text-xs font-bold">${p}</span>`).join('')}</div>` : '<div class="text-gray-400">Sem placas em aberto neste mês.</div>';
+
+      try{
+        const top6 = top.sort((a,b)=>b.v-a.v).slice(0,6).reverse();
+        Plotly.newPlot('chart-top-eventos',[{ y: top6.map(x=>x.l), x: top6.map(x=>x.v), type:'bar', orientation:'h', marker:{color:'#ef4444'} }],{ margin:{t:10,b:30,l:170,r:10} },{responsive:true});
+      }catch(e){}
+      try{
+        const ofKeys = Object.keys(ofis).sort((a,b)=>ofis[b]-ofis[a]).slice(0,8);
+        Plotly.newPlot('chart-oficinas',[{ y: ofKeys.reverse(), x: ofKeys.reverse().map(k=>ofis[k]), type:'bar', orientation:'h', marker:{color:'#6366f1'} }],{ margin:{t:10,b:30,l:220,r:10}, yaxis:{automargin:true} },{responsive:true});
+      }catch(e){}
+      try{ Plotly.newPlot('chart-custos-breakdown',[{ labels:['Peças','Mão','Outros'], values:[tPec,tMao,tOut], type:'pie', hole:.4 }],{ margin:{t:10,b:10,l:10,r:10} },{responsive:true}); }catch(e){}
+      try{ Plotly.newPlot('chart-tipo-beneficiario',[{ labels:Object.keys(ben), values:Object.values(ben), type:'pie' }],{ margin:{t:10,b:10,l:10,r:10} },{responsive:true}); }catch(e){}
+      try{ Plotly.newPlot('chart-pizza',[{ labels:Object.keys(sts), values:Object.values(sts), type:'pie', hole:.4 }],{ margin:{t:10,b:10,l:10,r:10}, showlegend:false },{responsive:true}); }catch(e){}
+
+      try{
+        const labs = Object.keys(jurStatusCounts);
+        const vals = Object.values(jurStatusCounts);
+        Plotly.newPlot('chart-juridico',[{ labels: labs.length? labs : ['Sem dados'], values: labs.length? vals : [1], type:'pie', hole:.45 }],{ margin:{t:10,b:10,l:10,r:10} },{responsive:true});
+      }catch(e){}
+
+      const role = localStorage.getItem('portoMais_role');
+      if(role === 'admin') forceSaveCurrentMonth();
+    }
+
+    function filterJuridicoView(){
+      const data = hot.getData() || [];
+      const rows = data.filter(r=> (r[1]||'').toString().toUpperCase().trim()==='TERCEIRO');
+      const wrap = document.getElementById('juridico-table');
+      if(!wrap) return;
+
+      if(!rows.length){ wrap.innerHTML = '<div class="text-gray-400">Sem registros do tipo TERCEIRO neste mês.</div>'; return; }
+
+      const head = ['PLACA','VEÍCULO','OFICINA','SITUAÇÃO','CAUSADOR','STATUS JURÍDICO','DT ENVIO','VALOR RECUP.','OBS'];
+      wrap.innerHTML = `
+        <div class="overflow-auto">
+          <table class="min-w-full text-xs">
+            <thead><tr>${head.map(h=>`<th class="text-left p-2 bg-gray-100 border">${h}</th>`).join('')}</tr></thead>
+            <tbody>
+              ${rows.map(r=>{
+                const placa = normalizePlaca(r[3]);
+                const valRec = parseFloat(r[15])||0;
+                return `<tr class="border-b hover:bg-gray-50">
+                  <td class="p-2 font-extrabold">${placa||''}</td>
+                  <td class="p-2">${(r[2]||'')}</td>
+                  <td class="p-2">${(r[5]||'')}</td>
+                  <td class="p-2">${(r[11]||'')}</td>
+                  <td class="p-2">${(r[12]||'')}</td>
+                  <td class="p-2 font-bold">${(r[13]||'')}</td>
+                  <td class="p-2">${(r[14]||'')}</td>
+                  <td class="p-2">${valRec? valRec.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : ''}</td>
+                  <td class="p-2">${(r[16]||'')}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    function updateCompareSelects(){
+      const months = getSavedMonths();
+      const html = months.map(m=> `<option value="${m.key}">${m.monthLabel||monthLabel(m.year,m.month)}</option>`).join('');
+      document.getElementById('month1-select').innerHTML = '<option value="">-- Selecione um mês --</option>' + html;
+      document.getElementById('month2-select').innerHTML = '<option value="">-- Selecione um mês --</option>' + html;
+    }
+
+    function compareMonths(){
+      const month1Key = document.getElementById('month1-select').value;
+      const month2Key = document.getElementById('month2-select').value;
+      if(!month1Key || !month2Key){ Swal.fire('⚠️ Selecione dois meses','Escolha dois meses para comparar.','warning'); return; }
+      const month1 = JSON.parse(localStorage.getItem(month1Key));
+      const month2 = JSON.parse(localStorage.getItem(month2Key));
+      if(!month1 || !month2){ Swal.fire('Erro','Não foi possível carregar os meses.','error'); return; }
+
+      let m1Total=0,m1Count=0,m1Ofis={},m1Pecas=0,m1Mao=0;
+      (month1.data||[]).forEach(row=>{ if(!row[0]) return; m1Count++; const total=parseFloat(row[10])||0; m1Total+=total; m1Pecas+=parseFloat(row[8])||0; m1Mao+=parseFloat(row[7])||0; const of=(row[5]||'NÃO INFORMADO').trim(); m1Ofis[of]=(m1Ofis[of]||0)+total; });
+
+      let m2Total=0,m2Count=0,m2Ofis={},m2Pecas=0,m2Mao=0;
+      (month2.data||[]).forEach(row=>{ if(!row[0]) return; m2Count++; const total=parseFloat(row[10])||0; m2Total+=total; m2Pecas+=parseFloat(row[8])||0; m2Mao+=parseFloat(row[7])||0; const of=(row[5]||'NÃO INFORMADO').trim(); m2Ofis[of]=(m2Ofis[of]||0)+total; });
+
+      document.getElementById('comp-month1-label').innerText = month1.monthLabel;
+      document.getElementById('comp-month1-total').innerText = m1Total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+      document.getElementById('comp-month1-count').innerText = m1Count;
+      document.getElementById('comp-month2-label').innerText = month2.monthLabel;
+      document.getElementById('comp-month2-total').innerText = m2Total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+      document.getElementById('comp-month2-count').innerText = m2Count;
+      document.getElementById('compare-results').classList.remove('hidden');
+
+      Plotly.newPlot('chart-compare', [
+        { x:['Cota','Mão de Obra','Peças'], y:[0,m1Mao,m1Pecas], name: month1.monthLabel, type:'bar', marker:{color:'#3b82f6'} },
+        { x:['Cota','Mão de Obra','Peças'], y:[0,m2Mao,m2Pecas], name: month2.monthLabel, type:'bar', marker:{color:'#10b981'} }
+      ], { barmode:'group', margin:{t:10,b:30,l:50,r:10}, yaxis:{title:'Valor (R$)'} }, {responsive:true});
+
+      const all = Array.from(new Set([...Object.keys(m1Ofis), ...Object.keys(m2Ofis)])).sort();
+      Plotly.newPlot('chart-compare-oficinas', [
+        { y: all, x: all.map(o=>m1Ofis[o]||0), name: month1.monthLabel, type:'bar', orientation:'h', marker:{color:'#3b82f6'} },
+        { y: all, x: all.map(o=>m2Ofis[o]||0), name: month2.monthLabel, type:'bar', orientation:'h', marker:{color:'#10b981'} }
+      ], { barmode:'group', margin:{t:10,b:30,l:200,r:10}, xaxis:{title:'Gastos (R$)'} }, {responsive:true});
+    }
+
+    const CHAVES_FIXAS = { t: "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", g: "5e27a4effa4367a686cee607fa5dd7ed" };
+    const USUARIOS = { "porto": { senha: "1234", permissao: "admin" }, "equipe": { senha: "1111", permissao: "leitor" } };
+
+    function getCloudConfig(){ return { t: localStorage.getItem('portoMais_ghToken')||'', g: localStorage.getItem('portoMais_gistId')||'' }; }
+    function getUserRole(){ return localStorage.getItem('portoMais_role') || 'leitor'; }
+
+    async function configureCloud(){
+      const { value: form } = await Swal.fire({
+        title: '🔐 Login Porto Mais',
+        html: `<p class="text-sm text-gray-500 mb-2">Digite suas credenciais</p>
+               <input id="u" class="swal2-input" placeholder="Usuário" value="porto">
+               <input id="p" class="swal2-input" type="password" placeholder="Senha">`,
+        focusConfirm:false, showCancelButton:true, confirmButtonText:'Entrar',
+        preConfirm: () => [document.getElementById('u').value.toLowerCase(), document.getElementById('p').value]
+      });
+
+      if(form){
+        const [u,p]=form;
+        const user = USUARIOS[u];
+        if(user && user.senha===p){
+          localStorage.setItem('portoMais_ghToken', CHAVES_FIXAS.t);
+          localStorage.setItem('portoMais_gistId', CHAVES_FIXAS.g);
+          localStorage.setItem('portoMais_role', user.permissao);
+          Swal.fire('✅ Conectado!', user.permissao==='admin'?'👑 ADMIN':'👀 EQUIPE', 'success');
+        } else {
+          Swal.fire('Erro','Dados incorretos.','error');
         }
+      }
+    }
 
-        async function saveToCloudReal() {
-            const role = getUserRole();
-            if (role !== 'admin') {
-                return Swal.fire('⛔ Sem Permissão', 'Usuário EQUIPE não pode salvar alterações.<br>Solicite ao Administrador.', 'error');
-            }
+    function forceSaveCurrentMonth(){
+      if(!hot) return false;
+      const d = hot.getData();
+      const k = monthKey(currentYear, currentMonth);
+      const p = { year: currentYear, month: currentMonth, monthLabel: monthLabel(currentYear,currentMonth), data: d, saveDate: new Date().toISOString() };
+      localStorage.setItem(k, JSON.stringify(p));
+      return { key:k };
+    }
 
-            const info = forceSaveCurrentMonth();
-            const months = forceGetSavedMonths();
-            const c = getCloudConfig();
-            if(!c.t || !c.g) return configureCloud();
+    function forceGetSavedMonths(){
+      return getSavedMonths().map(m=>({year:m.year, month:m.month, monthLabel: m.monthLabel, data:m.data, saveDate:m.saveDate}));
+    }
 
-            Swal.fire({title:'Salvando...', didOpen:()=>Swal.showLoading()});
-            try {
-                const r = await fetch(`https://api.github.com/gists/${c.g}`, { method: 'PATCH', headers: { 'Authorization': `token ${c.t}`, 'Accept': 'application/vnd.github.v3+json' }, body: JSON.stringify({ "files": { "backup_sistema.json": { "content": JSON.stringify({ updatedAt: new Date(), months: months }) } } }) });
-                if(!r.ok) throw new Error(r.status);
-                Swal.fire('✅ Salvo!', 'Backup atualizado com sucesso.', 'success');
-            } catch(e) { Swal.fire('Erro', e.message, 'error'); }
-        }
+    async function saveToCloudReal(){
+      if(getUserRole()!=='admin') return Swal.fire('⛔ Sem Permissão','Usuário EQUIPE não pode salvar alterações.','error');
+      forceSaveCurrentMonth();
+      const months = forceGetSavedMonths();
+      const c = getCloudConfig();
+      if(!c.t || !c.g) return configureCloud();
+      Swal.fire({title:'Salvando...', didOpen:()=>Swal.showLoading()});
+      try{
+        const r = await fetch(`https://api.github.com/gists/${c.g}`,{ method:'PATCH', headers:{ 'Authorization': `token ${c.t}`, 'Accept':'application/vnd.github.v3+json' }, body: JSON.stringify({ files:{ "backup_sistema.json": { content: JSON.stringify({ updatedAt: new Date(), months }) } } }) });
+        if(!r.ok) throw new Error(r.status);
+        Swal.fire('✅ Salvo!','Backup atualizado com sucesso.','success');
+      }catch(e){ Swal.fire('Erro', e.message, 'error'); }
+    }
 
-        async function loadFromCloudReal() {
-            const c = getCloudConfig();
-            if(!c.t || !c.g) return configureCloud();
+    async function loadFromCloudReal(){
+      const c=getCloudConfig();
+      if(!c.t || !c.g) return configureCloud();
+      Swal.fire({title:'Baixando...', didOpen:()=>Swal.showLoading()});
+      try{
+        const r = await fetch(`https://api.github.com/gists/${c.g}`,{ headers:{ 'Authorization': `token ${c.t}` } });
+        if(!r.ok) throw new Error(r.status);
+        const gist = await r.json();
+        const file = gist.files["backup_sistema.json"];
+        if(!file || !file.content) throw new Error('Vazio');
+        const data = JSON.parse(file.content);
+        if(data.months && data.months.length){
+          data.months.forEach(m=> localStorage.setItem(monthKey(m.year,m.month), JSON.stringify(m)));
+          const first = data.months[0];
+          currentYear=first.year; currentMonth=first.month;
+          hot.loadData(first.data);
+          fillMonthSwitch();
+          setBadge();
+          updateDashboard();
+          Swal.fire('✅ Atualizado!','Dados carregados.','success');
+        } else { Swal.fire('Vazio','Sem dados.','info'); }
+      }catch(e){ Swal.fire('Erro', e.message, 'error'); }
+    }
 
-            Swal.fire({title:'Baixando...', didOpen:()=>Swal.showLoading()});
-            try {
-                const r = await fetch(`https://api.github.com/gists/${c.g}`, { headers: { 'Authorization': `token ${c.t}` } });
-                if(!r.ok) throw new Error(r.status);
-                const gist = await r.json();
-                const file = gist.files["backup_sistema.json"];
-                if(!file || !file.content) throw new Error('Vazio');
-
-                const data = JSON.parse(file.content);
-
-                if(data.months && data.months.length > 0) {
-                    hot.loadData(data.months[0].data);
-                    updateDashboard(); 
-
-                    localStorage.setItem('portoMais_ghToken', c.t);
-                    localStorage.setItem('portoMais_gistId', c.g);
-                    data.months.forEach(m => localStorage.setItem(`month_${m.year}_${String(m.month).padStart(2,'0')}`, JSON.stringify(m)));
-
-                    Swal.fire('✅ Atualizado!', 'Dados carregados.', 'success');
-                } else { Swal.fire('Vazio', 'Sem dados.', 'info'); }
-            } catch(e) { Swal.fire('Erro', e.message, 'error'); }
-        }
-    </script>
-
+    setTimeout(()=>{
+      setBadge();
+      saveCurrentMonth();
+      fillMonthSwitch();
+      updateCompareSelects();
+      updateDashboard();
+    }, 200);
+  </script>
 </body>
 </html>

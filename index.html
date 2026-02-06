@@ -452,6 +452,96 @@
         <div id="oficinas-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </section>
 
+      <!-- OFICINA MODAL -->
+      <div id="oficinaModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+          <div class="p-6 border-b bg-gradient-to-r from-blue-500 to-cyan-600 rounded-t-2xl">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-2xl text-white" id="oficina-modal-title">🏪 Nova Oficina</h3>
+              <button onclick="closeOficinaModal()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
+            </div>
+          </div>
+          
+          <div class="p-6 space-y-4">
+            <div>
+              <label class="block text-sm font-bold mb-2">Nome da Oficina *</label>
+              <input type="text" id="of-nome" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="Ex: Auto Center Silva">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">CNPJ</label>
+              <input type="text" id="of-cnpj" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="00.000.000/0000-00">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">Telefone</label>
+              <input type="text" id="of-telefone" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="(31) 99999-9999">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">E-mail</label>
+              <input type="email" id="of-email" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="contato@oficina.com.br">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">Endereço</label>
+              <textarea id="of-endereco" rows="2" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="Rua, Número, Bairro, Cidade"></textarea>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">Categorias de Serviço *</label>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Mecânica" class="of-categoria">
+                  <span class="text-sm">Mecânica</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Lanternagem" class="of-categoria">
+                  <span class="text-sm">Lanternagem</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Lanternagem+Mecânica" class="of-categoria">
+                  <span class="text-sm">Lanternagem+Mecânica</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Vidros" class="of-categoria">
+                  <span class="text-sm">Vidros</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Ar-Condicionado" class="of-categoria">
+                  <span class="text-sm">Ar-Condicionado</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Elétrica" class="of-categoria">
+                  <span class="text-sm">Elétrica</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Alinhamento/Balanceamento" class="of-categoria">
+                  <span class="text-sm">Alinhamento/Balanceamento</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Estofaria" class="of-categoria">
+                  <span class="text-sm">Estofaria</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Funilaria" class="of-categoria">
+                  <span class="text-sm">Funilaria</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Pintura" class="of-categoria">
+                  <span class="text-sm">Pintura</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-gray-50 rounded-b-2xl flex gap-2 justify-end">
+            <button onclick="closeOficinaModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-bold">Cancelar</button>
+            <button onclick="saveOficina()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">💾 Salvar Oficina</button>
+          </div>
+        </div>
+      </div>
+
       <!-- COMPARE SELECTOR MODAL -->
       <div id="compareSelectorModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-auto">

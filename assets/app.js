@@ -20,7 +20,72 @@ let oficinas = [];
 let currentOficinaId = null;
 let hot = null;
 
-// ============ BACKUP FUNCTIONS (MISSING) ============
+// ============ MONTH TABS SYSTEM ============
+
+function renderMonthTabs() {
+  const tabsContainer = document.getElementById('month-tabs');
+  if (!tabsContainer) return;
+  
+  const savedMonths = getSavedMonths();
+  const recent = savedMonths.slice(0, 6); // Últimos 6 meses
+  
+  if (recent.length === 0) {
+    tabsContainer.innerHTML = '<div class="text-xs text-gray-400">Nenhum mês salvo ainda</div>';
+    return;
+  }
+  
+  const currentKey = monthKey(currentYear, currentMonth);
+  
+  tabsContainer.innerHTML = recent.map(m => {
+    const key = monthKey(m.year, m.month);
+    const isActive = key === currentKey;
+    const activeClass = isActive ? 'month-tab-active' : 'month-tab-inactive';
+    
+    return `
+      <button 
+        class="month-tab ${activeClass}" 
+        onclick="switchToMonth(${m.year}, ${m.month})"
+        title="${m.monthLabel}">
+        ${MONTH_NAMES[m.month - 1].substring(0, 3)}/${m.year}
+      </button>
+    `;
+  }).join('');
+  
+  // Adiciona botão de abrir navegador completo
+  tabsContainer.innerHTML += `
+    <button 
+      class="month-tab month-tab-more" 
+      onclick="showMonthNavigator()"
+      title="Ver todos os meses">
+      ⋯
+    </button>
+  `;
+}
+
+function switchToMonth(year, month) {
+  const key = monthKey(year, month);
+  const md = JSON.parse(localStorage.getItem(key) || 'null');
+  
+  if (md && md.data) {
+    currentYear = year;
+    currentMonth = month;
+    hot.loadData(md.data);
+    setBadge();
+    renderMonthTabs(); // Atualiza abas
+    updateDashboard();
+    
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: `📅 ${monthLabel(year, month)}`,
+      timer: 1500,
+      showConfirmButton: false
+    });
+  }
+}
+
+// ============ BACKUP FUNCTIONS ============
 
 function exportBackup() {
   exportAllBackup();
@@ -65,6 +130,7 @@ function handleImportFile(event) {
         currentMonth = month;
         if (hot) hot.loadData(latest.data || [[""]]);
         setBadge();
+        renderMonthTabs();
         updateDashboard();
       }
       
@@ -119,9 +185,6 @@ function clearLocalCache() {
     }
   });
 }
-
-// ============ REST OF THE CODE ============
-// (keeping all existing functions from the original file)
 
 // ============ COMPARISON FUNCTIONS ============
 function showCompareSelector() {
@@ -749,6 +812,7 @@ function loadMonthFromNavigator(year, month) {
     currentMonth = month;
     hot.loadData(md.data);
     setBadge();
+    renderMonthTabs();
     updateDashboard();
     closeMonthNavigator();
     Swal.fire({
@@ -774,6 +838,7 @@ function loadMonthFromNavigator(year, month) {
         hot.loadData([[""]]);
         saveCurrentMonth();
         setBadge();
+        renderMonthTabs();
         updateDashboard();
         closeMonthNavigator();
         Swal.fire('Criado!', `Mês ${monthLabel(year, month)} criado com sucesso.`, 'success');
@@ -825,6 +890,7 @@ async function createNewMonth() {
     hot.loadData([[""]]);
     saveCurrentMonth();
     setBadge();
+    renderMonthTabs();
     updateDashboard();
     renderMonthCalendar();
     
@@ -930,6 +996,7 @@ async function downloadFromFirebase() {
       currentMonth = latest.month;
       hot.loadData(latest.data || []);
       setBadge();
+      renderMonthTabs();
       updateDashboard();
     }
 
@@ -1085,6 +1152,7 @@ function saveCurrentMonth(){
   const k = monthKey(currentYear, currentMonth);
   const md = { year: currentYear, month: currentMonth, monthLabel: monthLabel(currentYear,currentMonth), saveDate: new Date().toLocaleString('pt-BR'), data };
   localStorage.setItem(k, JSON.stringify(md));
+  renderMonthTabs(); // Atualiza abas
   return md;
 }
 
@@ -1267,41 +1335,18 @@ function buildRankingJuridico(data) {
 
 function openRow(rowIndex){ go('data'); setTimeout(()=>{ hot.selectCell(rowIndex, 0); hot.scrollViewportTo(rowIndex, 0); }, 120); }
 
-function findOpenPlateInOtherMonths(placa){
-  const p = normalizePlaca(placa);
-  if(!p) return null;
-  const months = getSavedMonths();
-  for(const m of months){
-    if(m.year===currentYear && m.month===currentMonth) continue;
-    const rows = m.data || [];
-    for(const r of rows){
-      const placaR = normalizePlaca(r[4]);
-      const st = r[12];
-      if(placaR===p && isOpenStatus(st)) return { monthLabel: m.monthLabel || monthLabel(m.year,m.month), key: m.key, status: st };
-    }
-  }
-  return null;
-}
+// ============ SAVE WITH VALIDATION (USING validarPlacaAntesSalvar from melhorias-funcoes.js) ============
 
-async function saveCurrentMonthWithChecks(){
-  const rows = hot.getData();
-  const duplicates = [];
-  for(const r of rows){ if(!r[0]) continue; const found = findOpenPlateInOtherMonths(r[4]); if(found) duplicates.push({ placa: normalizePlaca(r[4]), found }); }
-  if(duplicates.length){
-    const first = duplicates[0];
-    const html = `<div class="text-left text-sm">
-      <p><b>Encontramos placa(s) já em aberto em outro mês.</b></p>
-      <p class="mt-2">Exemplo: <b>${first.placa}</b> está em <b>${first.found.monthLabel}</b> (status: ${first.found.status||'-'}).</p>
-      <p class="mt-2 text-xs text-gray-500">O sistema não vai duplicar para outro mês. Vá no mês onde está aberto e finalize/negue antes.</p>
-    </div>`;
-    const res = await Swal.fire({ title: '⚠️ Placa já em aberto', html, icon: 'warning', showCancelButton: true, confirmButtonText: 'Ir para o mês', cancelButtonText: 'Cancelar' });
-    if(res.isConfirmed){
-      const md = JSON.parse(localStorage.getItem(first.found.key));
-      if(md){ currentYear = md.year; currentMonth = md.month; hot.loadData(md.data); setBadge(); go('data'); }
-    }
-    return;
+async function saveCurrentMonthWithChecks() {
+  // USA A FUNÇÃO DO melhorias-funcoes.js se existir
+  if (typeof validarPlacaAntesSalvar === 'function') {
+    const podeSalvar = await validarPlacaAntesSalvar();
+    if (!podeSalvar) return;
   }
-  saveCurrentMonth(); setBadge(); 
+  
+  // Salva normalmente
+  saveCurrentMonth();
+  setBadge();
   
   if (firebaseDb) {
     const md = saveCurrentMonth();
@@ -1340,7 +1385,9 @@ function importBackupFile(){
         const first=d.months[0];
         currentYear=first.year; currentMonth=first.month;
         hot.loadData(first.data);
-        setBadge(); updateDashboard();
+        setBadge();
+        renderMonthTabs();
+        updateDashboard();
         Swal.fire('✅ Carregado!','Backup restaurado.','success');
       }catch(err){ Swal.fire('Erro','Falha ao importar: '+err.message,'error'); }
     };
@@ -1380,21 +1427,11 @@ function processPaste(){
     return row18;
   });
 
-  const kept=[];
-  const blocked=[];
-  for(const r of normalized){
-    const found = findOpenPlateInOtherMonths(r[4]);
-    if(found) blocked.push({placa: normalizePlaca(r[4]), month: found.monthLabel});
-    else kept.push(r);
-  }
-
-  hot.populateFromArray(0,0, kept);
+  hot.populateFromArray(0,0, normalized);
   closeImportModal();
   document.getElementById('pasteArea').value='';
   saveCurrentMonth(); setBadge();
-
-  if(blocked.length) Swal.fire('⚠️ Alguns registros foram bloqueados', `${blocked.length} placa(s) já estavam em aberto em outro mês e não foram importadas.`, 'warning');
-  else Swal.fire('✅ Sucesso!', `${kept.length} linhas importadas com sucesso!`, 'success');
+  Swal.fire('✅ Sucesso!', `${normalized.length} linhas importadas com sucesso!`, 'success');
 }
 
 function exportData(){ const exportPlugin = hot.getPlugin('exportFile'); exportPlugin.downloadFile('csv', { filename:'Eventos_PortoMais', columnHeaders:true, bom:true }); }
@@ -1626,7 +1663,8 @@ setTimeout(()=>{
   loadOficinas();
   initFirebase();
   initHandsontable();
-  setBadge(); 
+  setBadge();
+  renderMonthTabs(); // RENDERIZA ABAS
   saveCurrentMonth(); 
   updateHotOficinaDropdown();
   updateDashboard(); 

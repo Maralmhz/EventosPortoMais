@@ -1,11 +1,12 @@
 // ============================================================================
-// MELHORIAS IMPLEMENTADAS - EventosPortoMais v2.0
+// MELHORIAS IMPLEMENTADAS - EventosPortoMais v2.1
 // Data: 10/02/2026
 // ============================================================================
 // Este arquivo contém as novas funções para:
 // 1. Finalização cross-month (eventos finalizados em mês diferente)
 // 2. Eventos em atraso (40+ dias na oficina)
 // 3. Filtros corretos no dashboard
+// 4. VALIDAÇÃO PLACAS DUPLICADAS COM AVISO (sem bloquear)
 // ============================================================================
 
 // ============ 1. FUNÇÕES DE EVENTOS ATRASADOS ============
@@ -348,7 +349,168 @@ function kpiFilterNew(key) {
   }, 150);
 }
 
-// ============ 3. FUNÇÕES DE FINALIZAÇÃO CROSS-MONTH ============
+// ============ 3. VALIDAÇÃO DE PLACAS DUPLICADAS (CROSS-MONTH PERMITIDO) ============
+
+/**
+ * Verifica se placa já existe no mês atual com mesmo status
+ * @param {string} placa - Placa a verificar
+ * @param {number} rowIndex - Índice da linha atual (para ignorar)
+ * @returns {Object|null} - {row, status} se encontrou duplicata, null caso contrário
+ */
+function verificarPlacaDuplicadaMesAtual(placa, rowIndex) {
+  if (!hot) return null;
+  
+  const placaNorm = normalizePlaca(placa);
+  if (!placaNorm) return null;
+  
+  const data = hot.getData();
+  
+  for (let i = 0; i < data.length; i++) {
+    if (i === rowIndex) continue; // Ignora linha atual
+    
+    const r = data[i];
+    if (!r[0]) continue; // Linha vazia
+    
+    const placaR = normalizePlaca(r[4]);
+    const statusR = (r[12] || '').toString().toUpperCase().trim();
+    
+    // Se encontrou mesma placa com status em aberto
+    if (placaR === placaNorm && isOpenStatus(statusR)) {
+      return { row: i, status: statusR };
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Busca placa em outros meses (cross-month)
+ * @param {string} placa - Placa a buscar
+ * @returns {Object|null} - {monthLabel, status, key} se encontrou, null caso contrário
+ */
+function findOpenPlateInOtherMonths(placa) {
+  const placaNorm = normalizePlaca(placa);
+  if (!placaNorm) return null;
+  
+  const months = getSavedMonths();
+  
+  for (const m of months) {
+    // Ignora mês atual
+    if (m.year === currentYear && m.month === currentMonth) continue;
+    
+    const rows = m.data || [];
+    for (const r of rows) {
+      if (!r[0]) continue;
+      
+      const placaR = normalizePlaca(r[4]);
+      const statusR = (r[12] || '').toString().toUpperCase().trim();
+      
+      if (placaR === placaNorm && isOpenStatus(statusR)) {
+        return {
+          monthLabel: m.monthLabel || monthLabel(m.year, m.month),
+          status: statusR,
+          key: m.key
+        };
+      }
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Validação de placas duplicadas MODIFICADA (permite cross-month)
+ * Agora apenas AVISA, não bloqueia
+ */
+async function validarPlacaAntesSalvar() {
+  if (!hot) return true;
+  
+  const data = hot.getData();
+  const duplicatasMesAtual = [];
+  const crossMonthAvisos = [];
+  
+  // Verifica duplicatas no mês atual
+  for (let i = 0; i < data.length; i++) {
+    const r = data[i];
+    if (!r[0]) continue;
+    
+    const placa = normalizePlaca(r[4]);
+    if (!placa) continue;
+    
+    const status = (r[12] || '').toString().toUpperCase().trim();
+    if (!isOpenStatus(status)) continue;
+    
+    // Verifica duplicata no mês atual
+    const dupMesAtual = verificarPlacaDuplicadaMesAtual(placa, i);
+    if (dupMesAtual && !duplicatasMesAtual.find(x => x.placa === placa)) {
+      duplicatasMesAtual.push({ placa, status });
+    }
+    
+    // Verifica cross-month
+    const crossMonth = findOpenPlateInOtherMonths(placa);
+    if (crossMonth && !crossMonthAvisos.find(x => x.placa === placa)) {
+      crossMonthAvisos.push({ placa, ...crossMonth });
+    }
+  }
+  
+  // Se tem duplicata no mês atual, BLOQUEIA
+  if (duplicatasMesAtual.length > 0) {
+    const first = duplicatasMesAtual[0];
+    
+    await Swal.fire({
+      title: '⚠️ PLACA DUPLICADA DETECTADA!',
+      html: `
+        <div class="text-left text-sm">
+          <p class="mb-3">A placa <b>${first.placa}</b> já existe no mês atual com status <b>${first.status}</b>.</p>
+          <p class="text-xs text-red-600">
+            ❌ Não é permitido ter a mesma placa duplicada no mesmo mês.
+          </p>
+        </div>
+      `,
+      icon: 'error',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#ef4444'
+    });
+    
+    return false; // BLOQUEIA salvamento
+  }
+  
+  // Se tem cross-month, apenas AVISA (não bloqueia)
+  if (crossMonthAvisos.length > 0) {
+    const first = crossMonthAvisos[0];
+    
+    const result = await Swal.fire({
+      title: 'ℹ️ Placa já existe em outro mês',
+      html: `
+        <div class="text-left text-sm">
+          <p class="mb-3">A placa <b>${first.placa}</b> está <b>${first.status}</b> em <b>${first.monthLabel}</b>.</p>
+          <hr class="my-3">
+          <p class="text-xs text-gray-600">
+            💡 <b>Isso é normal</b> quando um evento começa em um mês e continua no próximo.
+          </p>
+          <p class="text-xs text-gray-600 mt-2">
+            ✅ Quando finalizar, o sistema vai perguntar em qual mês quer marcar como finalizado.
+          </p>
+          <p class="text-xs text-blue-600 mt-3">
+            <b>Deseja continuar salvando?</b>
+          </p>
+        </div>
+      `,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: '✅ Sim, salvar',
+      cancelButtonText: '❌ Cancelar',
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#6b7280'
+    });
+    
+    return result.isConfirmed; // Salva se usuário confirmar
+  }
+  
+  return true; // Nenhuma duplicata, pode salvar
+}
+
+// ============ 4. FUNÇÕES DE FINALIZAÇÃO CROSS-MONTH ============
 
 /**
  * Verifica se evento está sendo finalizado em mês diferente do lançamento
@@ -491,9 +653,13 @@ async function finalizarEventoOutroMes(placa, statusNovo) {
 }
 
 /**
- * Modifica saveCurrentMonthWithChecks para verificar finalizações cross-month
+ * Modifica saveCurrentMonthWithChecks para usar nova validação
  */
-function saveCurrentMonthWithChecksCrossMonth() {
+async function saveCurrentMonthWithChecksCrossMonth() {
+  // Valida placas duplicadas (com aviso cross-month)
+  const podeS alvar = await validarPlacaAntesSalvar();
+  if (!podeS alvar) return;
+  
   const rows = hot.getData();
   const crossMonthEvents = [];
   
@@ -553,44 +719,6 @@ function saveCurrentMonthWithChecksCrossMonth() {
     return;
   }
   
-  // Se não tem cross-month, executa checagem normal de duplicados
-  const duplicates = [];
-  for (const r of rows) {
-    if (!r[0]) continue;
-    const found = findOpenPlateInOtherMonths(r[4]);
-    if (found) duplicates.push({ placa: normalizePlaca(r[4]), found });
-  }
-  
-  if (duplicates.length) {
-    const first = duplicates[0];
-    const html = `<div class="text-left text-sm">
-      <p><b>Encontramos placa(s) já em aberto em outro mês.</b></p>
-      <p class="mt-2">Exemplo: <b>${first.placa}</b> está em <b>${first.found.monthLabel}</b> (status: ${first.found.status || '-'}).</p>
-      <p class="mt-2 text-xs text-gray-500">O sistema não vai duplicar para outro mês. Vá no mês onde está aberto e finalize/negue antes.</p>
-    </div>`;
-    
-    Swal.fire({
-      title: '⚠️ Placa já em aberto',
-      html,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Ir para o mês',
-      cancelButtonText: 'Cancelar'
-    }).then(res => {
-      if (res.isConfirmed) {
-        const md = JSON.parse(localStorage.getItem(first.found.key));
-        if (md) {
-          currentYear = md.year;
-          currentMonth = md.month;
-          hot.loadData(md.data);
-          setBadge();
-          go('data');
-        }
-      }
-    });
-    return;
-  }
-  
   // Salva normalmente
   saveCurrentMonth();
   setBadge();
@@ -605,7 +733,7 @@ function saveCurrentMonthWithChecksCrossMonth() {
   }
 }
 
-// ============ 4. MODIFICAÇÃO DO UPDATEDASHBOARD ============
+// ============ 5. MODIFICAÇÃO DO UPDATEDASHBOARD ============
 
 /**
  * Adiciona KPI de eventos atrasados ao updateDashboard
@@ -633,7 +761,7 @@ function updateDashboardAtrasados(data) {
   buildAtrasadosPanel(data);
 }
 
-// ============ 5. MODIFICAÇÃO DO INITHANDSONTABLE ============
+// ============ 6. MODIFICAÇÃO DO INITHANDSONTABLE ============
 
 /**
  * Adiciona 3 novas colunas ao Handsontable
@@ -721,4 +849,4 @@ function autoFillMesLancamento(changes) {
 //
 // ============================================================================
 
-console.log('✅ Melhorias carregadas: cross-month, atrasados, filtros corretos');
+console.log('✅ Melhorias v2.1 carregadas: cross-month permitido com aviso');

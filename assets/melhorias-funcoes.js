@@ -1,5 +1,5 @@
 // ============================================================================
-// MELHORIAS IMPLEMENTADAS - EventosPortoMais v2.1
+// MELHORIAS IMPLEMENTADAS - EventosPortoMais v2.2
 // Data: 10/02/2026
 // ============================================================================
 // Este arquivo contém as novas funções para:
@@ -7,6 +7,7 @@
 // 2. Eventos em atraso (40+ dias na oficina)
 // 3. Filtros corretos no dashboard
 // 4. VALIDAÇÃO PLACAS DUPLICADAS COM AVISO (sem bloquear)
+// 5. ABAS DE NAVEGAÇÃO RÁPIDA DE MESES
 // ============================================================================
 
 // ============ 1. FUNÇÕES DE EVENTOS ATRASADOS ============
@@ -657,8 +658,8 @@ async function finalizarEventoOutroMes(placa, statusNovo) {
  */
 async function saveCurrentMonthWithChecksCrossMonth() {
   // Valida placas duplicadas (com aviso cross-month)
-  const podeS alvar = await validarPlacaAntesSalvar();
-  if (!podeS alvar) return;
+  const podeSalvar = await validarPlacaAntesSalvar();
+  if (!podeSalvar) return;
   
   const rows = hot.getData();
   const crossMonthEvents = [];
@@ -834,6 +835,96 @@ function autoFillMesLancamento(changes) {
   });
 }
 
+// ============ 7. SISTEMA DE ABAS DE NAVEGAÇÃO RÁPIDA ============
+
+/**
+ * Renderiza as abas de navegação rápida de meses
+ * Exibe últimos 6 meses + botão para abrir navegador completo
+ */
+function renderMonthTabs() {
+  const container = document.getElementById('month-tabs');
+  if (!container) {
+    console.warn('⚠️ Container #month-tabs não encontrado');
+    return;
+  }
+  
+  try {
+    // Busca todos os meses salvos
+    const months = getSavedMonths();
+    
+    // Ordena por ano e mês (mais recente primeiro)
+    months.sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year;
+      return b.month - a.month;
+    });
+    
+    // Pega os últimos 6 meses
+    const recentMonths = months.slice(0, 6);
+    
+    // Mês atual
+    const currentKey = monthKey(currentYear, currentMonth);
+    const currentLabel = monthLabel(currentYear, currentMonth);
+    
+    // Limpa container
+    container.innerHTML = '';
+    
+    // Renderiza abas dos últimos 6 meses
+    recentMonths.forEach(m => {
+      const key = monthKey(m.year, m.month);
+      const label = m.monthLabel || monthLabel(m.year, m.month);
+      const isActive = key === currentKey;
+      
+      const tab = document.createElement('button');
+      tab.className = `month-tab ${isActive ? 'month-tab-active' : 'month-tab-inactive'}`;
+      tab.textContent = label;
+      tab.title = `Clique para navegar para ${label}`;
+      
+      tab.onclick = () => {
+        if (!isActive) {
+          loadMonth(m.year, m.month);
+          renderMonthTabs(); // Re-renderiza para atualizar destaque
+          updateDashboard();
+        }
+      };
+      
+      container.appendChild(tab);
+    });
+    
+    // Adiciona botão "+" para abrir navegador completo
+    const moreBtn = document.createElement('button');
+    moreBtn.className = 'month-tab month-tab-more';
+    moreBtn.textContent = '+';
+    moreBtn.title = 'Ver todos os meses';
+    moreBtn.onclick = () => showMonthNavigator();
+    
+    container.appendChild(moreBtn);
+    
+    console.log(`✅ Abas de meses renderizadas: ${recentMonths.length} abas + botão +`);
+    
+  } catch (error) {
+    console.error('❌ Erro ao renderizar abas de meses:', error);
+    container.innerHTML = '<div class="month-tab month-tab-inactive" style="cursor: default;">Erro ao carregar meses</div>';
+  }
+}
+
+/**
+ * Inicializa o sistema de abas
+ * Deve ser chamado após o carregamento do DOM e do app.js
+ */
+function initMonthTabs() {
+  // Aguarda DOM estar pronto
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(renderMonthTabs, 500);
+    });
+  } else {
+    setTimeout(renderMonthTabs, 500);
+  }
+}
+
+// Auto-inicializa
+initMonthTabs();
+
 // ============================================================================
 // INSTRUÇÕES DE INTEGRAÇÃO
 // ============================================================================
@@ -846,7 +937,9 @@ function autoFillMesLancamento(changes) {
 // 4. ADICIONE autoFillMesLancamento(changes) no afterChange do Handsontable
 // 5. SUBSTITUA saveCurrentMonthWithChecks por saveCurrentMonthWithChecksCrossMonth
 // 6. ADICIONE <script src="assets/melhorias-funcoes.js"></script> no index.html
+// 7. CHAME renderMonthTabs() após carregar um mês em loadMonth() e ao salvar
+// 8. CHAME renderMonthTabs() ao inicializar o sistema no onload
 //
 // ============================================================================
 
-console.log('✅ Melhorias v2.1 carregadas: cross-month permitido com aviso');
+console.log('✅ Melhorias v2.2 carregadas: cross-month + abas de navegação');

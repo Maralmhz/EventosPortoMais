@@ -215,14 +215,13 @@
 
     /* PATCH: Correção do Modal de Configurações */
     #configModal .bg-white {
-      max-height: 90vh !important;
+      max-height: 80vh !important;
       overflow-y: auto !important;
     }
 
     #configModal .space-y-6 {
-      max-height: calc(90vh - 200px) !important;
+      max-height: calc(80vh - 180px) !important;
       overflow-y: auto !important;
-      padding-right: 8px;
     }
 
     #configModal .card {
@@ -265,52 +264,6 @@
     #configModal .space-y-6::-webkit-scrollbar-thumb:hover {
       background: #64748b;
     }
-    
-    .month-tabs-container {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 12px 24px;
-      border-bottom: 2px solid rgba(255,255,255,0.1);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    
-    .month-tab {
-      display: inline-block;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all .2s ease;
-      border: 2px solid transparent;
-    }
-    
-    .month-tab-active {
-      background: rgba(255,255,255,1);
-      color: #667eea;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      transform: translateY(-2px);
-    }
-    
-    .month-tab-inactive {
-      background: rgba(255,255,255,0.15);
-      color: rgba(255,255,255,0.9);
-    }
-    
-    .month-tab-inactive:hover {
-      background: rgba(255,255,255,0.25);
-      transform: translateY(-2px);
-    }
-    
-    .month-tab-more {
-      background: rgba(255,255,255,0.2);
-      color: #fff;
-      font-size: 20px;
-      padding: 4px 14px;
-    }
-    
-    .month-tab-more:hover {
-      background: rgba(255,255,255,0.3);
-    }
   </style>
 </head>
 
@@ -351,12 +304,327 @@
         <div id="month-tabs" class="flex items-center gap-2"></div>
       </div>
 
-      <!-- DASHBOARD PAGE (restante do HTML igual ao original...) -->
+      <!-- DASHBOARD PAGE -->
       <section id="page-dash" class="page active">
-        <!-- ... conteúdo completo do dashboard ... -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <div class="kpi-card border-blue-500" onclick="kpiFilter('all')" style="border-image:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) 1;"><p class="kpi-label">Total de Eventos</p><p class="kpi-value" style="background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-total">0</p><p class="kpi-sub">Todos registros</p></div>
+          <div class="kpi-card border-purple-500" onclick="kpiFilter('roubo')" style="border-image:linear-gradient(135deg, #a855f7 0%, #9333ea 100%) 1;"><p class="kpi-label">Roubo / Furto</p><p class="kpi-value" style="background:linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-roubo">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+          <div class="kpi-card border-cyan-500" onclick="kpiFilter('vidros')" style="border-image:linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) 1;"><p class="kpi-label">Vidros</p><p class="kpi-value" style="background:linear-gradient(135deg, #06b6d4 0%, #0e7490 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-vidros">0</p><p class="kpi-sub">Filtro: EVENTO TIPO</p></div>
+          <div class="kpi-card border-yellow-500" onclick="kpiFilter('acordos')" style="border-image:linear-gradient(135deg, #eab308 0%, #ca8a04 100%) 1;"><p class="kpi-label">Acordos</p><p class="kpi-value" style="background:linear-gradient(135deg, #eab308 0%, #a16207 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-acordos">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+          <div class="kpi-card border-green-500" onclick="kpiFilter('finalizados')" style="border-image:linear-gradient(135deg, #22c55e 0%, #16a34a 100%) 1;"><p class="kpi-label">Finalizados</p><p class="kpi-value" style="background:linear-gradient(135deg, #22c55e 0%, #15803d 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-finalizados">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <div class="kpi-card border-slate-500" onclick="kpiFilter('terceiroCausador')" style="border-image:linear-gradient(135deg, #64748b 0%, #475569 100%) 1;"><p class="kpi-label">3º causador</p><p class="kpi-value" style="background:linear-gradient(135deg, #64748b 0%, #334155 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-terc-causador">0</p><p class="kpi-sub">Filtro: CAUSADOR</p></div>
+          <div class="kpi-card border-indigo-500" onclick="kpiFilter('jurEm')" style="border-image:linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) 1;"><p class="kpi-label">Jurídico: Em cobrança</p><p class="kpi-value" style="background:linear-gradient(135deg, #6366f1 0%, #4338ca 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-jur-em">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+          <div class="kpi-card border-emerald-500" onclick="kpiFilter('jurRec')" style="border-image:linear-gradient(135deg, #10b981 0%, #059669 100%) 1;"><p class="kpi-label">Jurídico: Recuperado</p><p class="kpi-value" style="background:linear-gradient(135deg, #10b981 0%, #047857 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-jur-rec">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+          <div class="kpi-card border-rose-500" onclick="kpiFilter('jurNao')" style="border-image:linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) 1;"><p class="kpi-label">Jurídico: Não cobrar</p><p class="kpi-value" style="background:linear-gradient(135deg, #f43f5e 0%, #be123c 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-jur-nao">0</p><p class="kpi-sub">Encerrar sem cobrança</p></div>
+          <div class="kpi-card border-amber-500" onclick="kpiFilter('jurValor')" style="border-image:linear-gradient(135deg, #f59e0b 0%, #d97706 100%) 1;"><p class="kpi-label">Valor a recuperar</p><p class="kpi-value" style="background:linear-gradient(135deg, #f59e0b 0%, #b45309 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-jur-valor">R$ 0,00</p><p class="kpi-sub">Clique para filtrar</p></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="chart-card"><h3 class="font-bold text-gray-700 mb-4 text-lg">📊 Eventos por Tipo</h3><canvas id="chart-tipo" style="max-height:280px;"></canvas></div>
+          <div class="chart-card"><h3 class="font-bold text-gray-700 mb-4 text-lg">⚖️ Status Jurídico</h3><canvas id="chart-juridico" style="max-height:280px;"></canvas></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="chart-card"><h3 class="font-bold text-gray-700 mb-4 text-lg">💰 Custos por Categoria</h3><canvas id="chart-custos" style="max-height:280px;"></canvas></div>
+          <div class="card">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-bold text-gray-700 text-lg">📌 Em aberto (eventos)</h3>
+              <button class="btn btn-primary" onclick="kpiFilter('open')">Ver na planilha</button>
+            </div>
+            <div id="open-panel" class="text-sm text-gray-700"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="card">
+            <h3 class="font-bold text-gray-700 mb-4 text-lg">🏆 Top 5 Oficinas (mais carros)</h3>
+            <div id="top-oficinas"></div>
+          </div>
+          <div class="card">
+            <h3 class="font-bold text-gray-700 mb-4 text-lg">💎 Top 5 Carros mais caros</h3>
+            <div id="top-carros"></div>
+          </div>
+        </div>
+
+        <div class="card mb-6">
+          <h3 class="font-bold text-gray-700 mb-4 text-lg">⚖️ Ranking Jurídico - Maiores valores a recuperar</h3>
+          <div id="ranking-juridico"></div>
+        </div>
       </section>
 
-      <!-- CONFIG MODAL (ATUALIZADO COM DIAGNÓSTICO) -->
+      <!-- COMPARAÇÃO PAGE -->
+      <section id="page-compare" class="page">
+        <div class="card mb-4">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h2 class="text-2xl font-extrabold text-gray-800">📈 Comparação de Meses</h2>
+              <p class="text-sm text-gray-600 mt-1">Selecione 2 ou mais meses para comparar métricas</p>
+            </div>
+            <div class="flex gap-2">
+              <button class="month-nav-btn" onclick="showCompareSelector()">🗓️ Selecionar Meses</button>
+              <button class="month-nav-btn" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%);" onclick="exportComparison()">📥 Exportar PNG</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="compare-months-display" class="mb-4"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="chart-card">
+            <h3 class="font-bold text-gray-700 mb-4 text-lg">📊 Eventos por Mês</h3>
+            <canvas id="chart-compare-eventos" style="max-height:300px;"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3 class="font-bold text-gray-700 mb-4 text-lg">💰 Custos Totais</h3>
+            <canvas id="chart-compare-custos" style="max-height:300px;"></canvas>
+          </div>
+        </div>
+
+        <div class="card mb-6">
+          <h3 class="font-bold text-gray-700 mb-4 text-lg">📋 Tabela Comparativa Detalhada</h3>
+          <div class="overflow-x-auto">
+            <table class="compare-table" id="compare-table"></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- EDITAR DADOS PAGE -->
+      <section id="page-data" class="page">
+        <div class="alert alert-info" style="background:#dbeafe; border-left:4px solid #3b82f6; padding:16px; border-radius:8px; margin-bottom:16px;">
+          💡 <b>EVENTO TIPO</b> (VIDROS/ROUBO etc.) define o que aparece no Dashboard. <b>CAUSADOR</b> define quem causou (TERCEIRO entra no Jurídico).
+        </div>
+        <div class="card"><div id="spreadsheet"></div></div>
+      </section>
+
+      <!-- JURÍDICO PAGE -->
+      <section id="page-juridico" class="page">
+        <div class="card mb-4">
+          <h2 class="text-2xl font-extrabold text-gray-800">⚖️ Jurídico (3º causador)</h2>
+          <p class="text-sm text-gray-600 mt-1">Somente eventos em que <b>CAUSADOR = TERCEIRO</b>. EVENTO TIPO pode ser VIDROS, ROUBO/FURTO etc.</p>
+        </div>
+
+        <div class="card">
+          <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+            <div class="text-sm font-bold text-gray-700">Somente registros com CAUSADOR = TERCEIRO</div>
+            <button class="btn btn-primary" onclick="filterJuridicoView()">🔎 Atualizar lista</button>
+          </div>
+          <div id="juridico-table" class="text-sm"></div>
+        </div>
+      </section>
+
+      <!-- OFICINAS PAGE -->
+      <section id="page-oficinas" class="page">
+        <div class="card mb-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-extrabold text-gray-800">🏪 Cadastro de Oficinas</h2>
+              <p class="text-sm text-gray-600 mt-1">Gerencie oficinas parceiras e suas especialidades</p>
+            </div>
+            <button class="btn btn-primary" onclick="showAddOficinaModal()">➕ Nova Oficina</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <div class="kpi-card border-blue-500" onclick="filterOficinasByCategory('')" style="border-image:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) 1;"><p class="kpi-label">Total</p><p class="kpi-value" style="background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-total">0</p><p class="kpi-sub">Todas oficinas</p></div>
+          <div class="kpi-card border-cyan-500" onclick="filterOficinasByCategory('Mecânica')" style="border-image:linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) 1;"><p class="kpi-label">Mecânica</p><p class="kpi-value" style="background:linear-gradient(135deg, #06b6d4 0%, #0e7490 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-mec">0</p><p class="kpi-sub">Filtrar</p></div>
+          <div class="kpi-card border-orange-500" onclick="filterOficinasByCategory('Lanternagem')" style="border-image:linear-gradient(135deg, #f59e0b 0%, #ea580c 100%) 1;"><p class="kpi-label">Lanternagem</p><p class="kpi-value" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-lant">0</p><p class="kpi-sub">Filtrar</p></div>
+          <div class="kpi-card border-purple-500" onclick="filterOficinasByCategory('Lanternagem+Mecânica')" style="border-image:linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) 1;"><p class="kpi-label">Lant+Mec</p><p class="kpi-value" style="background:linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-lantmec">0</p><p class="kpi-sub">Filtrar</p></div>
+          <div class="kpi-card border-emerald-500" onclick="filterOficinasByCategory('Vidros')" style="border-image:linear-gradient(135deg, #10b981 0%, #059669 100%) 1;"><p class="kpi-label">Vidros</p><p class="kpi-value" style="background:linear-gradient(135deg, #10b981 0%, #047857 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-vidros">0</p><p class="kpi-sub">Filtrar</p></div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="flex gap-3 flex-wrap">
+            <input type="text" id="search-oficina" placeholder="🔍 Buscar por nome ou CNPJ..." class="flex-1 border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" oninput="renderOficinasList()">
+            <select id="filter-categoria" onchange="renderOficinasList()" class="border-2 border-gray-300 rounded-lg px-4 py-2">
+              <option value="">Todas categorias</option>
+              <option value="Mecânica">Mecânica</option>
+              <option value="Lanternagem">Lanternagem</option>
+              <option value="Lanternagem+Mecânica">Lanternagem+Mecânica</option>
+              <option value="Vidros">Vidros</option>
+              <option value="Ar-Condicionado">Ar-Condicionado</option>
+              <option value="Elétrica">Elétrica</option>
+              <option value="Alinhamento/Balanceamento">Alinhamento/Balanceamento</option>
+              <option value="Estofaria">Estofaria</option>
+              <option value="Funilaria">Funilaria</option>
+              <option value="Pintura">Pintura</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="oficinas-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </section>
+
+      <!-- OFICINA MODAL -->
+      <div id="oficinaModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+          <div class="p-6 border-b bg-gradient-to-r from-blue-500 to-cyan-600 rounded-t-2xl">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-2xl text-white" id="oficina-modal-title">🏪 Nova Oficina</h3>
+              <button onclick="closeOficinaModal()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
+            </div>
+          </div>
+          
+          <div class="p-6 space-y-4">
+            <div>
+              <label class="block text-sm font-bold mb-2">Nome da Oficina *</label>
+              <input type="text" id="of-nome" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="Ex: Auto Center Silva">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">CNPJ</label>
+              <input type="text" id="of-cnpj" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="00.000.000/0000-00">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">Telefone</label>
+              <input type="text" id="of-telefone" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="(31) 99999-9999">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">E-mail</label>
+              <input type="email" id="of-email" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="contato@oficina.com.br">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">Endereço</label>
+              <textarea id="of-endereco" rows="2" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="Rua, Número, Bairro, Cidade"></textarea>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">Categorias de Serviço *</label>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Mecânica" class="of-categoria">
+                  <span class="text-sm">Mecânica</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Lanternagem" class="of-categoria">
+                  <span class="text-sm">Lanternagem</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Lanternagem+Mecânica" class="of-categoria">
+                  <span class="text-sm">Lanternagem+Mecânica</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Vidros" class="of-categoria">
+                  <span class="text-sm">Vidros</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Ar-Condicionado" class="of-categoria">
+                  <span class="text-sm">Ar-Condicionado</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Elétrica" class="of-categoria">
+                  <span class="text-sm">Elétrica</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Alinhamento/Balanceamento" class="of-categoria">
+                  <span class="text-sm">Alinhamento/Balanceamento</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Estofaria" class="of-categoria">
+                  <span class="text-sm">Estofaria</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Funilaria" class="of-categoria">
+                  <span class="text-sm">Funilaria</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Pintura" class="of-categoria">
+                  <span class="text-sm">Pintura</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-gray-50 rounded-b-2xl flex gap-2 justify-end">
+            <button onclick="closeOficinaModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-bold">Cancelar</button>
+            <button onclick="saveOficina()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">💾 Salvar Oficina</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPARE SELECTOR MODAL -->
+      <div id="compareSelectorModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-auto">
+          <div class="p-6 border-b bg-gradient-to-r from-purple-500 to-pink-600 rounded-t-2xl">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-2xl text-white">📈 Selecionar Meses para Comparar</h3>
+              <button onclick="closeCompareSelector()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
+            </div>
+          </div>
+          
+          <div class="p-6">
+            <div class="year-selector">
+              <button class="year-btn" onclick="changeCompareSelectorYear(-1)">◀ Ano Anterior</button>
+              <div class="year-display" id="compare-year">2026</div>
+              <button class="year-btn" onclick="changeCompareSelectorYear(1)">Próximo Ano ▶</button>
+            </div>
+            
+            <div class="mb-4">
+              <p class="text-sm font-bold text-gray-700 mb-2">✅ Meses selecionados: <span id="selected-count">0</span></p>
+              <div id="selected-months-badges" class="flex flex-wrap gap-2"></div>
+            </div>
+            
+            <div class="calendar-grid" id="compare-calendar"></div>
+            
+            <div class="mt-6 p-4 bg-purple-50 rounded-lg">
+              <p class="text-sm text-gray-700"><b>💡 Como usar:</b></p>
+              <ul class="text-xs text-gray-600 mt-2 space-y-1">
+                <li>• Clique nos meses que deseja comparar (mínimo 2)</li>
+                <li>• Verde = selecionado para comparação</li>
+                <li>• Navegue entre anos para comparar períodos diferentes</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-gray-50 rounded-b-2xl flex gap-2 justify-end">
+            <button onclick="closeCompareSelector()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-bold">Cancelar</button>
+            <button onclick="generateComparison()" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-bold">📊 Gerar Comparação</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MONTH NAVIGATOR MODAL -->
+      <div id="monthNavigatorModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-auto">
+          <div class="p-6 border-b bg-gradient-to-r from-blue-500 to-purple-600 rounded-t-2xl">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-2xl text-white flex items-center gap-2">📅 Navegador de Meses e Anos</h3>
+              <button onclick="closeMonthNavigator()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
+            </div>
+          </div>
+          
+          <div class="p-6">
+            <div class="year-selector">
+              <button class="year-btn" onclick="changeNavigatorYear(-1)">◀ Ano Anterior</button>
+              <div class="year-display" id="navigator-year">2026</div>
+              <button class="year-btn" onclick="changeNavigatorYear(1)">Próximo Ano ▶</button>
+            </div>
+            
+            <div class="mb-4 text-center">
+              <button class="month-nav-btn" onclick="createNewMonth()">➕ Criar Novo Mês</button>
+            </div>
+            
+            <div class="calendar-grid" id="month-calendar"></div>
+            
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+              <p class="text-sm text-gray-700"><b>💡 Como usar:</b></p>
+              <ul class="text-xs text-gray-600 mt-2 space-y-1">
+                <li>• <b>Azul claro</b> = Mês com dados salvos</li>
+                <li>• <b>Azul escuro</b> = Mês atual</li>
+                <li>• <b>Clique</b> em qualquer mês para carregar seus dados</li>
+                <li>• Use <b>"➕ Criar Novo Mês"</b> para adicionar meses de anos passados (ex: Janeiro 2024)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIG MODAL -->
       <div id="configModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
           <div class="p-6 border-b bg-gradient-to-r from-blue-600 to-indigo-600 rounded-t-2xl">
@@ -368,7 +636,7 @@
             </div>
           </div>
           
-          <div class="p-6 space-y-4" style="max-height: calc(90vh - 180px); overflow-y: auto;">
+          <div class="p-6 space-y-6">
             <!-- 🔴 DIAGNÓSTICO FIREBASE (NOVO) -->
             <div class="card p-4 bg-red-50 border-2 border-red-300">
               <h4 class="font-bold text-red-900 mb-2 flex items-center gap-2">
@@ -378,16 +646,16 @@
                 Use se tiver problemas de sincronização ou duplicatas
               </p>
               <div class="grid grid-cols-2 gap-2">
-                <button onclick="diagnosticarFirebase(); closeConfigModal();" class="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                <button onclick="diagnosticarFirebase()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
                   🔍 Diagnóstico
                 </button>
-                <button onclick="sincronizacaoCompleta(); closeConfigModal();" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                <button onclick="sincronizacaoCompleta()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
                   🔄 Sync Completo
                 </button>
-                <button onclick="limparDuplicatas(); closeConfigModal();" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                <button onclick="limparDuplicatas()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
                   🗑️ Limpar Duplicatas
                 </button>
-                <button onclick="forcarBaixarTudoDaNuvem(); closeConfigModal();" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                <button onclick="forcarBaixarTudoDaNuvem()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
                   ☁️ Baixar Tudo
                 </button>
               </div>
@@ -448,27 +716,27 @@
                 Sincroniza automaticamente com Firebase quando conectado à internet
               </p>
               <div class="grid grid-cols-3 gap-2">
-                <button onclick="forcarEnviarTudoParaNuvem(); closeConfigModal();" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                <button onclick="uploadToFirebase(); closeConfigModal();" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-lg font-bold transition">
                   📤 Enviar
                 </button>
-                <button onclick="forcarBaixarTudoDaNuvem(); closeConfigModal();" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                <button onclick="downloadFromFirebase(); closeConfigModal();" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-3 rounded-lg font-bold transition">
                   📥 Baixar
                 </button>
-                <button onclick="diagnosticarFirebase(); closeConfigModal();" class="bg-amber-400 hover:bg-amber-500 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                <button onclick="checkFirebaseStatus(); closeConfigModal();" class="bg-amber-400 hover:bg-amber-500 text-white px-4 py-3 rounded-lg font-bold transition">
                   🔍 Status
                 </button>
               </div>
             </div>
 
             <!-- Limpar Cache -->
-            <div class="card p-4 bg-gray-100 border-2 border-gray-300">
-              <h4 class="font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <div class="card p-4 bg-red-50 border-2 border-red-200">
+              <h4 class="font-bold text-red-900 mb-2 flex items-center gap-2">
                 🗑️ Limpar Cache Local
               </h4>
-              <p class="text-sm text-gray-800 mb-3">
+              <p class="text-sm text-red-800 mb-3">
                 ⚠️ Remove TODOS os dados salvos localmente (não afeta Firebase)
               </p>
-              <button onclick="clearLocalCache()" class="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-bold transition">
+              <button onclick="clearLocalCache()" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-bold transition">
                 🗑️ Limpar Tudo
               </button>
             </div>
@@ -487,7 +755,7 @@
 
   <!-- Scripts -->
   <script src="assets/diagnostico-firebase.js?v=1.0.0"></script>
-  <script src="assets/melhorias-funcoes.js?v=2.2.0"></script>
-  <script src="assets/app.js?v=2.2.0"></script>
+  <script src="assets/melhorias-funcoes.js?v=2.1.0"></script>
+  <script src="assets/app.js"></script>
 </body>
 </html>

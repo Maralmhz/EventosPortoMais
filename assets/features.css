@@ -1,1 +1,289 @@
-/* [CONTEÚDO COMPLETO DO FEATURES.CSS]
+/* ============ ESTILOS PARA NOVAS FUNCIONALIDADES ============ */
+
+/* ============ 1. BARRA DE BUSCA FIXA ============ */
+.search-bar-container {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.search-bar-container input {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.search-bar-container button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: white;
+  color: #667eea;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.search-bar-container button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+#search-counter {
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ============ 2. DESTAQUE DA LINHA ============ */
+.selected-row-highlight {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
+  border-left: 4px solid #3b82f6 !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* ============ 3. CONTADOR DE LINHAS ============ */
+.row-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* ============ 4. FILTROS RÁPIDOS VISUAIS ============ */
+.quick-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.filter-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.filter-chip.active {
+  border-color: currentColor;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* ============ 7. MODO ESCURO ============ */
+body.dark-mode {
+  background: #1a1a2e !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .content {
+  background: linear-gradient(135deg, #16213e 0%, #0f1729 100%) !important;
+}
+
+.dark-mode .card,
+.dark-mode .chart-card,
+.dark-mode .kpi-card {
+  background: #252b42 !important;
+  border-color: #3a4055 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .topbar {
+  background: rgba(37, 43, 66, 0.95) !important;
+  border-bottom-color: #3a4055 !important;
+}
+
+.dark-mode .sidebar {
+  background: linear-gradient(180deg, #0f1729 0%, #1a1a2e 100%) !important;
+}
+
+.dark-mode .month-cell,
+.dark-mode .ranking-item,
+.dark-mode .open-panel-item {
+  background: #2a3142 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .month-cell:hover,
+.dark-mode .ranking-item:hover,
+.dark-mode .open-panel-item:hover {
+  background: #343d55 !important;
+}
+
+.dark-mode input,
+.dark-mode select,
+.dark-mode textarea {
+  background: #2a3142 !important;
+  color: #e0e0e0 !important;
+  border-color: #3a4055 !important;
+}
+
+.dark-mode .handsontable {
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .htCore td,
+.dark-mode .htCore th {
+  background: #252b42 !important;
+  color: #e0e0e0 !important;
+  border-color: #3a4055 !important;
+}
+
+/* ============ 8. NOTIFICAÇÕES ============ */
+.notification-icon {
+  position: relative;
+  cursor: pointer;
+  font-size: 24px;
+  transition: transform 0.2s ease;
+}
+
+.notification-icon:hover {
+  transform: scale(1.1);
+}
+
+#notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ef4444;
+  color: white;
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  min-width: 18px;
+  text-align: center;
+}
+
+/* ============ 11. STATUS VISUAL POR COR ============ */
+.status-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.status-finalizado { background: #10b981; }
+.status-pendente { background: #eab308; }
+.status-negado { background: #ef4444; }
+.status-acordo { background: #3b82f6; }
+.status-em-andamento { background: #f59e0b; }
+
+/* ============ 16. TAGS ============ */
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  margin: 2px;
+}
+
+.tag-btn {
+  padding: 8px 16px;
+  border: 2px solid #cbd5e1;
+  border-radius: 999px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tag-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.tag-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+}
+
+/* ============ BOTÕES DE AÇÃO ============ */
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+/* ============ RESPONSIVO ============ */
+@media (max-width: 768px) {
+  .search-bar-container {
+    flex-direction: column;
+  }
+  
+  .search-bar-container input,
+  .search-bar-container button {
+    width: 100%;
+  }
+  
+  .quick-filters {
+    justify-content: center;
+  }
+}

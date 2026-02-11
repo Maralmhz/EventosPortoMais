@@ -96,10 +96,17 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
-/* ============ 7. MODO ESCURO ============ */
+/* ============ 7. MODO ESCURO - 🔥 CORRIGIDO ============ */
+
+/* 🔥 IMPORTANTE: Aplica modo escuro IMEDIATAMENTE se estiver salvo no localStorage */
 body.dark-mode {
   background: #1a1a2e !important;
   color: #e0e0e0 !important;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.dark-mode .layout {
+  background: #1a1a2e !important;
 }
 
 .dark-mode .content {
@@ -114,9 +121,25 @@ body.dark-mode {
   color: #e0e0e0 !important;
 }
 
+.dark-mode .kpi-label,
+.dark-mode .kpi-sub {
+  color: #94a3b8 !important;
+}
+
 .dark-mode .topbar {
   background: rgba(37, 43, 66, 0.95) !important;
   border-bottom-color: #3a4055 !important;
+  backdrop-filter: blur(16px);
+}
+
+.dark-mode #page-title,
+.dark-mode h1, .dark-mode h2, .dark-mode h3, .dark-mode h4 {
+  color: #f1f5f9 !important;
+}
+
+.dark-mode #page-sub,
+.dark-mode p {
+  color: #94a3b8 !important;
 }
 
 .dark-mode .sidebar {
@@ -136,6 +159,11 @@ body.dark-mode {
   background: #343d55 !important;
 }
 
+.dark-mode .month-cell.current {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: white !important;
+}
+
 .dark-mode input,
 .dark-mode select,
 .dark-mode textarea {
@@ -144,8 +172,20 @@ body.dark-mode {
   border-color: #3a4055 !important;
 }
 
+.dark-mode input::placeholder,
+.dark-mode textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* 🔥 HANDSONTABLE NO MODO ESCURO */
 .dark-mode .handsontable {
   color: #e0e0e0 !important;
+  background: #252b42 !important;
+}
+
+.dark-mode .ht_master .wtHolder,
+.dark-mode .htCore {
+  background: #252b42 !important;
 }
 
 .dark-mode .htCore td,
@@ -153,6 +193,52 @@ body.dark-mode {
   background: #252b42 !important;
   color: #e0e0e0 !important;
   border-color: #3a4055 !important;
+}
+
+.dark-mode .htCore thead th {
+  background: #1e2538 !important;
+  color: #f1f5f9 !important;
+  font-weight: 700;
+}
+
+.dark-mode .htCore tbody th {
+  background: #1e2538 !important;
+  color: #94a3b8 !important;
+}
+
+/* Seleção de células no modo escuro */
+.dark-mode .htCore td.area,
+.dark-mode .htCore td.current {
+  background: rgba(59, 130, 246, 0.2) !important;
+}
+
+.dark-mode .htCore td.highlight {
+  background: rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Modais no modo escuro */
+.dark-mode .swal2-popup {
+  background: #252b42 !important;
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .swal2-title,
+.dark-mode .swal2-html-container {
+  color: #e0e0e0 !important;
+}
+
+.dark-mode .compare-table th {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+}
+
+.dark-mode .compare-table td {
+  background: #252b42 !important;
+  color: #e0e0e0 !important;
+  border-color: #3a4055 !important;
+}
+
+.dark-mode .compare-table tr:hover td {
+  background: #2a3142 !important;
 }
 
 /* ============ 8. NOTIFICAÇÕES ============ */
@@ -232,6 +318,17 @@ body.dark-mode {
   border-color: #667eea;
 }
 
+.dark-mode .tag-btn {
+  background: #2a3142;
+  color: #e0e0e0;
+  border-color: #3a4055;
+}
+
+.dark-mode .tag-btn:hover {
+  background: #343d55;
+  border-color: #4a5568;
+}
+
 /* ============ BOTÕES DE AÇÃO ============ */
 .action-button {
   display: inline-flex;
@@ -287,3 +384,15 @@ body.dark-mode {
     justify-content: center;
   }
 }
+
+/* ============ 🔥 APLICA MODO ESCURO IMEDIATAMENTE AO CARREGAR ============ */
+<script>
+(function() {
+  // Carrega preferência ANTES de renderizar a página
+  const darkMode = localStorage.getItem('darkMode') === 'true';
+  if (darkMode) {
+    document.documentElement.classList.add('dark-mode');
+    document.body.classList.add('dark-mode');
+  }
+})();
+</script>

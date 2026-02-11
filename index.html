@@ -17,6 +17,7 @@
 
   <link href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" rel="stylesheet" />
   <link href="assets/styles.css" rel="stylesheet" />
+  <link href="assets/features.css" rel="stylesheet" />
 
   <style>
     @keyframes shimmer { 0%,100%{background-position:200% center;} 50%{background-position:-200% center;} }
@@ -293,9 +294,27 @@
         </div>
 
         <div class="flex items-center gap-2 flex-wrap">
+          <!-- ✨ NOVAS FUNCIONALIDADES: Barra de busca inteligente -->
+          <div class="smart-search-container" style="display: flex; align-items: center; gap: 8px;">
+            <input type="text" id="smart-search-input" placeholder="🔍 Busca inteligente..." 
+                   style="padding: 8px 12px; border-radius: 8px; border: 2px solid #e2e8f0; min-width: 200px;">
+            <button id="smart-search-btn" class="month-nav-btn" style="padding: 8px 12px;">🔎</button>
+            <button id="clear-search-btn" class="month-nav-btn" style="padding: 8px 12px; background: linear-gradient(135deg, #64748b 0%, #475569 100%);">✖️</button>
+            <span id="search-counter" style="font-size: 11px; color: #64748b; font-weight: 700;"></span>
+          </div>
+          
           <button class="month-nav-btn" onclick="showMonthNavigator()">📅 Navegar Meses</button>
           <button class="btn btn-primary" onclick="saveCurrentMonthWithChecks()">💾 Salvar</button>
           <button class="btn btn-success" onclick="updateDashboard(); go('dash')">🔄 Atualizar</button>
+          
+          <!-- ✨ Contador de linhas -->
+          <div id="row-counter" style="font-size: 12px; color: #64748b; font-weight: 700;"></div>
+          
+          <!-- ✨ Botão modo escuro -->
+          <button class="month-nav-btn" onclick="toggleDarkMode()" id="dark-mode-icon" style="padding: 8px 12px;">🌙</button>
+          
+          <!-- ✨ Botão atalhos -->
+          <button class="month-nav-btn" onclick="showKeyboardShortcutsHelp()" style="padding: 8px 12px;">⌨️</button>
         </div>
       </div>
 
@@ -757,6 +776,19 @@
   <script src="assets/hotfix-clicks.js?v=1.0.1"></script>
   <script src="assets/diagnostico-firebase.js?v=1.0.0"></script>
   <script src="assets/melhorias-funcoes.js?v=2.1.0"></script>
+  <script src="assets/features.js?v=1.0.0"></script>
   <script src="assets/app.js"></script>
+  <script>
+    // ✨ INICIALIZAÇÃO DAS NOVAS FUNCIONALIDADES
+    document.addEventListener('DOMContentLoaded', () => {
+      // Aguarda o app.js carregar completamente
+      setTimeout(() => {
+        if (typeof initAllFeatures === 'function') {
+          initAllFeatures();
+          console.log('✅ Features.js inicializado com sucesso!');
+        }
+      }, 1000);
+    });
+  </script>
 </body>
 </html>

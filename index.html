@@ -104,6 +104,40 @@
       box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
     }
     
+    /* ✨ BARRA DE AÇÕES RÁPIDAS */
+    .quick-action-bar {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .quick-action-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: all 0.2s ease;
+      border: none;
+    }
+    
+    .quick-action-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    }
+    
+    .quick-action-btn:active {
+      transform: scale(0.95);
+    }
+    
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -308,14 +342,36 @@
           <button class="btn btn-success" onclick="updateDashboard(); go('dash')">🔄 Atualizar</button>
           
           <!-- ✨ Contador de linhas -->
-          <div id="row-counter" style="font-size: 12px; color: #64748b; font-weight: 700;"></div>
+          <div id="row-counter" class="row-counter"></div>
           
           <!-- ✨ Botão modo escuro -->
-          <button class="month-nav-btn" onclick="toggleDarkMode()" id="dark-mode-icon" style="padding: 8px 12px;">🌙</button>
+          <button class="month-nav-btn" onclick="window.toggleDarkMode && window.toggleDarkMode()" id="dark-mode-icon" style="padding: 8px 12px;" title="Modo Escuro (Ctrl+Shift+D)">🌙</button>
           
           <!-- ✨ Botão atalhos -->
-          <button class="month-nav-btn" onclick="showKeyboardShortcutsHelp()" style="padding: 8px 12px;">⌨️</button>
+          <button class="month-nav-btn" onclick="window.showKeyboardShortcutsHelp && window.showKeyboardShortcutsHelp()" style="padding: 8px 12px;" title="Atalhos de Teclado">⌨️</button>
+          
+          <!-- ✨ Botão exportar Excel -->
+          <button class="month-nav-btn" onclick="window.exportFormattedExcel && window.exportFormattedExcel()" style="padding: 8px 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%);" title="Exportar Excel">📄</button>
         </div>
+      </div>
+
+      <!-- 🎯 BARRA DE AÇÕES RÁPIDAS FLUTUANTE -->
+      <div class="quick-action-bar">
+        <button class="quick-action-btn" onclick="window.addCommentToCurrentRow && window.addCommentToCurrentRow()" 
+                style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);" 
+                title="Adicionar Comentário (Ctrl+Shift+C)">💬</button>
+        
+        <button class="quick-action-btn" onclick="window.addTagToCurrentRow && window.addTagToCurrentRow()" 
+                style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);" 
+                title="Adicionar Tag (Ctrl+Shift+T)">🏷️</button>
+        
+        <button class="quick-action-btn" onclick="window.duplicateCurrentEvent && window.duplicateCurrentEvent()" 
+                style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);" 
+                title="Duplicar Evento (Ctrl+D)">📋</button>
+        
+        <button class="quick-action-btn" onclick="window.showCostCalculator && window.showCostCalculator()" 
+                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);" 
+                title="Calculadora de Custos">💰</button>
       </div>
 
       <!-- 🎯 ABAS DE MESES NO TOPO -->
@@ -384,7 +440,7 @@
             </div>
             <div class="flex gap-2">
               <button class="month-nav-btn" onclick="showCompareSelector()">🗓️ Selecionar Meses</button>
-              <button class="month-nav-btn" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%);" onclick="exportComparison()">📥 Exportar PNG</button>
+              <button class="month-nav-btn" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%);" onclick="exportComparison()">📅 Exportar PNG</button>
             </div>
           </div>
         </div>
@@ -437,12 +493,15 @@
       <!-- OFICINAS PAGE -->
       <section id="page-oficinas" class="page">
         <div class="card mb-4">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between flex-wrap gap-2">
             <div>
               <h2 class="text-2xl font-extrabold text-gray-800">🏪 Cadastro de Oficinas</h2>
               <p class="text-sm text-gray-600 mt-1">Gerencie oficinas parceiras e suas especialidades</p>
             </div>
-            <button class="btn btn-primary" onclick="showAddOficinaModal()">➕ Nova Oficina</button>
+            <div class="flex gap-2">
+              <button class="btn btn-primary" onclick="showAddOficinaModal()">➕ Nova Oficina</button>
+              <button class="month-nav-btn" onclick="window.showOficinasMap && window.showOficinasMap()" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">🗺️ Ver Mapa</button>
+            </div>
           </div>
         </div>
 
@@ -696,20 +755,20 @@
             <!-- Exportar Backup -->
             <div class="card p-4 bg-purple-50 border-2 border-purple-200">
               <h4 class="font-bold text-purple-900 mb-2 flex items-center gap-2">
-                📥 Exportar Backup
+                📅 Exportar Backup
               </h4>
               <p class="text-sm text-purple-800 mb-3">
                 Baixa todos os meses salvos em arquivo JSON (recomendado fazer semanalmente)
               </p>
               <button onclick="exportBackup(); closeConfigModal();" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-bold transition">
-                📥 Exportar JSON
+                📅 Exportar JSON
               </button>
             </div>
 
             <!-- Importar Backup -->
             <div class="card p-4 bg-green-50 border-2 border-green-200">
               <h4 class="font-bold text-green-900 mb-2 flex items-center gap-2">
-                📤 Importar Backup
+                📄 Importar Backup
               </h4>
               <p class="text-sm text-green-800 mb-3">
                 Restaura dados de um arquivo JSON de backup previamente exportado
@@ -722,7 +781,7 @@
                 onchange="handleImportFile(event)"
               >
               <button onclick="document.getElementById('import-file-input').click()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-bold transition">
-                📤 Selecionar Arquivo JSON
+                📄 Selecionar Arquivo JSON
               </button>
             </div>
 
@@ -736,10 +795,10 @@
               </p>
               <div class="grid grid-cols-3 gap-2">
                 <button onclick="uploadToFirebase(); closeConfigModal();" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-lg font-bold transition">
-                  📤 Enviar
+                  📄 Enviar
                 </button>
                 <button onclick="downloadFromFirebase(); closeConfigModal();" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-3 rounded-lg font-bold transition">
-                  📥 Baixar
+                  📅 Baixar
                 </button>
                 <button onclick="checkFirebaseStatus(); closeConfigModal();" class="bg-amber-400 hover:bg-amber-500 text-white px-4 py-3 rounded-lg font-bold transition">
                   🔍 Status
@@ -776,7 +835,7 @@
   <script src="assets/hotfix-clicks.js?v=1.0.1"></script>
   <script src="assets/diagnostico-firebase.js?v=1.0.0"></script>
   <script src="assets/melhorias-funcoes.js?v=2.1.0"></script>
-  <script src="assets/features.js?v=1.0.0"></script>
+  <script src="assets/features.js?v=1.0.1"></script>
   <script src="assets/app.js"></script>
   <script>
     // ✨ INICIALIZAÇÃO DAS NOVAS FUNCIONALIDADES
@@ -786,6 +845,8 @@
         if (typeof initAllFeatures === 'function') {
           initAllFeatures();
           console.log('✅ Features.js inicializado com sucesso!');
+        } else {
+          console.warn('⚠️ initAllFeatures não foi carregado ainda');
         }
       }, 1000);
     });

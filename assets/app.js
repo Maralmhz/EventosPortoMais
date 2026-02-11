@@ -1657,6 +1657,9 @@ function initHandsontable() {
       saveCurrentMonth(); setBadge();
     }
   });
+  
+  // 🔥 EXPORTA PARA WINDOW (FIX duplicateCurrentEvent)
+  window.hot = hot;
 }
 
 setTimeout(()=>{ 

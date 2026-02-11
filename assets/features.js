@@ -178,7 +178,13 @@ function updateRowCounter() {
 }
 
 // ============ 7. MODO ESCURO ============
+// 🔥 IMPORTANTE: Carrega preferência IMEDIATAMENTE
 let darkModeEnabled = localStorage.getItem('darkMode') === 'true';
+
+// 🔥 Aplica modo escuro IMEDIATAMENTE (antes de qualquer outra coisa)
+if (darkModeEnabled) {
+  document.body.classList.add('dark-mode');
+}
 
 function toggleDarkMode() {
   darkModeEnabled = !darkModeEnabled;
@@ -659,7 +665,7 @@ function initAllFeatures() {
   initSmartSearch();
   initRowHighlight();
   initKeyboardShortcuts();
-  applyDarkMode();
+  applyDarkMode(); // Atualiza o ícone
   updateRowCounter();
   updateAutocompleteCache();
   
@@ -672,6 +678,7 @@ function initAllFeatures() {
   }
   
   console.log('✅ Todas as novas funcionalidades carregadas!');
+  console.log(`🌙 Modo escuro: ${darkModeEnabled ? 'ATIVADO' : 'DESATIVADO'}`);
 }
 
 // Exporta funções globais

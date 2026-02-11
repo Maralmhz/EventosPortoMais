@@ -91,7 +91,7 @@ function performSmartSearch() {
     return;
   }
   
-  const data = hot.getData();
+  const data = window.hot.getData();
   searchHighlightedRows = [];
   
   data.forEach((row, idx) => {
@@ -106,10 +106,11 @@ function performSmartSearch() {
     return;
   }
   
-  go('data');
+  if (window.go) window.go('data');
+  
   setTimeout(() => {
-    hot.selectCell(searchHighlightedRows[0], 0);
-    hot.scrollViewportTo(searchHighlightedRows[0], 0);
+    window.hot.selectCell(searchHighlightedRows[0], 0);
+    window.hot.scrollViewportTo(searchHighlightedRows[0], 0);
     
     document.getElementById('search-counter').innerText = `${searchHighlightedRows.length} resultado(s)`;
     
@@ -134,7 +135,7 @@ function clearSmartSearch() {
 function initRowHighlight() {
   if (!window.hot) return;
   
-  hot.addHook('afterSelection', (row, column, row2, column2) => {
+  window.hot.addHook('afterSelection', (row, column, row2, column2) => {
     const allRows = document.querySelectorAll('.htCore tbody tr');
     allRows.forEach(tr => tr.classList.remove('selected-row-highlight'));
     
@@ -227,7 +228,7 @@ function showKeyboardShortcutsHelp() {
 function updateRowCounter() {
   if (!window.hot) return;
   
-  const data = hot.getData() || [];
+  const data = window.hot.getData() || [];
   const totalRows = data.filter(r => r && r[0]).length;
   
   const counter = document.getElementById('row-counter');
@@ -318,7 +319,7 @@ function exportFormattedExcel() {
   });
   
   setTimeout(() => {
-    const data = hot.getData().filter(r => r[0]);
+    const data = window.hot.getData().filter(r => r[0]);
     
     const headers = [
       'ASSOCIAÇÃO', 'BENEFICIÁRIO', 'EVENTO TIPO', 'VEÍCULO', 'PLACA', 'DATA OFICINA',
@@ -335,7 +336,7 @@ function exportFormattedExcel() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Eventos_${monthLabel(currentYear, currentMonth)}_${Date.now()}.csv`;
+    a.download = `Eventos_${window.monthLabel(window.currentYear, window.currentMonth)}_${Date.now()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     
@@ -347,7 +348,7 @@ function exportFormattedExcel() {
 function updateAutocompleteCache() {
   if (!window.hot) return;
   
-  const data = hot.getData() || [];
+  const data = window.hot.getData() || [];
   
   const veiculos = new Set();
   const placas = new Set();
@@ -366,19 +367,23 @@ function updateAutocompleteCache() {
 
 // ============ 12. COMENTÁRIOS ============
 function addCommentToCurrentRow() {
+  console.log('💬 addCommentToCurrentRow chamada');
+  
   if (!window.hot) {
     Swal.fire('Erro', 'Tabela não carregada', 'error');
     return;
   }
   
-  const selected = hot.getSelected();
-  if (!selected) {
+  const selected = window.hot.getSelected();
+  console.log('📍 Linha selecionada:', selected);
+  
+  if (!selected || !selected[0]) {
     Swal.fire('Atenção', 'Selecione uma linha primeiro', 'warning');
     return;
   }
   
   const row = selected[0][0];
-  const placa = hot.getDataAtCell(row, 4);
+  const placa = window.hot.getDataAtCell(row, 4);
   
   if (!placa) {
     Swal.fire('Atenção', 'Esta linha não possui placa', 'warning');
@@ -424,19 +429,23 @@ function addCommentToCurrentRow() {
 
 // ============ 15. DUPLICAR EVENTO ============
 function duplicateCurrentEvent() {
+  console.log('📋 duplicateCurrentEvent chamada');
+  
   if (!window.hot) {
     Swal.fire('Erro', 'Tabela não carregada', 'error');
     return;
   }
   
-  const selected = hot.getSelected();
-  if (!selected) {
+  const selected = window.hot.getSelected();
+  console.log('📍 Linha selecionada:', selected);
+  
+  if (!selected || !selected[0]) {
     Swal.fire('Atenção', 'Selecione uma linha para duplicar', 'warning');
     return;
   }
   
   const row = selected[0][0];
-  const rowData = hot.getDataAtRow(row);
+  const rowData = window.hot.getDataAtRow(row);
   
   if (!rowData || !rowData[0]) {
     Swal.fire('Atenção', 'Selecione uma linha válida', 'warning');
@@ -455,9 +464,9 @@ function duplicateCurrentEvent() {
       const newRow = [...rowData];
       newRow[4] = ''; // Limpa a placa
       
-      hot.alter('insert_row_below', row, 1);
-      hot.populateFromArray(row + 1, 0, [newRow]);
-      hot.selectCell(row + 1, 0);
+      window.hot.alter('insert_row_below', row, 1);
+      window.hot.populateFromArray(row + 1, 0, [newRow]);
+      window.hot.selectCell(row + 1, 0);
       
       if (window.saveCurrentMonth) window.saveCurrentMonth();
       showNotification('Evento Duplicado', 'Registro copiado com sucesso', 'success');
@@ -467,19 +476,23 @@ function duplicateCurrentEvent() {
 
 // ============ 16. TAGS ============
 function addTagToCurrentRow() {
+  console.log('🏷️ addTagToCurrentRow chamada');
+  
   if (!window.hot) {
     Swal.fire('Erro', 'Tabela não carregada', 'error');
     return;
   }
   
-  const selected = hot.getSelected();
-  if (!selected) {
+  const selected = window.hot.getSelected();
+  console.log('📍 Linha selecionada:', selected);
+  
+  if (!selected || !selected[0]) {
     Swal.fire('Atenção', 'Selecione uma linha primeiro', 'warning');
     return;
   }
   
   const row = selected[0][0];
-  const placa = hot.getDataAtCell(row, 4);
+  const placa = window.hot.getDataAtCell(row, 4);
   
   if (!placa) {
     Swal.fire('Atenção', 'Esta linha não possui placa', 'warning');
@@ -617,13 +630,13 @@ function showCostCalculator() {
     }
   }).then((result) => {
     if (result.isConfirmed && window.hot) {
-      const selected = hot.getSelected();
-      if (selected) {
+      const selected = window.hot.getSelected();
+      if (selected && selected[0]) {
         const row = selected[0][0];
-        hot.setDataAtCell(row, 7, result.value.cota);
-        hot.setDataAtCell(row, 8, result.value.mao);
-        hot.setDataAtCell(row, 9, result.value.pecas);
-        hot.setDataAtCell(row, 10, result.value.outras);
+        window.hot.setDataAtCell(row, 7, result.value.cota);
+        window.hot.setDataAtCell(row, 8, result.value.mao);
+        window.hot.setDataAtCell(row, 9, result.value.pecas);
+        window.hot.setDataAtCell(row, 10, result.value.outras);
         showNotification('Valores Inseridos', 'Custos calculados e inseridos', 'success');
       }
     }
@@ -656,7 +669,7 @@ function initAllFeatures() {
   updateAutocompleteCache();
   
   if (window.hot) {
-    hot.addHook('afterChange', () => {
+    window.hot.addHook('afterChange', () => {
       updateRowCounter();
       updateAutocompleteCache();
     });
@@ -680,4 +693,5 @@ window.showOficinasMap = showOficinasMap;
 window.showCostCalculator = showCostCalculator;
 window.showKeyboardShortcutsHelp = showKeyboardShortcutsHelp;
 
-console.log('📦 features.js carregado - Funções disponíveis:', Object.keys(window).filter(k => k.includes('duplicate') || k.includes('Comment') || k.includes('Tag')));
+console.log('📦 features.js carregado!');
+console.log('✅ Funções exportadas:', ['duplicateCurrentEvent', 'addCommentToCurrentRow', 'addTagToCurrentRow', 'showCostCalculator']);

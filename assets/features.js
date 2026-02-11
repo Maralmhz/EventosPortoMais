@@ -1,5 +1,54 @@
 // ============ NOVAS FUNCIONALIDADES ============
 
+// ============ 7. MODO ESCURO - 🔥 CORRIGIDO ============
+// 🔥 IMPORTANTE: Declara e carrega preferência PRIMEIRO (antes de tudo)
+let darkModeEnabled = false;
+
+// Carrega do localStorage IMEDIATAMENTE
+try {
+  const saved = localStorage.getItem('darkMode');
+  darkModeEnabled = saved === 'true';
+  console.log('🌙 Modo escuro carregado:', darkModeEnabled);
+} catch (e) {
+  console.warn('Erro ao carregar preferência modo escuro:', e);
+}
+
+// Aplica IMEDIATAMENTE se estiver ativado
+if (darkModeEnabled) {
+  document.body.classList.add('dark-mode');
+  document.documentElement.classList.add('dark-mode');
+}
+
+function toggleDarkMode() {
+  darkModeEnabled = !darkModeEnabled;
+  localStorage.setItem('darkMode', darkModeEnabled.toString());
+  applyDarkMode();
+  
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'success',
+    title: darkModeEnabled ? '🌙 Modo Escuro Ativado' : '☀️ Modo Claro Ativado',
+    timer: 1500,
+    showConfirmButton: false
+  });
+}
+
+function applyDarkMode() {
+  if (darkModeEnabled) {
+    document.body.classList.add('dark-mode');
+    document.documentElement.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+    document.documentElement.classList.remove('dark-mode');
+  }
+  
+  const icon = document.getElementById('dark-mode-icon');
+  if (icon) {
+    icon.innerText = darkModeEnabled ? '☀️' : '🌙';
+  }
+}
+
 // ============ 1. BUSCA INTELIGENTE COM LUPA ============
 let searchHighlightedRows = [];
 
@@ -174,43 +223,6 @@ function updateRowCounter() {
   const counter = document.getElementById('row-counter');
   if (counter) {
     counter.innerHTML = `📊 <b>${totalRows}</b> evento(s)`;
-  }
-}
-
-// ============ 7. MODO ESCURO ============
-// 🔥 IMPORTANTE: Carrega preferência IMEDIATAMENTE
-let darkModeEnabled = localStorage.getItem('darkMode') === 'true';
-
-// 🔥 Aplica modo escuro IMEDIATAMENTE (antes de qualquer outra coisa)
-if (darkModeEnabled) {
-  document.body.classList.add('dark-mode');
-}
-
-function toggleDarkMode() {
-  darkModeEnabled = !darkModeEnabled;
-  localStorage.setItem('darkMode', darkModeEnabled);
-  applyDarkMode();
-  
-  Swal.fire({
-    toast: true,
-    position: 'top-end',
-    icon: 'success',
-    title: darkModeEnabled ? '🌙 Modo Escuro Ativado' : '☀️ Modo Claro Ativado',
-    timer: 1500,
-    showConfirmButton: false
-  });
-}
-
-function applyDarkMode() {
-  if (darkModeEnabled) {
-    document.body.classList.add('dark-mode');
-  } else {
-    document.body.classList.remove('dark-mode');
-  }
-  
-  const icon = document.getElementById('dark-mode-icon');
-  if (icon) {
-    icon.innerText = darkModeEnabled ? '☀️' : '🌙';
   }
 }
 

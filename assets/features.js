@@ -1,24 +1,32 @@
 // ============ NOVAS FUNCIONALIDADES ============
 
-// ============ 7. MODO ESCURO - 🔥 CORRIGIDO ============
-// 🔥 IMPORTANTE: Declara e carrega preferência PRIMEIRO (antes de tudo)
+// 🔥 VARIÁVEIS GLOBAIS - DECLARA TODAS NO INÍCIO
 let darkModeEnabled = false;
+let searchHighlightedRows = [];
+let notifications = [];
+let autocompleteCache = { veiculos: [], placas: [], beneficiarios: [] };
+let eventComments = {};
+let eventTags = {};
+const availableTags = ['Urgente', 'Revisão', 'Aguardando', 'Prioridade', 'Verificar', 'Pendente'];
 
-// Carrega do localStorage IMEDIATAMENTE
+// Carrega dados salvos
 try {
   const saved = localStorage.getItem('darkMode');
   darkModeEnabled = saved === 'true';
-  console.log('🌙 Modo escuro carregado:', darkModeEnabled);
+  eventComments = JSON.parse(localStorage.getItem('eventComments') || '{}');
+  eventTags = JSON.parse(localStorage.getItem('eventTags') || '{}');
+  console.log('🌙 Preferências carregadas');
 } catch (e) {
-  console.warn('Erro ao carregar preferência modo escuro:', e);
+  console.warn('Erro ao carregar preferências:', e);
 }
 
-// Aplica IMEDIATAMENTE se estiver ativado
+// Aplica modo escuro IMEDIATAMENTE
 if (darkModeEnabled) {
   document.body.classList.add('dark-mode');
   document.documentElement.classList.add('dark-mode');
 }
 
+// ============ 7. MODO ESCURO ============
 function toggleDarkMode() {
   darkModeEnabled = !darkModeEnabled;
   localStorage.setItem('darkMode', darkModeEnabled.toString());
@@ -49,9 +57,7 @@ function applyDarkMode() {
   }
 }
 
-// ============ 1. BUSCA INTELIGENTE COM LUPA ============
-let searchHighlightedRows = [];
-
+// ============ 1. BUSCA INTELIGENTE ============
 function initSmartSearch() {
   const searchBar = document.getElementById('smart-search-input');
   const searchBtn = document.getElementById('smart-search-btn');
@@ -73,6 +79,11 @@ function initSmartSearch() {
 }
 
 function performSmartSearch() {
+  if (!window.hot) {
+    Swal.fire('Erro', 'Tabela não carregada', 'error');
+    return;
+  }
+  
   const query = document.getElementById('smart-search-input').value.toLowerCase().trim();
   
   if (!query) {
@@ -95,13 +106,12 @@ function performSmartSearch() {
     return;
   }
   
-  // Vai para o primeiro resultado
   go('data');
   setTimeout(() => {
     hot.selectCell(searchHighlightedRows[0], 0);
     hot.scrollViewportTo(searchHighlightedRows[0], 0);
     
-    document.getElementById('search-counter').innerText = `${searchHighlightedRows.length} resultado(s) encontrado(s)`;
+    document.getElementById('search-counter').innerText = `${searchHighlightedRows.length} resultado(s)`;
     
     Swal.fire({
       toast: true,
@@ -120,16 +130,14 @@ function clearSmartSearch() {
   searchHighlightedRows = [];
 }
 
-// ============ 2. DESTAQUE DA LINHA INTEIRA AO EDITAR ============
+// ============ 2. DESTAQUE DA LINHA ============
 function initRowHighlight() {
-  if (!hot) return;
+  if (!window.hot) return;
   
   hot.addHook('afterSelection', (row, column, row2, column2) => {
-    // Remove destaque anterior
     const allRows = document.querySelectorAll('.htCore tbody tr');
     allRows.forEach(tr => tr.classList.remove('selected-row-highlight'));
     
-    // Adiciona destaque na linha selecionada
     setTimeout(() => {
       const selectedRows = document.querySelectorAll('.htCore tbody tr');
       if (selectedRows[row]) {
@@ -140,23 +148,23 @@ function initRowHighlight() {
 }
 
 // ============ 3. ATALHOS DE TECLADO ============
-const KEYBOARD_SHORTCUTS = {
-  'ctrl+s': saveCurrentMonthWithChecks,
-  'ctrl+f': () => document.getElementById('smart-search-input')?.focus(),
-  'ctrl+n': () => { if (hot) hot.alter('insert_row_below'); },
-  'ctrl+d': duplicateCurrentEvent,
-  'ctrl+e': exportData,
-  'f1': () => go('dash'),
-  'f2': () => go('data'),
-  'f3': () => go('compare'),
-  'f4': () => go('juridico'),
-  'f5': () => go('oficinas'),
-  'ctrl+shift+d': toggleDarkMode,
-  'ctrl+shift+c': () => addCommentToCurrentRow(),
-  'ctrl+shift+t': () => addTagToCurrentRow()
-};
-
 function initKeyboardShortcuts() {
+  const KEYBOARD_SHORTCUTS = {
+    'ctrl+s': () => { if (window.saveCurrentMonthWithChecks) window.saveCurrentMonthWithChecks(); },
+    'ctrl+f': () => document.getElementById('smart-search-input')?.focus(),
+    'ctrl+n': () => { if (window.hot) window.hot.alter('insert_row_below'); },
+    'ctrl+d': () => { if (window.duplicateCurrentEvent) window.duplicateCurrentEvent(); },
+    'ctrl+e': () => { if (window.exportData) window.exportData(); },
+    'f1': () => { if (window.go) window.go('dash'); },
+    'f2': () => { if (window.go) window.go('data'); },
+    'f3': () => { if (window.go) window.go('compare'); },
+    'f4': () => { if (window.go) window.go('juridico'); },
+    'f5': () => { if (window.go) window.go('oficinas'); },
+    'ctrl+shift+d': toggleDarkMode,
+    'ctrl+shift+c': () => addCommentToCurrentRow(),
+    'ctrl+shift+t': () => addTagToCurrentRow()
+  };
+  
   document.addEventListener('keydown', (e) => {
     const key = [];
     if (e.ctrlKey) key.push('ctrl');
@@ -217,8 +225,10 @@ function showKeyboardShortcutsHelp() {
 
 // ============ 4. CONTADOR DE LINHAS ============
 function updateRowCounter() {
-  const data = hot?.getData() || [];
-  const totalRows = data.filter(r => r[0]).length;
+  if (!window.hot) return;
+  
+  const data = hot.getData() || [];
+  const totalRows = data.filter(r => r && r[0]).length;
   
   const counter = document.getElementById('row-counter');
   if (counter) {
@@ -226,9 +236,7 @@ function updateRowCounter() {
   }
 }
 
-// ============ 8. NOTIFICAÇÕES PUSH ============
-let notifications = [];
-
+// ============ 8. NOTIFICAÇÕES ============
 function showNotification(title, message, type = 'info') {
   const notification = {
     id: Date.now(),
@@ -240,12 +248,10 @@ function showNotification(title, message, type = 'info') {
   
   notifications.unshift(notification);
   
-  // Limita a 50 notificações
   if (notifications.length > 50) {
     notifications = notifications.slice(0, 50);
   }
   
-  // Toast notification
   Swal.fire({
     toast: true,
     position: 'top-end',
@@ -297,8 +303,13 @@ function showNotificationPanel() {
   updateNotificationBadge();
 }
 
-// ============ 9. EXPORTAR EXCEL FORMATADO ============
+// ============ 9. EXPORTAR EXCEL ============
 function exportFormattedExcel() {
+  if (!window.hot || !window.currentYear || !window.currentMonth || !window.monthLabel) {
+    Swal.fire('Erro', 'Dados não carregados', 'error');
+    return;
+  }
+  
   Swal.fire({
     title: '📊 Exportar Excel',
     html: '<p>Gerando arquivo Excel formatado...</p>',
@@ -309,7 +320,6 @@ function exportFormattedExcel() {
   setTimeout(() => {
     const data = hot.getData().filter(r => r[0]);
     
-    // Adiciona cabeçalhos
     const headers = [
       'ASSOCIAÇÃO', 'BENEFICIÁRIO', 'EVENTO TIPO', 'VEÍCULO', 'PLACA', 'DATA OFICINA',
       'OFICINA', 'COTA', 'MÃO DE OBRA', 'PEÇAS', 'OUTRAS DESPESAS', 'GASTOS TOTAIS',
@@ -333,15 +343,11 @@ function exportFormattedExcel() {
   }, 500);
 }
 
-// ============ 10. AUTOCOMPLETE INTELIGENTE ============
-let autocompleteCache = {
-  veiculos: [],
-  placas: [],
-  beneficiarios: []
-};
-
+// ============ 10. AUTOCOMPLETE ============
 function updateAutocompleteCache() {
-  const data = hot?.getData() || [];
+  if (!window.hot) return;
+  
+  const data = hot.getData() || [];
   
   const veiculos = new Set();
   const placas = new Set();
@@ -358,10 +364,13 @@ function updateAutocompleteCache() {
   autocompleteCache.beneficiarios = Array.from(beneficiarios).slice(0, 100);
 }
 
-// ============ 12. COMENTÁRIOS POR EVENTO ============
-let eventComments = JSON.parse(localStorage.getItem('eventComments') || '{}');
-
+// ============ 12. COMENTÁRIOS ============
 function addCommentToCurrentRow() {
+  if (!window.hot) {
+    Swal.fire('Erro', 'Tabela não carregada', 'error');
+    return;
+  }
+  
   const selected = hot.getSelected();
   if (!selected) {
     Swal.fire('Atenção', 'Selecione uma linha primeiro', 'warning');
@@ -369,15 +378,14 @@ function addCommentToCurrentRow() {
   }
   
   const row = selected[0][0];
-  const placa = normalizePlaca(hot.getDataAtCell(row, 4));
+  const placa = hot.getDataAtCell(row, 4);
   
   if (!placa) {
     Swal.fire('Atenção', 'Esta linha não possui placa', 'warning');
     return;
   }
   
-  const commentKey = `${monthKey(currentYear, currentMonth)}_${placa}`;
-  const existingComments = eventComments[commentKey] || [];
+  const commentKey = `${window.currentYear}_${window.currentMonth}_${placa}`;
   
   Swal.fire({
     title: '💬 Comentário',
@@ -414,43 +422,13 @@ function addCommentToCurrentRow() {
   });
 }
 
-function viewCommentsForRow(row) {
-  const placa = normalizePlaca(hot.getDataAtCell(row, 4));
-  
-  if (!placa) {
-    Swal.fire('Atenção', 'Esta linha não possui placa', 'warning');
-    return;
-  }
-  
-  const commentKey = `${monthKey(currentYear, currentMonth)}_${placa}`;
-  const comments = eventComments[commentKey] || [];
-  
-  if (comments.length === 0) {
-    Swal.fire('Sem comentários', `Nenhum comentário para ${placa}`, 'info');
-    return;
-  }
-  
-  const html = `
-    <div class="text-left max-h-96 overflow-y-auto">
-      ${comments.map(c => `
-        <div class="border-b p-3 bg-gray-50 rounded mb-2">
-          <p class="text-sm">${c.text}</p>
-          <p class="text-xs text-gray-400 mt-1">${c.user} • ${c.timestamp}</p>
-        </div>
-      `).join('')}
-    </div>
-  `;
-  
-  Swal.fire({
-    title: `💬 Comentários - ${placa}`,
-    html: html,
-    width: '600px',
-    confirmButtonText: 'Fechar'
-  });
-}
-
 // ============ 15. DUPLICAR EVENTO ============
 function duplicateCurrentEvent() {
+  if (!window.hot) {
+    Swal.fire('Erro', 'Tabela não carregada', 'error');
+    return;
+  }
+  
   const selected = hot.getSelected();
   if (!selected) {
     Swal.fire('Atenção', 'Selecione uma linha para duplicar', 'warning');
@@ -460,7 +438,7 @@ function duplicateCurrentEvent() {
   const row = selected[0][0];
   const rowData = hot.getDataAtRow(row);
   
-  if (!rowData[0]) {
+  if (!rowData || !rowData[0]) {
     Swal.fire('Atenção', 'Selecione uma linha válida', 'warning');
     return;
   }
@@ -481,17 +459,19 @@ function duplicateCurrentEvent() {
       hot.populateFromArray(row + 1, 0, [newRow]);
       hot.selectCell(row + 1, 0);
       
-      saveCurrentMonth();
+      if (window.saveCurrentMonth) window.saveCurrentMonth();
       showNotification('Evento Duplicado', 'Registro copiado com sucesso', 'success');
     }
   });
 }
 
-// ============ 16. TAGS PERSONALIZADAS ============
-let eventTags = JSON.parse(localStorage.getItem('eventTags') || '{}');
-const availableTags = ['Urgente', 'Revisão', 'Aguardando', 'Prioridade', 'Verificar', 'Pendente'];
-
+// ============ 16. TAGS ============
 function addTagToCurrentRow() {
+  if (!window.hot) {
+    Swal.fire('Erro', 'Tabela não carregada', 'error');
+    return;
+  }
+  
   const selected = hot.getSelected();
   if (!selected) {
     Swal.fire('Atenção', 'Selecione uma linha primeiro', 'warning');
@@ -499,14 +479,14 @@ function addTagToCurrentRow() {
   }
   
   const row = selected[0][0];
-  const placa = normalizePlaca(hot.getDataAtCell(row, 4));
+  const placa = hot.getDataAtCell(row, 4);
   
   if (!placa) {
     Swal.fire('Atenção', 'Esta linha não possui placa', 'warning');
     return;
   }
   
-  const tagKey = `${monthKey(currentYear, currentMonth)}_${placa}`;
+  const tagKey = `${window.currentYear}_${window.currentMonth}_${placa}`;
   const currentTags = eventTags[tagKey] || [];
   
   const html = `
@@ -517,7 +497,7 @@ function addTagToCurrentRow() {
           const active = currentTags.includes(tag);
           return `
             <button 
-              onclick="toggleTagSelection('${tag}')" 
+              onclick="window.toggleTagSelection('${tag}')" 
               class="tag-btn ${active ? 'active' : ''}"
               id="tag-btn-${tag}"
             >
@@ -577,14 +557,6 @@ window.toggleTagSelection = function(tag) {
   }
 };
 
-function getTagsForRow(row) {
-  const placa = normalizePlaca(hot.getDataAtCell(row, 4));
-  if (!placa) return [];
-  
-  const tagKey = `${monthKey(currentYear, currentMonth)}_${placa}`;
-  return eventTags[tagKey] || [];
-}
-
 // ============ 14. MAPA DE OFICINAS ============
 function showOficinasMap() {
   Swal.fire({
@@ -595,7 +567,7 @@ function showOficinasMap() {
   });
 }
 
-// ============ 15. CALCULADORA DE CUSTOS ============
+// ============ 15. CALCULADORA ============
 function showCostCalculator() {
   Swal.fire({
     title: '💰 Calculadora de Custos',
@@ -644,7 +616,7 @@ function showCostCalculator() {
       };
     }
   }).then((result) => {
-    if (result.isConfirmed) {
+    if (result.isConfirmed && window.hot) {
       const selected = hot.getSelected();
       if (selected) {
         const row = selected[0][0];
@@ -674,26 +646,27 @@ function updateCalcTotal() {
 
 // ============ INICIALIZAÇÃO ============
 function initAllFeatures() {
+  console.log('🚀 Inicializando features...');
+  
   initSmartSearch();
   initRowHighlight();
   initKeyboardShortcuts();
-  applyDarkMode(); // Atualiza o ícone
+  applyDarkMode();
   updateRowCounter();
   updateAutocompleteCache();
   
-  // Atualiza contador quando dados mudam
-  if (hot) {
+  if (window.hot) {
     hot.addHook('afterChange', () => {
       updateRowCounter();
       updateAutocompleteCache();
     });
   }
   
-  console.log('✅ Todas as novas funcionalidades carregadas!');
+  console.log('✅ Features carregadas!');
   console.log(`🌙 Modo escuro: ${darkModeEnabled ? 'ATIVADO' : 'DESATIVADO'}`);
 }
 
-// Exporta funções globais
+// 🔥 EXPORTA TODAS AS FUNÇÕES PARA O ESCOPO GLOBAL
 window.initAllFeatures = initAllFeatures;
 window.performSmartSearch = performSmartSearch;
 window.clearSmartSearch = clearSmartSearch;
@@ -706,3 +679,5 @@ window.addTagToCurrentRow = addTagToCurrentRow;
 window.showOficinasMap = showOficinasMap;
 window.showCostCalculator = showCostCalculator;
 window.showKeyboardShortcutsHelp = showKeyboardShortcutsHelp;
+
+console.log('📦 features.js carregado - Funções disponíveis:', Object.keys(window).filter(k => k.includes('duplicate') || k.includes('Comment') || k.includes('Tag')));

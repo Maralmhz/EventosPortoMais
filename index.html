@@ -3,1773 +3,858 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Porto+ Eventos — Gestão de Proteção Veicular</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <title>Gerenciador de Eventos - Porto Mais</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <link href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" rel="stylesheet" />
+  <link href="assets/styles.css" rel="stylesheet" />
+  <link href="assets/features.css" rel="stylesheet" />
+
   <style>
-    /* ===== DESIGN TOKENS ===== */
-    :root {
-      --bg: #0b0f1a;
-      --bg2: #111827;
-      --bg3: #1a2235;
-      --surface: #1e2d40;
-      --surface2: #243448;
-      --border: #2a3f58;
-      --border2: #344d6b;
-      --text: #e8f0f8;
-      --text2: #8fa3bc;
-      --text3: #5a7395;
-      --accent: #1d6ae5;
-      --accent2: #2575f0;
-      --accent-glow: rgba(29,106,229,0.25);
-      --green: #10b981;
-      --green-bg: rgba(16,185,129,0.1);
-      --red: #ef4444;
-      --red-bg: rgba(239,68,68,0.1);
-      --amber: #f59e0b;
-      --amber-bg: rgba(245,158,11,0.1);
-      --purple: #8b5cf6;
-      --purple-bg: rgba(139,92,246,0.1);
-      --cyan: #06b6d4;
-      --radius: 10px;
-      --radius-lg: 16px;
-      --shadow: 0 4px 24px rgba(0,0,0,0.4);
-      --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
-      --font: 'Sora', sans-serif;
-      --mono: 'JetBrains Mono', monospace;
-      --transition: 0.18s ease;
+    @keyframes shimmer { 0%,100%{background-position:200% center;} 50%{background-position:-200% center;} }
+    @keyframes pulse-glow { 0%,100%{box-shadow:0 0 20px rgba(59,130,246,0.3);} 50%{box-shadow:0 0 30px rgba(59,130,246,0.6);} }
+    @keyframes float { 0%,100%{transform:translateY(0px);} 50%{transform:translateY(-6px);} }
+    @keyframes countUp { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+    .layout { display: flex; height: 100vh; overflow: hidden; }
+
+    .sidebar { width: 60px; background: linear-gradient(180deg, #002B5C 0%, #001b3a 100%); color: #fff; flex-shrink: 0; display: flex; flex-direction: column; position: relative; transition: width .2s ease; }
+
+    .sidebar .menu { padding: 10px; padding-top: 20px; display:flex; flex-direction:column; gap:10px; overflow:auto; }
+    .sidebar .item { display:flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius: 12px; cursor:pointer; font-size:24px; color: rgba(255,255,255,.88); transition: all .15s ease; margin:0 auto; }
+    .sidebar .item:hover { background: rgba(255,255,255,.10); transform: scale(1.1); }
+    .sidebar .item.active { background: rgba(255,255,255,.16); color:#fff; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+
+    .sidebar .footer { margin-top:auto; padding: 12px; border-top: 1px solid rgba(255,255,255,.08); text-align:center; }
+    .sidebar .footer .badge { font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 999px; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; display:inline-block; }
+
+    .content { flex:1; background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%); overflow:auto; }
+
+    .topbar { position: sticky; top:0; z-index: 50; background: rgba(255,255,255,.95); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(0,0,0,.06); padding: 14px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 2px 12px rgba(0,0,0,.04); }
+    .badge { font-size: 12px; font-weight: 800; padding: 6px 12px; border-radius: 999px; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; box-shadow:0 4px 12px rgba(102,126,234,.3); }
+
+    .page { display:none; padding: 24px; animation: pageIn .35s ease both; }
+    .page.active { display:block; }
+    @keyframes pageIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
+
+    .card { background:#fff; border-radius:16px; padding:20px; box-shadow:0 4px 20px rgba(0,0,0,.06); transition:transform .2s ease, box-shadow .2s ease; border:1px solid rgba(0,0,0,.04); }
+    .card:hover { transform:translateY(-3px); box-shadow:0 12px 30px rgba(0,0,0,.1); }
+
+    .kpi-card { background:linear-gradient(135deg, #fff 0%, #f8f9ff 100%); border-radius:16px; padding:20px; cursor:pointer; user-select:none; transition:all .25s cubic-bezier(.4,0,.2,1); border-left:4px solid; position:relative; overflow:hidden; }
+    .kpi-card::before { content:''; position:absolute; top:0; right:0; width:80px; height:80px; background:radial-gradient(circle, rgba(255,255,255,.4) 0%, transparent 70%); border-radius:50%; transform:translate(30%,-30%); }
+    .kpi-card:hover { transform:translateY(-4px) scale(1.02); box-shadow:0 16px 40px rgba(0,0,0,.12); }
+    .kpi-card:active { transform:translateY(-2px) scale(1.01); }
+    .kpi-label { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#64748b; margin-bottom:8px; }
+    .kpi-value { font-size:32px; font-weight:900; margin-bottom:4px; background:linear-gradient(135deg, #1e293b 0%, #475569 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; animation:countUp .6s ease-out; }
+    .kpi-sub { font-size:11px; color:#94a3b8; font-weight:600; }
+
+    .chart-card { background:#fff; border-radius:20px; padding:24px; box-shadow:0 8px 30px rgba(0,0,0,.08); border:1px solid rgba(0,0,0,.04); }
+
+    .open-panel-item { cursor:pointer; transition: all .2s ease; border-radius:12px; }
+    .open-panel-item:hover { background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); transform: translateX(4px); }
+
+    .sync-badge { display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; padding:6px 12px; border-radius:999px; font-size:11px; font-weight:800; box-shadow:0 4px 12px rgba(16,185,129,.3); animation:pulse-glow 2s infinite; }
+    
+    .ranking-item { display:flex; align-items:center; gap:12px; padding:12px; background:#f8fafc; border-radius:8px; margin-bottom:8px; transition:all .2s ease; }
+    .ranking-item:hover { background:#e2e8f0; transform:translateX(4px); }
+    .ranking-pos { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; flex-shrink:0; }
+    .ranking-pos.gold { background:linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); }
+    .ranking-pos.silver { background:linear-gradient(135deg, #94a3b8 0%, #64748b 100%); }
+    .ranking-pos.bronze { background:linear-gradient(135deg, #fb923c 0%, #ea580c 100%); }
+    .ranking-info { flex:1; }
+    .ranking-name { font-weight:800; font-size:14px; color:#1e293b; }
+    .ranking-details { font-size:11px; color:#64748b; margin-top:2px; }
+    .ranking-value { font-weight:900; font-size:16px; color:#3b82f6; text-align:right; }
+
+    .category-badge { display:inline-block; padding:4px 10px; border-radius:999px; font-size:10px; font-weight:800; margin:2px; }
+    .cat-mecanica { background:#3b82f6; color:#fff; }
+    .cat-lanternagem { background:#f59e0b; color:#fff; }
+    .cat-lantmec { background:#8b5cf6; color:#fff; }
+    .cat-vidros { background:#06b6d4; color:#fff; }
+    .cat-arcond { background:#10b981; color:#fff; }
+    .cat-eletrica { background:#eab308; color:#fff; }
+    .cat-alinhamento { background:#ec4899; color:#fff; }
+    .cat-estofaria { background:#f43f5e; color:#fff; }
+    .cat-funilaria { background:#64748b; color:#fff; }
+    .cat-pintura { background:#a855f7; color:#fff; }
+
+    .month-nav-btn { 
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+      color: white; 
+      padding: 8px 16px; 
+      border-radius: 8px; 
+      font-weight: 700; 
+      font-size: 14px; 
+      cursor: pointer; 
+      border: none; 
+      transition: all .2s ease;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
+    .month-nav-btn:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
     }
-    a { color: inherit; text-decoration: none; }
-    button { cursor: pointer; font-family: var(--font); }
-    input, select, textarea { font-family: var(--font); }
-
-    /* ===== SCROLLBAR ===== */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg2); }
-    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
-    /* ===== LAYOUT ===== */
-    .app-wrapper { display: flex; min-height: 100vh; }
-
-    /* ===== SIDEBAR ===== */
-    .sidebar {
-      width: 220px;
-      background: var(--bg2);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
+    
+    /* ✨ BARRA DE AÇÕES RÁPIDAS - MELHORADA */
+    .quick-action-bar {
       position: fixed;
-      top: 0; left: 0;
-      height: 100vh;
-      z-index: 100;
-      transition: var(--transition);
-    }
-    .sidebar-logo {
-      padding: 20px 20px 16px;
-      border-bottom: 1px solid var(--border);
-    }
-    .logo-mark {
-      display: flex; align-items: center; gap: 10px;
-    }
-    .logo-icon {
-      width: 36px; height: 36px;
-      background: linear-gradient(135deg, var(--accent), #0a4fa8);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-    }
-    .logo-text { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
-    .logo-sub { font-size: 10px; color: var(--text3); margin-top: 1px; letter-spacing: 0.06em; text-transform: uppercase; }
-
-    .sidebar-nav { padding: 12px 8px; flex: 1; display: flex; flex-direction: column; gap: 2px; }
-    .nav-section-label {
-      font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--text3); padding: 8px 12px 4px;
-    }
-    .nav-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 9px 12px; border-radius: 8px;
-      color: var(--text2); font-size: 13px; font-weight: 500;
-      cursor: pointer; transition: var(--transition); border: none;
-      background: transparent; width: 100%; text-align: left;
-    }
-    .nav-item:hover { background: var(--surface); color: var(--text); }
-    .nav-item.active {
-      background: var(--accent-glow);
-      color: var(--accent2);
-      border: 1px solid rgba(29,106,229,0.3);
-    }
-    .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
-    .nav-badge {
-      margin-left: auto; background: var(--red);
-      color: #fff; font-size: 10px; font-weight: 700;
-      padding: 1px 6px; border-radius: 10px;
-    }
-
-    .sidebar-footer {
-      padding: 12px 8px;
-      border-top: 1px solid var(--border);
-    }
-    .demo-badge {
-      background: var(--amber-bg);
-      border: 1px solid rgba(245,158,11,0.3);
-      color: var(--amber);
-      font-size: 10px; font-weight: 600;
-      padding: 6px 10px; border-radius: 6px;
-      letter-spacing: 0.05em; text-align: center;
-    }
-
-    /* ===== MAIN ===== */
-    .main-content {
-      margin-left: 220px;
-      flex: 1;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
       display: flex;
       flex-direction: column;
+      gap: 12px;
     }
-
-    /* ===== TOPBAR ===== */
-    .topbar {
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
-      padding: 0 24px;
+    
+    .quick-action-btn {
+      width: 56px;
       height: 56px;
-      display: flex; align-items: center; gap: 16px;
-      position: sticky; top: 0; z-index: 50;
-    }
-    .topbar-title { font-size: 15px; font-weight: 600; }
-    .topbar-spacer { flex: 1; }
-    .topbar-time {
-      font-family: var(--mono);
-      font-size: 12px; color: var(--text3);
-    }
-    .topbar-btn {
-      width: 32px; height: 32px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 6px; display: flex; align-items: center; justify-content: center;
-      font-size: 15px; transition: var(--transition); color: var(--text2);
-    }
-    .topbar-btn:hover { background: var(--surface2); color: var(--text); }
-
-    /* ===== PAGE CONTENT ===== */
-    .page { padding: 24px; display: none; }
-    .page.active { display: block; }
-
-    /* ===== TOAST ===== */
-    #toast-container {
-      position: fixed; top: 20px; right: 20px;
-      z-index: 9999; display: flex; flex-direction: column; gap: 8px;
-    }
-    .toast {
-      min-width: 280px; max-width: 360px;
-      background: var(--surface);
-      border: 1px solid var(--border2);
-      border-radius: 10px;
-      padding: 12px 16px;
-      display: flex; align-items: flex-start; gap: 10px;
-      box-shadow: var(--shadow);
-      animation: toastIn 0.25s ease;
-    }
-    .toast.success { border-color: var(--green); }
-    .toast.error { border-color: var(--red); }
-    .toast.warning { border-color: var(--amber); }
-    .toast-icon { font-size: 18px; margin-top: 1px; flex-shrink: 0; }
-    .toast-body { flex: 1; }
-    .toast-title { font-size: 13px; font-weight: 600; }
-    .toast-msg { font-size: 12px; color: var(--text2); margin-top: 2px; }
-    .toast-close { background: none; border: none; color: var(--text3); font-size: 16px; padding: 0; line-height: 1; }
-    @keyframes toastIn {
-      from { opacity: 0; transform: translateX(20px); }
-      to { opacity: 1; transform: translateX(0); }
-    }
-
-    /* ===== KPI CARDS ===== */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    .kpi-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s ease;
+      border: none;
       position: relative;
-      overflow: hidden;
-      transition: var(--transition);
     }
-    .kpi-card:hover { border-color: var(--border2); transform: translateY(-2px); }
-    .kpi-card::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    
+    .quick-action-btn:hover {
+      transform: scale(1.15);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
     }
-    .kpi-card.blue::before { background: linear-gradient(90deg, var(--accent), var(--cyan)); }
-    .kpi-card.green::before { background: linear-gradient(90deg, var(--green), #34d399); }
-    .kpi-card.amber::before { background: linear-gradient(90deg, var(--amber), #fcd34d); }
-    .kpi-card.red::before { background: linear-gradient(90deg, var(--red), #f87171); }
-    .kpi-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3); }
-    .kpi-value { font-size: 28px; font-weight: 700; margin: 8px 0 4px; letter-spacing: -0.02em; }
-    .kpi-sub { font-size: 11px; color: var(--text2); }
-    .kpi-icon {
-      position: absolute; right: 16px; top: 50%;
-      transform: translateY(-50%);
-      font-size: 32px; opacity: 0.12;
+    
+    .quick-action-btn:active {
+      transform: scale(0.95);
     }
-
-    /* ===== CHARTS ===== */
-    .charts-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    .chart-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 20px;
-    }
-    .chart-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 16px;
-    }
-    .chart-title { font-size: 13px; font-weight: 600; }
-    .chart-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
-
-    /* Bar chart */
-    .bar-chart { display: flex; flex-direction: column; gap: 8px; }
-    .bar-row { display: flex; align-items: center; gap: 10px; }
-    .bar-label { font-size: 11px; color: var(--text2); width: 110px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .bar-track { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
-    .bar-count { font-size: 11px; font-family: var(--mono); color: var(--text2); width: 28px; text-align: right; }
-
-    /* Pie chart */
-    .pie-legend { display: flex; flex-direction: column; gap: 8px; }
-    .pie-legend-row { display: flex; align-items: center; gap: 8px; }
-    .pie-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .pie-legend-label { font-size: 11px; color: var(--text2); flex: 1; }
-    .pie-legend-pct { font-size: 11px; font-family: var(--mono); color: var(--text); }
-
-    /* Line chart */
-    .line-chart-wrap { position: relative; height: 120px; }
-    .line-chart-labels {
-      display: flex; justify-content: space-between;
-      margin-top: 6px;
-    }
-    .line-chart-label { font-size: 10px; color: var(--text3); }
-
-    /* ===== TABLE ===== */
-    .table-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-    }
-    .table-toolbar {
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
-      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-    }
-    .search-wrap { position: relative; flex: 1; min-width: 200px; }
-    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 14px; pointer-events: none; }
-    .search-input {
-      width: 100%; background: var(--bg3);
-      border: 1px solid var(--border); border-radius: 8px;
-      padding: 8px 12px 8px 32px;
-      color: var(--text); font-size: 13px;
-      outline: none; transition: var(--transition);
-    }
-    .search-input:focus { border-color: var(--accent); background: var(--bg2); }
-    .filter-select {
-      background: var(--bg3); border: 1px solid var(--border);
-      border-radius: 8px; padding: 8px 12px;
-      color: var(--text); font-size: 12px;
-      outline: none; cursor: pointer;
-    }
-    .filter-select:focus { border-color: var(--accent); }
-    .filter-select option { background: var(--bg2); }
-    .btn-sm {
-      padding: 8px 14px; border-radius: 8px;
-      font-size: 12px; font-weight: 600;
-      border: 1px solid; transition: var(--transition);
-    }
-    .btn-primary {
-      background: var(--accent); color: #fff;
-      border-color: var(--accent);
-    }
-    .btn-primary:hover { background: var(--accent2); }
-    .btn-ghost {
-      background: transparent; color: var(--text2);
-      border-color: var(--border);
-    }
-    .btn-ghost:hover { background: var(--surface2); color: var(--text); }
-    .btn-danger {
-      background: var(--red-bg); color: var(--red);
-      border-color: var(--red);
-    }
-    .btn-danger:hover { background: var(--red); color: #fff; }
-
-    .data-table { width: 100%; border-collapse: collapse; }
-    .data-table th {
-      padding: 10px 16px;
-      font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
-      text-transform: uppercase; color: var(--text3);
-      text-align: left; background: var(--bg3);
-      border-bottom: 1px solid var(--border);
-      cursor: pointer; user-select: none;
+    
+    .quick-action-btn::before {
+      content: attr(data-tooltip);
+      position: absolute;
+      right: 70px;
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
       white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
     }
-    .data-table th:hover { color: var(--text2); }
-    .data-table td {
-      padding: 12px 16px;
-      font-size: 12px; color: var(--text);
-      border-bottom: 1px solid var(--border);
-      transition: background var(--transition);
+    
+    .quick-action-btn:hover::before {
+      opacity: 1;
     }
-    .data-table tr:last-child td { border-bottom: none; }
-    .data-table tbody tr:hover td { background: var(--bg3); }
-
-    .badge {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 8px; border-radius: 20px;
-      font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
-      border: 1px solid;
+    
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
     }
-    .badge-green { background: var(--green-bg); color: var(--green); border-color: rgba(16,185,129,0.3); }
-    .badge-red { background: var(--red-bg); color: var(--red); border-color: rgba(239,68,68,0.3); }
-    .badge-amber { background: var(--amber-bg); color: var(--amber); border-color: rgba(245,158,11,0.3); }
-    .badge-blue { background: var(--accent-glow); color: var(--accent2); border-color: rgba(29,106,229,0.3); }
-    .badge-purple { background: var(--purple-bg); color: var(--purple); border-color: rgba(139,92,246,0.3); }
-    .badge-gray { background: rgba(100,116,139,0.1); color: #94a3b8; border-color: rgba(100,116,139,0.3); }
-
-    .placa-text {
-      font-family: var(--mono);
-      font-size: 11px;
-      background: var(--bg3);
-      padding: 2px 6px; border-radius: 4px;
-      border: 1px solid var(--border);
-      letter-spacing: 0.1em;
-    }
-    .cpf-text { font-family: var(--mono); font-size: 11px; color: var(--text2); }
-    .valor-text { font-family: var(--mono); font-size: 12px; font-weight: 600; }
-
-    /* Pagination */
-    .pagination {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 20px;
-      border-top: 1px solid var(--border);
-    }
-    .pagination-info { font-size: 12px; color: var(--text3); }
-    .pagination-buttons { display: flex; gap: 4px; }
-    .page-btn {
-      width: 30px; height: 30px;
-      background: var(--bg3); border: 1px solid var(--border);
-      border-radius: 6px; color: var(--text2);
-      font-size: 12px; display: flex; align-items: center; justify-content: center;
-      transition: var(--transition);
-    }
-    .page-btn:hover { background: var(--surface2); color: var(--text); }
-    .page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-    .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-    /* ===== MODAL ===== */
-    .modal-overlay {
-      position: fixed; inset: 0; z-index: 200;
-      background: rgba(0,0,0,0.7);
-      display: flex; align-items: center; justify-content: center;
-      backdrop-filter: blur(4px);
-      animation: fadeIn 0.2s ease;
-    }
-    .modal-overlay.hidden { display: none; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .modal {
-      background: var(--bg2);
-      border: 1px solid var(--border2);
-      border-radius: var(--radius-lg);
-      width: 100%; max-width: 560px;
-      max-height: 90vh; overflow-y: auto;
-      animation: modalIn 0.25s ease;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-    }
-    @keyframes modalIn {
-      from { opacity: 0; transform: scale(0.96) translateY(10px); }
-      to { opacity: 1; transform: scale(1) translateY(0); }
-    }
-    .modal-header {
-      padding: 20px 24px 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .modal-title { font-size: 15px; font-weight: 700; }
-    .modal-close {
-      width: 28px; height: 28px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 6px; font-size: 16px; color: var(--text2);
-      display: flex; align-items: center; justify-content: center;
-      transition: var(--transition);
-    }
-    .modal-close:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
-    .modal-body { padding: 20px 24px; }
-    .modal-footer {
-      padding: 16px 24px;
-      border-top: 1px solid var(--border);
-      display: flex; gap: 10px; justify-content: flex-end;
-    }
-
-    /* ===== FORM ===== */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .form-group { display: flex; flex-direction: column; gap: 5px; }
-    .form-group.full { grid-column: 1 / -1; }
-    .form-label { font-size: 11px; font-weight: 600; color: var(--text2); letter-spacing: 0.04em; text-transform: uppercase; }
-    .form-input {
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: 8px; padding: 9px 12px;
-      color: var(--text); font-size: 13px;
-      outline: none; transition: var(--transition); width: 100%;
-    }
-    .form-input:focus { border-color: var(--accent); background: var(--bg2); box-shadow: 0 0 0 3px var(--accent-glow); }
-    .form-input.error { border-color: var(--red); }
-    .form-error { font-size: 10px; color: var(--red); margin-top: 2px; }
-    .form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%235a7395' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; padding-right: 30px; }
-
-    .checkbox-group { display: flex; gap: 16px; flex-wrap: wrap; }
-    .checkbox-item { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-    .checkbox-item input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
-    .checkbox-label { font-size: 12px; color: var(--text2); }
-
-    /* ===== SIMULATOR ===== */
-    .sim-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .sim-result {
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 20px;
-    }
-    .sim-result-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 14px; }
-    .sim-result-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 0; border-bottom: 1px solid var(--border);
-      font-size: 12px;
-    }
-    .sim-result-row:last-child { border-bottom: none; }
-    .sim-result-row.total {
-      margin-top: 8px; padding-top: 12px;
-      border-top: 2px solid var(--border2);
-    }
-    .sim-result-label { color: var(--text2); }
-    .sim-result-value { font-family: var(--mono); font-weight: 600; }
-    .sim-result-total-value {
-      font-family: var(--mono);
-      font-size: 22px; font-weight: 700;
-      color: var(--accent2);
-    }
-    .sim-empty {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 8px;
-      height: 200px; color: var(--text3); text-align: center;
-    }
-    .sim-empty-icon { font-size: 40px; opacity: 0.3; }
-    .alert-box {
-      padding: 12px 14px;
+    
+    .month-cell {
+      padding: 12px;
+      text-align: center;
       border-radius: 8px;
-      font-size: 12px;
-      border: 1px solid;
-      margin-top: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      transition: all .2s ease;
+      border: 2px solid transparent;
     }
-    .alert-warning { background: var(--amber-bg); border-color: rgba(245,158,11,0.3); color: var(--amber); }
-    .alert-info { background: var(--accent-glow); border-color: rgba(29,106,229,0.3); color: var(--accent2); }
-    .alert-success { background: var(--green-bg); border-color: rgba(16,185,129,0.3); color: var(--green); }
-
-    /* ===== DETAIL VIEW ===== */
-    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .detail-item { background: var(--bg3); border-radius: 8px; padding: 12px 14px; }
-    .detail-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 4px; }
-    .detail-value { font-size: 13px; font-weight: 500; }
-
-    /* ===== SECTION HEADERS ===== */
-    .section-header {
-      display: flex; align-items: center; justify-content: space-between;
+    
+    .month-cell:hover {
+      background: #e0f2fe;
+      border-color: #3b82f6;
+      transform: scale(1.05);
+    }
+    
+    .month-cell.has-data {
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      border-color: #3b82f6;
+    }
+    
+    .month-cell.current {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+    
+    .month-cell.selected {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border-color: #047857;
+    }
+    
+    .year-selector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
       margin-bottom: 20px;
     }
-    .section-title { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
-    .section-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
-
-    /* ===== EMPTY STATE ===== */
-    .empty-state {
-      padding: 60px 20px;
-      text-align: center; color: var(--text3);
-    }
-    .empty-state-icon { font-size: 48px; opacity: 0.2; margin-bottom: 12px; }
-    .empty-state-title { font-size: 15px; font-weight: 600; color: var(--text2); }
-    .empty-state-sub { font-size: 12px; margin-top: 4px; }
-
-    /* ===== LOADING ===== */
-    .loading-overlay {
-      display: flex; align-items: center; justify-content: center;
-      padding: 60px; color: var(--text3);
-    }
-    .spinner {
-      width: 20px; height: 20px;
-      border: 2px solid var(--border2);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      margin-right: 10px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 900px) {
-      .sidebar { width: 60px; overflow: hidden; }
-      .sidebar-logo .logo-text, .sidebar-logo .logo-sub,
-      .nav-item span:not(.nav-icon), .nav-section-label, .sidebar-footer, .nav-badge { display: none; }
-      .main-content { margin-left: 60px; }
-      .charts-grid { grid-template-columns: 1fr; }
-      .sim-layout { grid-template-columns: 1fr; }
-      .form-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 640px) {
-      .kpi-grid { grid-template-columns: 1fr 1fr; }
-      .table-toolbar { flex-direction: column; }
-    }
-
-    /* ===== SORT INDICATOR ===== */
-    .sort-asc::after { content: ' ↑'; }
-    .sort-desc::after { content: ' ↓'; }
-
-    /* ===== HIGHLIGHT ROW ===== */
-    .row-reincidente td:first-child { border-left: 3px solid var(--red); }
-    .row-alto-valor td:first-child { border-left: 3px solid var(--amber); }
-
-    /* ===== TABS ===== */
-    .tab-bar {
-      display: flex; gap: 4px;
-      background: var(--bg3); border-radius: 10px;
-      padding: 4px; margin-bottom: 20px;
-      width: fit-content;
-    }
-    .tab-btn {
-      padding: 7px 16px; border-radius: 7px;
-      font-size: 12px; font-weight: 600;
-      border: none; background: transparent;
-      color: var(--text3); transition: var(--transition);
-    }
-    .tab-btn.active {
-      background: var(--surface);
-      color: var(--text);
-      box-shadow: var(--shadow-sm);
-    }
-
-    /* ===== SUPABASE SQL ===== */
-    .sql-block {
-      background: var(--bg);
-      border: 1px solid var(--border);
+    
+    .year-btn {
+      background: #f1f5f9;
+      border: 2px solid #cbd5e1;
+      padding: 8px 12px;
       border-radius: 8px;
-      padding: 16px;
-      font-family: var(--mono);
-      font-size: 11px;
-      color: #7dd3fc;
-      overflow-x: auto;
-      white-space: pre;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all .2s ease;
+    }
+    
+    .year-btn:hover {
+      background: #e2e8f0;
+      border-color: #94a3b8;
+    }
+    
+    .year-display {
+      font-size: 24px;
+      font-weight: 900;
+      color: #1e293b;
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .compare-table th {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    
+    .compare-table td {
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+    }
+    
+    .compare-table tr:hover {
+      background: #f9fafb;
+    }
+    
+    .metric-label {
+      font-weight: 700;
+      color: #374151;
+    }
+    
+    .delta-positive {
+      color: #10b981;
+      font-weight: 800;
+    }
+    
+    .delta-negative {
+      color: #ef4444;
+      font-weight: 800;
+    }
+
+    /* PATCH: Correção do Modal de Configurações */
+    #configModal .bg-white {
+      max-height: 80vh !important;
+      overflow-y: auto !important;
+    }
+
+    #configModal .space-y-6 {
+      max-height: calc(80vh - 180px) !important;
+      overflow-y: auto !important;
+    }
+
+    #configModal .card {
+      padding: 12px !important;
+    }
+
+    #configModal h4 {
+      font-size: 14px !important;
+      margin-bottom: 6px !important;
+    }
+
+    #configModal p {
+      font-size: 12px !important;
+      margin-bottom: 8px !important;
+    }
+
+    #configModal button {
+      padding: 8px 12px !important;
+      font-size: 13px !important;
+    }
+
+    #configModal {
+      padding: 20px !important;
+    }
+
+    #configModal .space-y-6::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #configModal .space-y-6::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 10px;
+    }
+
+    #configModal .space-y-6::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 10px;
+    }
+
+    #configModal .space-y-6::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
     }
   </style>
 </head>
+
 <body>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav class="menu">
+        <div class="item active" id="nav-dash" onclick="go('dash')" title="Dashboard"><span>📊</span></div>
+        <div class="item" id="nav-data" onclick="go('data')" title="Editar Dados"><span>📝</span></div>
+        <div class="item" id="nav-compare" onclick="go('compare')" title="Comparar Meses"><span>📈</span></div>
+        <div class="item" id="nav-juridico" onclick="go('juridico')" title="Jurídico"><span>⚖️</span></div>
+        <div class="item" id="nav-oficinas" onclick="go('oficinas')" title="Oficinas"><span>🏪</span></div>
+        <div class="item" id="nav-config" onclick="showConfigMenu()" title="Configurações"><span>⚙️</span></div>
+      </nav>
 
-<div id="toast-container"></div>
+      <div class="footer">
+        <div class="badge" id="badge-month">ATUAL</div>
+        <div id="sync-status" style="font-size:9px; margin-top:4px; color:rgba(255,255,255,0.6);"></div>
+      </div>
+    </aside>
 
-<!-- MODAL CONTAINER -->
-<div id="modal-overlay" class="modal-overlay hidden">
-  <div id="modal-content" class="modal"></div>
-</div>
-
-<div class="app-wrapper">
-
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-mark">
-        <div class="logo-icon">🛡️</div>
-        <div>
-          <div class="logo-text">Porto+</div>
-          <div class="logo-sub">Eventos</div>
+    <main class="content">
+      <div class="topbar">
+        <div class="flex items-center gap-3">
+          <div class="text-lg font-extrabold text-gray-800" id="page-title">Dashboard</div>
+          <div class="text-xs font-bold text-gray-500" id="page-sub">Visão geral do mês atual</div>
         </div>
-      </div>
-    </div>
-    <nav class="sidebar-nav">
-      <div class="nav-section-label">Principal</div>
-      <button class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
-        <span class="nav-icon">📊</span>
-        <span>Dashboard</span>
-      </button>
-      <button class="nav-item" onclick="navigate('eventos')" id="nav-eventos">
-        <span class="nav-icon">📋</span>
-        <span>Eventos</span>
-        <span class="nav-badge" id="badge-eventos">0</span>
-      </button>
-      <button class="nav-item" onclick="navigate('simulador')" id="nav-simulador">
-        <span class="nav-icon">🧮</span>
-        <span>Simulador</span>
-      </button>
-      <div class="nav-section-label">Sistema</div>
-      <button class="nav-item" onclick="navigate('configuracao')" id="nav-configuracao">
-        <span class="nav-icon">⚙️</span>
-        <span>Configuração</span>
-      </button>
-    </nav>
-    <div class="sidebar-footer">
-      <div class="demo-badge">⚡ MODO DEMO</div>
-    </div>
-  </aside>
 
-  <!-- MAIN -->
-  <main class="main-content">
-
-    <!-- TOPBAR -->
-    <div class="topbar">
-      <div class="topbar-title" id="topbar-title">Dashboard</div>
-      <div class="topbar-spacer"></div>
-      <div class="topbar-time" id="topbar-time"></div>
-      <button class="topbar-btn" onclick="refreshCurrentPage()" title="Atualizar">🔄</button>
-      <button class="topbar-btn" onclick="openModal('novo-evento')" title="Novo Evento">＋</button>
-    </div>
-
-    <!-- DASHBOARD -->
-    <div id="page-dashboard" class="page active">
-      <div class="section-header">
-        <div>
-          <div class="section-title">Visão Geral</div>
-          <div class="section-sub" id="dashboard-periodo">Carregando...</div>
-        </div>
-        <button class="btn-sm btn-primary" onclick="openModal('novo-evento')">＋ Novo Evento</button>
-      </div>
-
-      <!-- KPIs -->
-      <div class="kpi-grid" id="kpi-grid">
-        <div class="loading-overlay"><div class="spinner"></div> Carregando KPIs...</div>
-      </div>
-
-      <!-- CHARTS -->
-      <div class="charts-grid" id="charts-grid">
-        <!-- rendered by JS -->
-      </div>
-
-      <!-- RECENT EVENTS TABLE -->
-      <div class="table-card">
-        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
-          <div class="chart-title">Eventos Recentes</div>
-          <button class="btn-sm btn-ghost" onclick="navigate('eventos')">Ver todos →</button>
-        </div>
-        <div id="recent-table-body"></div>
-      </div>
-    </div>
-
-    <!-- EVENTOS -->
-    <div id="page-eventos" class="page">
-      <div class="section-header">
-        <div>
-          <div class="section-title">Eventos</div>
-          <div class="section-sub" id="eventos-count-label">Carregando...</div>
-        </div>
-        <button class="btn-sm btn-primary" onclick="openModal('novo-evento')">＋ Novo Evento</button>
-      </div>
-
-      <div class="table-card">
-        <div class="table-toolbar">
-          <div class="search-wrap" style="min-width:220px">
-            <span class="search-icon">🔍</span>
-            <input class="search-input" id="search-placa" placeholder="Buscar por placa..." oninput="applyFilters()" />
+        <div class="flex items-center gap-2 flex-wrap">
+          <!-- ✨ NOVAS FUNCIONALIDADES: Barra de busca inteligente -->
+          <div class="smart-search-container" style="display: flex; align-items: center; gap: 8px;">
+            <input type="text" id="smart-search-input" placeholder="🔍 Busca inteligente..." 
+                   style="padding: 8px 12px; border-radius: 8px; border: 2px solid #e2e8f0; min-width: 200px;">
+            <button id="smart-search-btn" class="month-nav-btn" style="padding: 8px 12px;">🔎</button>
+            <button id="clear-search-btn" class="month-nav-btn" style="padding: 8px 12px; background: linear-gradient(135deg, #64748b 0%, #475569 100%);"><nowiki>✖️</nowiki></button>
+            <span id="search-counter" style="font-size: 11px; color: #64748b; font-weight: 700;"></span>
           </div>
-          <div class="search-wrap" style="max-width:180px">
-            <span class="search-icon">👤</span>
-            <input class="search-input" id="search-cpf" placeholder="CPF..." oninput="applyFilters()" />
-          </div>
-          <select class="filter-select" id="filter-assoc" onchange="applyFilters()">
-            <option value="">Todas as associações</option>
-          </select>
-          <select class="filter-select" id="filter-tipo" onchange="applyFilters()">
-            <option value="">Todos os tipos</option>
-          </select>
-          <input type="date" class="filter-select" id="filter-date-ini" onchange="applyFilters()" title="Data início" />
-          <input type="date" class="filter-select" id="filter-date-fim" onchange="applyFilters()" title="Data fim" />
-          <button class="btn-sm btn-ghost" onclick="clearFilters()">✕ Limpar</button>
-        </div>
-
-        <div style="overflow-x:auto">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th onclick="toggleSort('created_at')">Data</th>
-                <th onclick="toggleSort('placa')">Placa</th>
-                <th onclick="toggleSort('cpf')">CPF</th>
-                <th onclick="toggleSort('associacao')">Associação</th>
-                <th onclick="toggleSort('tipo_evento')">Tipo</th>
-                <th onclick="toggleSort('valor_fipe')">FIPE</th>
-                <th onclick="toggleSort('cota')">Cota</th>
-                <th>Flags</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="eventos-tbody">
-              <tr><td colspan="9"><div class="loading-overlay"><div class="spinner"></div> Carregando...</div></td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="pagination" id="pagination">
-          <!-- rendered by JS -->
-        </div>
-      </div>
-    </div>
-
-    <!-- SIMULADOR -->
-    <div id="page-simulador" class="page">
-      <div class="section-header">
-        <div>
-          <div class="section-title">Simulador de Cota</div>
-          <div class="section-sub">Calcule o valor da cota com todas as regras de negócio</div>
+          
+          <button class="month-nav-btn" onclick="showMonthNavigator()">📅 Navegar Meses</button>
+          <button class="btn btn-primary" onclick="saveCurrentMonthWithChecks()">💾 Salvar</button>
+          <button class="btn btn-success" onclick="updateDashboard(); go('dash')">🔄 Atualizar</button>
+          
+          <!-- ✨ Contador de linhas -->
+          <div id="row-counter" class="row-counter"></div>
+          
+          <!-- ✨ Botão modo escuro -->
+          <button class="month-nav-btn" onclick="setTimeout(() => { if(window.toggleDarkMode) window.toggleDarkMode(); }, 50)" id="dark-mode-icon" style="padding: 8px 12px;" title="Modo Escuro (Ctrl+Shift+D)">🌙</button>
+          
         </div>
       </div>
 
-      <div class="sim-layout">
-        <!-- FORM -->
-        <div>
-          <div class="table-card" style="padding: 20px;">
-            <div style="font-size:13px; font-weight:600; margin-bottom:16px; color:var(--text2)">📥 Dados para Simulação</div>
-            <div class="form-grid">
-              <div class="form-group">
-                <label class="form-label">Valor FIPE (R$)</label>
-                <input class="form-input" id="sim-fipe" type="number" min="0" placeholder="Ex: 45000" oninput="simularCota()" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Associação</label>
-                <select class="form-input form-select" id="sim-assoc" onchange="simularCota()">
-                  <option value="">Selecione...</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Categoria</label>
-                <select class="form-input form-select" id="sim-cat" onchange="simularCota()">
-                  <option value="">Selecione...</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">CPF (para reincidência)</label>
-                <input class="form-input" id="sim-cpf" type="text" placeholder="000.000.000-00" oninput="this.value = maskCPF(this.value); checkSimReincidencia()" maxlength="14" />
-              </div>
+    
+      <!-- 🎯 ABAS DE MESES NO TOPO -->
+      <div class="month-tabs-container">
+        <div id="month-tabs" class="flex items-center gap-2"></div>
+      </div>
+
+      <!-- DASHBOARD PAGE -->
+      <section id="page-dash" class="page active">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <div class="kpi-card border-blue-500" onclick="kpiFilter('all')" style="border-image:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) 1;"><p class="kpi-label">Total de Eventos</p><p class="kpi-value" style="background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-total">0</p><p class="kpi-sub">Todos registros</p></div>
+          <div class="kpi-card border-purple-500" onclick="kpiFilter('roubo')" style="border-image:linear-gradient(135deg, #a855f7 0%, #9333ea 100%) 1;"><p class="kpi-label">Roubo / Furto</p><p class="kpi-value" style="background:linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-roubo">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+          <div class="kpi-card border-cyan-500" onclick="kpiFilter('vidros')" style="border-image:linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) 1;"><p class="kpi-label">Vidros</p><p class="kpi-value" style="background:linear-gradient(135deg, #06b6d4 0%, #0e7490 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-vidros">0</p><p class="kpi-sub">Filtro: EVENTO TIPO</p></div>
+          <div class="kpi-card border-yellow-500" onclick="kpiFilter('acordos')" style="border-image:linear-gradient(135deg, #eab308 0%, #ca8a04 100%) 1;"><p class="kpi-label">Acordos</p><p class="kpi-value" style="background:linear-gradient(135deg, #eab308 0%, #a16207 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-acordos">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+          <div class="kpi-card border-green-500" onclick="kpiFilter('finalizados')" style="border-image:linear-gradient(135deg, #22c55e 0%, #16a34a 100%) 1;"><p class="kpi-label">Finalizados</p><p class="kpi-value" style="background:linear-gradient(135deg, #22c55e 0%, #15803d 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-finalizados">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <div class="kpi-card border-slate-500" onclick="kpiFilter('terceiroCausador')" style="border-image:linear-gradient(135deg, #64748b 0%, #475569 100%) 1;"><p class="kpi-label">3º causador</p><p class="kpi-value" style="background:linear-gradient(135deg, #64748b 0%, #334155 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-terc-causador">0</p><p class="kpi-sub">Filtro: CAUSADOR</p></div>
+          <div class="kpi-card border-indigo-500" onclick="kpiFilter('jurEm')" style="border-image:linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) 1;"><p class="kpi-label">Jurídico: Em cobrança</p><p class="kpi-value" style="background:linear-gradient(135deg, #6366f1 0%, #4338ca 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-jur-em">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+          <div class="kpi-card border-emerald-500" onclick="kpiFilter('jurRec')" style="border-image:linear-gradient(135deg, #10b981 0%, #059669 100%) 1;"><p class="kpi-label">Jurídico: Recuperado</p><p class="kpi-value" style="background:linear-gradient(135deg, #10b981 0%, #047857 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-jur-rec">0</p><p class="kpi-sub">Clique para filtrar</p></div>
+          <div class="kpi-card border-rose-500" onclick="kpiFilter('jurNao')" style="border-image:linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) 1;"><p class="kpi-label">Jurídico: Não cobrar</p><p class="kpi-value" style="background:linear-gradient(135deg, #f43f5e 0%, #be123c 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-jur-nao">0</p><p class="kpi-sub">Encerrar sem cobrança</p></div>
+          <div class="kpi-card border-amber-500" onclick="kpiFilter('jurValor')" style="border-image:linear-gradient(135deg, #f59e0b 0%, #d97706 100%) 1;"><p class="kpi-label">Valor a recuperar</p><p class="kpi-value" style="background:linear-gradient(135deg, #f59e0b 0%, #b45309 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-jur-valor">R$ 0,00</p><p class="kpi-sub">Clique para filtrar</p></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="chart-card"><h3 class="font-bold text-gray-700 mb-4 text-lg">📊 Eventos por Tipo</h3><canvas id="chart-tipo" style="max-height:280px;"></canvas></div>
+          <div class="chart-card"><h3 class="font-bold text-gray-700 mb-4 text-lg">⚖️ Status Jurídico</h3><canvas id="chart-juridico" style="max-height:280px;"></canvas></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="chart-card"><h3 class="font-bold text-gray-700 mb-4 text-lg">💰 Custos por Categoria</h3><canvas id="chart-custos" style="max-height:280px;"></canvas></div>
+          <div class="card">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="font-bold text-gray-700 text-lg">📌 Em aberto (eventos)</h3>
+              <button class="btn btn-primary" onclick="kpiFilter('open')">Ver na planilha</button>
             </div>
+            <div id="open-panel" class="text-sm text-gray-700"></div>
+          </div>
+        </div>
 
-            <div style="margin-top: 16px;">
-              <label class="form-label" style="display:block; margin-bottom:10px">Coberturas adicionais</label>
-              <div class="checkbox-group">
-                <label class="checkbox-item">
-                  <input type="checkbox" id="sim-vidro" onchange="simularCota()" />
-                  <span class="checkbox-label">🪟 Vidro (+50%)</span>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="card">
+            <h3 class="font-bold text-gray-700 mb-4 text-lg">🏆 Top 5 Oficinas (mais carros)</h3>
+            <div id="top-oficinas"></div>
+          </div>
+          <div class="card">
+            <h3 class="font-bold text-gray-700 mb-4 text-lg">💎 Top 5 Carros mais caros</h3>
+            <div id="top-carros"></div>
+          </div>
+        </div>
+
+        <div class="card mb-6">
+          <h3 class="font-bold text-gray-700 mb-4 text-lg">⚖️ Ranking Jurídico - Maiores valores a recuperar</h3>
+          <div id="ranking-juridico"></div>
+        </div>
+      </section>
+
+      <!-- COMPARAÇÃO PAGE -->
+      <section id="page-compare" class="page">
+        <div class="card mb-4">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h2 class="text-2xl font-extrabold text-gray-800">📈 Comparação de Meses</h2>
+              <p class="text-sm text-gray-600 mt-1">Selecione 2 ou mais meses para comparar métricas</p>
+            </div>
+            <div class="flex gap-2">
+              <button class="month-nav-btn" onclick="showCompareSelector()">🗓️ Selecionar Meses</button>
+              <button class="month-nav-btn" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%);" onclick="exportComparison()">📅 Exportar PNG</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="compare-months-display" class="mb-4"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="chart-card">
+            <h3 class="font-bold text-gray-700 mb-4 text-lg">📊 Eventos por Mês</h3>
+            <canvas id="chart-compare-eventos" style="max-height:300px;"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3 class="font-bold text-gray-700 mb-4 text-lg">💰 Custos Totais</h3>
+            <canvas id="chart-compare-custos" style="max-height:300px;"></canvas>
+          </div>
+        </div>
+
+        <div class="card mb-6">
+          <h3 class="font-bold text-gray-700 mb-4 text-lg">📋 Tabela Comparativa Detalhada</h3>
+          <div class="overflow-x-auto">
+            <table class="compare-table" id="compare-table"></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- EDITAR DADOS PAGE -->
+      <section id="page-data" class="page">
+        <div class="alert alert-info" style="background:#dbeafe; border-left:4px solid #3b82f6; padding:16px; border-radius:8px; margin-bottom:16px;">
+          💡 <b>EVENTO TIPO</b> (VIDROS/ROUBO etc.) define o que aparece no Dashboard. <b>CAUSADOR</b> define quem causou (TERCEIRO entra no Jurídico).
+        </div>
+        <div class="card"><div id="spreadsheet"></div></div>
+      </section>
+
+      <!-- JURÍDICO PAGE -->
+      <section id="page-juridico" class="page">
+        <div class="card mb-4">
+          <h2 class="text-2xl font-extrabold text-gray-800">⚖️ Jurídico (3º causador)</h2>
+          <p class="text-sm text-gray-600 mt-1">Somente eventos em que <b>CAUSADOR = TERCEIRO</b>. EVENTO TIPO pode ser VIDROS, ROUBO/FURTO etc.</p>
+        </div>
+
+        <div class="card">
+          <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+            <div class="text-sm font-bold text-gray-700">Somente registros com CAUSADOR = TERCEIRO</div>
+            <button class="btn btn-primary" onclick="filterJuridicoView()">🔎 Atualizar lista</button>
+          </div>
+          <div id="juridico-table" class="text-sm"></div>
+        </div>
+      </section>
+
+      <!-- OFICINAS PAGE -->
+      <section id="page-oficinas" class="page">
+        <div class="card mb-4">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 class="text-2xl font-extrabold text-gray-800">🏪 Cadastro de Oficinas</h2>
+              <p class="text-sm text-gray-600 mt-1">Gerencie oficinas parceiras e suas especialidades</p>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <button class="btn btn-primary" onclick="showAddOficinaModal()">➕ Nova Oficina</button>
+              <button class="month-nav-btn" onclick="setTimeout(() => { if(window.exportarOficinasParaJSON) window.exportarOficinasParaJSON(); }, 50)" 
+                      style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                📤 Backup
+              </button>
+              <button class="month-nav-btn" onclick="setTimeout(() => { if(window.showOficinasMap) window.showOficinasMap(); }, 50)" 
+                      style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                🗺️ Ver Mapa
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <div class="kpi-card border-blue-500" onclick="filterOficinasByCategory('')" style="border-image:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) 1;"><p class="kpi-label">Total</p><p class="kpi-value" style="background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-total">0</p><p class="kpi-sub">Todas oficinas</p></div>
+          <div class="kpi-card border-cyan-500" onclick="filterOficinasByCategory('Mecânica')" style="border-image:linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) 1;"><p class="kpi-label">Mecânica</p><p class="kpi-value" style="background:linear-gradient(135deg, #06b6d4 0%, #0e7490 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-mec">0</p><p class="kpi-sub">Filtrar</p></div>
+          <div class="kpi-card border-orange-500" onclick="filterOficinasByCategory('Lanternagem')" style="border-image:linear-gradient(135deg, #f59e0b 0%, #ea580c 100%) 1;"><p class="kpi-label">Lanternagem</p><p class="kpi-value" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-lant">0</p><p class="kpi-sub">Filtrar</p></div>
+          <div class="kpi-card border-purple-500" onclick="filterOficinasByCategory('Lanternagem+Mecânica')" style="border-image:linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) 1;"><p class="kpi-label">Lant+Mec</p><p class="kpi-value" style="background:linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-lantmec">0</p><p class="kpi-sub">Filtrar</p></div>
+          <div class="kpi-card border-emerald-500" onclick="filterOficinasByCategory('Vidros')" style="border-image:linear-gradient(135deg, #10b981 0%, #059669 100%) 1;"><p class="kpi-label">Vidros</p><p class="kpi-value" style="background:linear-gradient(135deg, #10b981 0%, #047857 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;" id="kpi-of-vidros">0</p><p class="kpi-sub">Filtrar</p></div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="flex gap-3 flex-wrap">
+            <input type="text" id="search-oficina" placeholder="🔍 Buscar por nome ou CNPJ..." class="flex-1 border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" oninput="renderOficinasList()">
+            <select id="filter-categoria" onchange="renderOficinasList()" class="border-2 border-gray-300 rounded-lg px-4 py-2">
+              <option value="">Todas categorias</option>
+              <option value="Mecânica">Mecânica</option>
+              <option value="Lanternagem">Lanternagem</option>
+              <option value="Lanternagem+Mecânica">Lanternagem+Mecânica</option>
+              <option value="Vidros">Vidros</option>
+              <option value="Ar-Condicionado">Ar-Condicionado</option>
+              <option value="Elétrica">Elétrica</option>
+              <option value="Alinhamento/Balanceamento">Alinhamento/Balanceamento</option>
+              <option value="Estofaria">Estofaria</option>
+              <option value="Funilaria">Funilaria</option>
+              <option value="Pintura">Pintura</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="oficinas-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </section>
+
+      <!-- OFICINA MODAL -->
+      <div id="oficinaModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+          <div class="p-6 border-b bg-gradient-to-r from-blue-500 to-cyan-600 rounded-t-2xl">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-2xl text-white" id="oficina-modal-title">🏪 Nova Oficina</h3>
+              <button onclick="closeOficinaModal()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
+            </div>
+          </div>
+          
+          <div class="p-6 space-y-4">
+            <div>
+              <label class="block text-sm font-bold mb-2">Nome da Oficina *</label>
+              <input type="text" id="of-nome" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="Ex: Auto Center Silva">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">CNPJ</label>
+              <input type="text" id="of-cnpj" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="00.000.000/0000-00">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">Telefone</label>
+              <input type="text" id="of-telefone" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="(31) 99999-9999">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">E-mail</label>
+              <input type="email" id="of-email" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="contato@oficina.com.br">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">Endereço</label>
+              <textarea id="of-endereco" rows="2" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="Rua, Número, Bairro, Cidade"></textarea>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold mb-2">Categorias de Serviço *</label>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Mecânica" class="of-categoria">
+                  <span class="text-sm">Mecânica</span>
                 </label>
-                <label class="checkbox-item">
-                  <input type="checkbox" id="sim-terceiros" onchange="simularCota()" />
-                  <span class="checkbox-label">🚗 Terceiros (+50%)</span>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Lanternagem" class="of-categoria">
+                  <span class="text-sm">Lanternagem</span>
                 </label>
-                <label class="checkbox-item">
-                  <input type="checkbox" id="sim-reincidencia" onchange="simularCota()" />
-                  <span class="checkbox-label">🔁 Reincidência (×2)</span>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Lanternagem+Mecânica" class="of-categoria">
+                  <span class="text-sm">Lanternagem+Mecânica</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Vidros" class="of-categoria">
+                  <span class="text-sm">Vidros</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Ar-Condicionado" class="of-categoria">
+                  <span class="text-sm">Ar-Condicionado</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Elétrica" class="of-categoria">
+                  <span class="text-sm">Elétrica</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Alinhamento/Balanceamento" class="of-categoria">
+                  <span class="text-sm">Alinhamento/Balanceamento</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Estofaria" class="of-categoria">
+                  <span class="text-sm">Estofaria</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Funilaria" class="of-categoria">
+                  <span class="text-sm">Funilaria</span>
+                </label>
+                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" value="Pintura" class="of-categoria">
+                  <span class="text-sm">Pintura</span>
                 </label>
               </div>
             </div>
+          </div>
+          
+          <div class="p-4 bg-gray-50 rounded-b-2xl flex gap-2 justify-end">
+            <button onclick="closeOficinaModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-bold">Cancelar</button>
+            <button onclick="saveOficina()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">💾 Salvar Oficina</button>
+          </div>
+        </div>
+      </div>
 
-            <div id="sim-reincidencia-alert" style="display:none"></div>
+      <!-- COMPARE SELECTOR MODAL -->
+      <div id="compareSelectorModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-auto">
+          <div class="p-6 border-b bg-gradient-to-r from-purple-500 to-pink-600 rounded-t-2xl">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-2xl text-white">📈 Selecionar Meses para Comparar</h3>
+              <button onclick="closeCompareSelector()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
+            </div>
+          </div>
+          
+          <div class="p-6">
+            <div class="year-selector">
+              <button class="year-btn" onclick="changeCompareSelectorYear(-1)">◀ Ano Anterior</button>
+              <div class="year-display" id="compare-year">2026</div>
+              <button class="year-btn" onclick="changeCompareSelectorYear(1)">Próximo Ano ▶</button>
+            </div>
+            
+            <div class="mb-4">
+              <p class="text-sm font-bold text-gray-700 mb-2">✅ Meses selecionados: <span id="selected-count">0</span></p>
+              <div id="selected-months-badges" class="flex flex-wrap gap-2"></div>
+            </div>
+            
+            <div class="calendar-grid" id="compare-calendar"></div>
+            
+            <div class="mt-6 p-4 bg-purple-50 rounded-lg">
+              <p class="text-sm text-gray-700"><b>💡 Como usar:</b></p>
+              <ul class="text-xs text-gray-600 mt-2 space-y-1">
+                <li>• Clique nos meses que deseja comparar (mínimo 2)</li>
+                <li>• Verde = selecionado para comparação</li>
+                <li>• Navegue entre anos para comparar períodos diferentes</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="p-4 bg-gray-50 rounded-b-2xl flex gap-2 justify-end">
+            <button onclick="closeCompareSelector()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-bold">Cancelar</button>
+            <button onclick="generateComparison()" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-bold">📊 Gerar Comparação</button>
+          </div>
+        </div>
+      </div>
 
-            <div style="margin-top:16px; display:flex; gap:10px;">
-              <button class="btn-sm btn-primary" style="flex:1" onclick="salvarSimulacao()">💾 Salvar como Evento</button>
-              <button class="btn-sm btn-ghost" onclick="limparSimulador()">✕ Limpar</button>
+      <!-- MONTH NAVIGATOR MODAL -->
+      <div id="monthNavigatorModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-auto">
+          <div class="p-6 border-b bg-gradient-to-r from-blue-500 to-purple-600 rounded-t-2xl">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-2xl text-white flex items-center gap-2">📅 Navegador de Meses e Anos</h3>
+              <button onclick="closeMonthNavigator()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
+            </div>
+          </div>
+          
+          <div class="p-6">
+            <div class="year-selector">
+              <button class="year-btn" onclick="changeNavigatorYear(-1)">◀ Ano Anterior</button>
+              <div class="year-display" id="navigator-year">2026</div>
+              <button class="year-btn" onclick="changeNavigatorYear(1)">Próximo Ano ▶</button>
+            </div>
+            
+            <div class="mb-4 text-center">
+              <button class="month-nav-btn" onclick="createNewMonth()">➕ Criar Novo Mês</button>
+            </div>
+            
+            <div class="calendar-grid" id="month-calendar"></div>
+            
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+              <p class="text-sm text-gray-700"><b>💡 Como usar:</b></p>
+              <ul class="text-xs text-gray-600 mt-2 space-y-1">
+                <li>• <b>Azul claro</b> = Mês com dados salvos</li>
+                <li>• <b>Azul escuro</b> = Mês atual</li>
+                <li>• <b>Clique</b> em qualquer mês para carregar seus dados</li>
+                <li>• Use <b>"➕ Criar Novo Mês"</b> para adicionar meses de anos passados (ex: Janeiro 2024)</li>
+              </ul>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- RESULT -->
-        <div>
-          <div id="sim-result-container">
-            <div class="sim-result">
-              <div class="sim-empty">
-                <div class="sim-empty-icon">🧮</div>
-                <div style="font-size:13px; font-weight:600; color:var(--text2)">Preencha os dados ao lado</div>
-                <div style="font-size:12px">para calcular a cota</div>
+      <!-- CONFIG MODAL -->
+      <div id="configModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+          <div class="p-6 border-b bg-gradient-to-r from-blue-600 to-indigo-600 rounded-t-2xl">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-2xl text-white flex items-center gap-2">
+                ⚙️ Configurações e Backup
+              </h3>
+              <button onclick="closeConfigModal()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
+            </div>
+          </div>
+          
+          <div class="p-6 space-y-6">
+            <!-- 🔴 DIAGNÓSTICO FIREBASE (NOVO) -->
+            <div class="card p-4 bg-red-50 border-2 border-red-300">
+              <h4 class="font-bold text-red-900 mb-2 flex items-center gap-2">
+                🔴 Diagnóstico e Reparo
+              </h4>
+              <p class="text-sm text-red-800 mb-3">
+                Use se tiver problemas de sincronização ou duplicatas
+              </p>
+              <div class="grid grid-cols-2 gap-2">
+                <button onclick="diagnosticarFirebase()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                  🔍 Diagnóstico
+                </button>
+                <button onclick="sincronizacaoCompleta()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                  🔄 Sync Completo
+                </button>
+                <button onclick="limparDuplicatas()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                  🗑️ Limpar Duplicatas
+                </button>
+                <button onclick="forcarBaixarTudoDaNuvem()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                  ☁️ Baixar Tudo
+                </button>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- CONFIGURAÇÃO -->
-    <div id="page-configuracao" class="page">
-      <div class="section-header">
-        <div>
-          <div class="section-title">Configuração</div>
-          <div class="section-sub">Integração com Supabase e configurações do sistema</div>
-        </div>
-      </div>
-
-      <div style="display:grid; gap:16px; max-width:700px">
-        <div class="table-card" style="padding:20px">
-          <div style="font-size:13px; font-weight:600; margin-bottom:4px">🔌 Conexão Supabase</div>
-          <div style="font-size:12px; color:var(--text3); margin-bottom:16px">Configure as credenciais para usar banco de dados real</div>
-          <div class="form-grid">
-            <div class="form-group full">
-              <label class="form-label">URL do Projeto</label>
-              <input class="form-input" id="cfg-url" type="text" placeholder="https://xxxx.supabase.co" />
+            <!-- Salvar Atual -->
+            <div class="card p-4 bg-blue-50 border-2 border-blue-200">
+              <h4 class="font-bold text-blue-900 mb-2 flex items-center gap-2">
+                💾 Salvar Mês Atual
+              </h4>
+              <p class="text-sm text-blue-800 mb-3">
+                Salva o mês atual no navegador (LocalStorage) e sincroniza com nuvem (Firebase)
+              </p>
+              <button onclick="saveCurrentMonthWithChecks(); closeConfigModal();" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold transition">
+                💾 Salvar Agora
+              </button>
             </div>
-            <div class="form-group full">
-              <label class="form-label">Chave Anon</label>
-              <input class="form-input" id="cfg-key" type="password" placeholder="eyJhbGci..." />
+
+            <!-- Exportar Backup -->
+            <div class="card p-4 bg-purple-50 border-2 border-purple-200">
+              <h4 class="font-bold text-purple-900 mb-2 flex items-center gap-2">
+                📅 Exportar Backup
+              </h4>
+              <p class="text-sm text-purple-800 mb-3">
+                Baixa todos os meses salvos em arquivo JSON (recomendado fazer semanalmente)
+              </p>
+              <button onclick="exportBackup(); closeConfigModal();" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-bold transition">
+                📅 Exportar JSON
+              </button>
+            </div>
+
+            <!-- Importar Backup -->
+            <div class="card p-4 bg-green-50 border-2 border-green-200">
+              <h4 class="font-bold text-green-900 mb-2 flex items-center gap-2">
+                📄 Importar Backup
+              </h4>
+              <p class="text-sm text-green-800 mb-3">
+                Restaura dados de um arquivo JSON de backup previamente exportado
+              </p>
+              <input 
+                type="file" 
+                id="import-file-input" 
+                accept=".json" 
+                class="hidden" 
+                onchange="handleImportFile(event)"
+              >
+              <button onclick="document.getElementById('import-file-input').click()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-bold transition">
+                📄 Selecionar Arquivo JSON
+              </button>
+            </div>
+
+            <!-- Sincronização Firebase -->
+            <div class="card p-4 bg-amber-50 border-2 border-amber-200">
+              <h4 class="font-bold text-amber-900 mb-2 flex items-center gap-2">
+                ☁️ Sincronização em Nuvem
+              </h4>
+              <p class="text-sm text-amber-800 mb-3">
+                Sincroniza automaticamente com Firebase quando conectado à internet
+              </p>
+              <div class="grid grid-cols-3 gap-2">
+                <button onclick="uploadToFirebase(); closeConfigModal();" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-lg font-bold transition">
+                  📄 Enviar
+                </button>
+                <button onclick="downloadFromFirebase(); closeConfigModal();" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-3 rounded-lg font-bold transition">
+                  📅 Baixar
+                </button>
+                <button onclick="checkFirebaseStatus(); closeConfigModal();" class="bg-amber-400 hover:bg-amber-500 text-white px-4 py-3 rounded-lg font-bold transition">
+                  🔍 Status
+                </button>
+              </div>
+            </div>
+
+            <!-- Limpar Cache -->
+            <div class="card p-4 bg-red-50 border-2 border-red-200">
+              <h4 class="font-bold text-red-900 mb-2 flex items-center gap-2">
+                🗑️ Limpar Cache Local
+              </h4>
+              <p class="text-sm text-red-800 mb-3">
+                ⚠️ Remove TODOS os dados salvos localmente (não afeta Firebase)
+              </p>
+              <button onclick="clearLocalCache()" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-bold transition">
+                🗑️ Limpar Tudo
+              </button>
             </div>
           </div>
-          <div style="margin-top:14px; display:flex; gap:10px">
-            <button class="btn-sm btn-primary" onclick="salvarConfig()">💾 Salvar e Reconectar</button>
-            <button class="btn-sm btn-ghost" onclick="testarConexao()">🔧 Testar Conexão</button>
+
+          <div class="p-4 bg-gray-50 rounded-b-2xl flex justify-end">
+            <button onclick="closeConfigModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-bold">
+              Fechar
+            </button>
           </div>
         </div>
-
-        <div class="table-card" style="padding:20px">
-          <div style="font-size:13px; font-weight:600; margin-bottom:4px">🗄️ SQL para criar tabela</div>
-          <div style="font-size:12px; color:var(--text3); margin-bottom:12px">Execute no SQL Editor do Supabase</div>
-          <div class="sql-block">CREATE TABLE IF NOT EXISTS eventos (
-  id BIGSERIAL PRIMARY KEY,
-  cpf TEXT NOT NULL,
-  placa TEXT NOT NULL,
-  associacao TEXT NOT NULL,
-  categoria TEXT NOT NULL,
-  tipo_evento TEXT NOT NULL,
-  valor_fipe NUMERIC(12,2),
-  cota NUMERIC(12,2),
-  vidro BOOLEAN DEFAULT false,
-  terceiros BOOLEAN DEFAULT false,
-  reincidencia BOOLEAN DEFAULT false,
-  observacoes TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Índices para busca rápida
-CREATE INDEX idx_eventos_cpf ON eventos(cpf);
-CREATE INDEX idx_eventos_placa ON eventos(placa);
-CREATE INDEX idx_eventos_assoc ON eventos(associacao);
-CREATE INDEX idx_eventos_created ON eventos(created_at DESC);
-
--- Row Level Security
-ALTER TABLE eventos ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all" ON eventos FOR ALL USING (true);</div>
-          <button class="btn-sm btn-ghost" style="margin-top:10px" onclick="copiarSQL()">📋 Copiar SQL</button>
-        </div>
       </div>
-    </div>
 
-  </main>
-</div>
+    </main>
+  </div>
 
-<script>
-// ============================================================
-// CONSTANTS
-// ============================================================
-const ASSOCIACOES = ['Porto Seguro','Sompo','Bradesco Auto/RE','Tokio Marine','Allianz','HDI','Suhai','Azul Seguros','Liberty','Mapfre'];
-const CATEGORIAS = ['Carro de Passeio','SUV','Moto','Caminhonete','Furgão/Van','Caminhão','Táxi/App'];
-const TIPOS_EVENTO = ['Colisão','Roubo','Furto','Vidro','Incêndio','Terceiros','Fenômeno Natural','Outros'];
-const TABELA_COTAS = {
-  'Porto Seguro': {'Carro de Passeio':{p:0.05,m:800},'SUV':{p:0.06,m:1200},'Moto':{p:0.06,m:600},'Caminhonete':{p:0.06,m:1000},'Furgão/Van':{p:0.07,m:1500},'Caminhão':{p:0.08,m:2000},'Táxi/App':{p:0.05,m:900,d:0.3}},
-  'Sompo': {'Carro de Passeio':{p:0.055,m:850},'SUV':{p:0.065,m:1300},'Moto':{p:0.065,m:650},'Caminhonete':{p:0.065,m:1050},'Furgão/Van':{p:0.075,m:1600},'Caminhão':{p:0.085,m:2100},'Táxi/App':{p:0.055,m:950,d:0.3}},
-  'Bradesco Auto/RE': {'Carro de Passeio':{p:0.05,m:800},'SUV':{p:0.06,m:1200},'Moto':{p:0.06,m:600},'Caminhonete':{p:0.06,m:1000},'Furgão/Van':{p:0.07,m:1500},'Caminhão':{p:0.08,m:2000},'Táxi/App':{p:0.05,m:900,d:0.3}},
-  'Tokio Marine': {'Carro de Passeio':{p:0.05,m:820},'SUV':{p:0.06,m:1250},'Moto':{p:0.06,m:620},'Caminhonete':{p:0.06,m:1020},'Furgão/Van':{p:0.07,m:1550},'Caminhão':{p:0.08,m:2050},'Táxi/App':{p:0.05,m:920,d:0.3}},
-  'Allianz': {'Carro de Passeio':{p:0.052,m:810},'SUV':{p:0.062,m:1220},'Moto':{p:0.062,m:610},'Caminhonete':{p:0.062,m:1010},'Furgão/Van':{p:0.072,m:1520},'Caminhão':{p:0.082,m:2020},'Táxi/App':{p:0.052,m:910,d:0.3}},
-  'HDI': {'Carro de Passeio':{p:0.048,m:780},'SUV':{p:0.058,m:1180},'Moto':{p:0.058,m:580},'Caminhonete':{p:0.058,m:980},'Furgão/Van':{p:0.068,m:1480},'Caminhão':{p:0.078,m:1980},'Táxi/App':{p:0.048,m:880,d:0.3}},
-  'Suhai': {'Carro de Passeio':{p:0.045,m:750},'SUV':{p:0.055,m:1150},'Moto':{p:0.055,m:550},'Caminhonete':{p:0.055,m:950},'Furgão/Van':{p:0.065,m:1450},'Caminhão':{p:0.075,m:1950},'Táxi/App':{p:0.045,m:850,d:0.3}},
-  'Azul Seguros': {'Carro de Passeio':{p:0.05,m:800},'SUV':{p:0.06,m:1200},'Moto':{p:0.06,m:600},'Caminhonete':{p:0.06,m:1000},'Furgão/Van':{p:0.07,m:1500},'Caminhão':{p:0.08,m:2000},'Táxi/App':{p:0.05,m:900,d:0.3}},
-  'Liberty': {'Carro de Passeio':{p:0.051,m:805},'SUV':{p:0.061,m:1210},'Moto':{p:0.061,m:605},'Caminhonete':{p:0.061,m:1005},'Furgão/Van':{p:0.071,m:1510},'Caminhão':{p:0.081,m:2010},'Táxi/App':{p:0.051,m:905,d:0.3}},
-  'Mapfre': {'Carro de Passeio':{p:0.05,m:800},'SUV':{p:0.06,m:1200},'Moto':{p:0.06,m:600},'Caminhonete':{p:0.06,m:1000},'Furgão/Van':{p:0.07,m:1500},'Caminhão':{p:0.08,m:2000},'Táxi/App':{p:0.05,m:900,d:0.3}},
-};
-const COR_TIPO = {Colisão:'#f59e0b',Roubo:'#ef4444',Furto:'#f97316',Vidro:'#3b82f6',Incêndio:'#dc2626',Terceiros:'#8b5cf6','Fenômeno Natural':'#06b6d4',Outros:'#6b7280'};
-const COLORS = ['#1d6ae5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899','#14b8a6','#a78bfa'];
-
-// ============================================================
-// MOCK DATA
-// ============================================================
-let mockEventos = [
-  {id:1,cpf:'123.456.789-00',placa:'ABC-1234',associacao:'Porto Seguro',categoria:'Carro de Passeio',valor_fipe:45000,cota:2250,vidro:false,terceiros:false,reincidencia:false,tipo_evento:'Colisão',observacoes:'',created_at:new Date(Date.now()-2*864e5).toISOString()},
-  {id:2,cpf:'987.654.321-00',placa:'XYZ-5678',associacao:'Sompo',categoria:'SUV',valor_fipe:120000,cota:8400,vidro:true,terceiros:false,reincidencia:true,tipo_evento:'Roubo',observacoes:'Veículo recuperado sem partes',created_at:new Date(Date.now()-5*864e5).toISOString()},
-  {id:3,cpf:'111.222.333-44',placa:'DEF-9012',associacao:'Bradesco Auto/RE',categoria:'Moto',valor_fipe:18000,cota:1080,vidro:false,terceiros:false,reincidencia:false,tipo_evento:'Vidro',observacoes:'',created_at:new Date(Date.now()-10*864e5).toISOString()},
-  {id:4,cpf:'555.666.777-88',placa:'GHI-3456',associacao:'Porto Seguro',categoria:'Carro de Passeio',valor_fipe:65000,cota:5200,vidro:false,terceiros:true,reincidencia:true,tipo_evento:'Colisão',observacoes:'',created_at:new Date(Date.now()-1*864e5).toISOString()},
-  {id:5,cpf:'123.456.789-00',placa:'JKL-7890',associacao:'Tokio Marine',categoria:'Caminhonete',valor_fipe:95000,cota:5700,vidro:false,terceiros:false,reincidencia:false,tipo_evento:'Furto',observacoes:'',created_at:new Date(Date.now()-15*864e5).toISOString()},
-  {id:6,cpf:'444.555.666-77',placa:'MNO-2345',associacao:'Sompo',categoria:'SUV',valor_fipe:200000,cota:16000,vidro:true,terceiros:false,reincidencia:false,tipo_evento:'Colisão',observacoes:'',created_at:new Date(Date.now()-3*864e5).toISOString()},
-  {id:7,cpf:'222.333.444-55',placa:'PQR-6789',associacao:'Allianz',categoria:'Carro de Passeio',valor_fipe:38000,cota:1976,vidro:false,terceiros:false,reincidencia:false,tipo_evento:'Incêndio',observacoes:'',created_at:new Date(Date.now()-20*864e5).toISOString()},
-  {id:8,cpf:'777.888.999-00',placa:'STU-0123',associacao:'HDI',categoria:'Caminhonete',valor_fipe:78000,cota:4524,vidro:true,terceiros:true,reincidencia:false,tipo_evento:'Colisão',observacoes:'',created_at:new Date(Date.now()-7*864e5).toISOString()},
-];
-let nextId = 9;
-
-// ============================================================
-// STATE
-// ============================================================
-let allEventos = [];
-let filteredEventos = [];
-let currentPage = 1;
-const pageSize = 10;
-let sortField = 'created_at';
-let sortDir = 'desc';
-let currentPageName = 'dashboard';
-
-// ============================================================
-// UTILS
-// ============================================================
-const fmt = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
-const fmtNum = v => new Intl.NumberFormat('pt-BR').format(v||0);
-
-function maskCPF(v) {
-  const d = v.replace(/\D/g,'').slice(0,11);
-  if(d.length<=3) return d;
-  if(d.length<=6) return `${d.slice(0,3)}.${d.slice(3)}`;
-  if(d.length<=9) return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6)}`;
-  return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`;
-}
-
-function maskPlaca(v) {
-  const c = v.replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,7);
-  if(c.length<=3) return c;
-  return c.slice(0,3)+'-'+c.slice(3);
-}
-
-function relTime(ds) {
-  const d = Date.now() - new Date(ds).getTime();
-  const m = Math.floor(d/6e4);
-  if(m<1) return 'agora';
-  if(m<60) return `${m}min atrás`;
-  const h = Math.floor(m/60);
-  if(h<24) return `${h}h atrás`;
-  const days = Math.floor(h/24);
-  if(days<30) return `${days}d atrás`;
-  return new Date(ds).toLocaleDateString('pt-BR');
-}
-
-function fmtDate(ds) {
-  return new Date(ds).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
-}
-
-// ============================================================
-// TOAST
-// ============================================================
-function toast(type, title, msg) {
-  const icons = {success:'✅',error:'❌',warning:'⚠️',info:'ℹ️'};
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.innerHTML = `
-    <span class="toast-icon">${icons[type]||'ℹ️'}</span>
-    <div class="toast-body">
-      <div class="toast-title">${title}</div>
-      ${msg ? `<div class="toast-msg">${msg}</div>` : ''}
-    </div>
-    <button class="toast-close" onclick="this.parentElement.remove()">×</button>
-  `;
-  document.getElementById('toast-container').appendChild(el);
-  setTimeout(() => el.remove(), 4500);
-}
-
-// ============================================================
-// NAVIGATION
-// ============================================================
-function navigate(page) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
-  document.getElementById(`nav-${page}`).classList.add('active');
-  const titles = {dashboard:'Dashboard',eventos:'Eventos',simulador:'Simulador de Cota',configuracao:'Configuração'};
-  document.getElementById('topbar-title').textContent = titles[page]||page;
-  currentPageName = page;
-  if(page==='dashboard') loadDashboard();
-  if(page==='eventos') loadEventos();
-}
-
-function refreshCurrentPage() { navigate(currentPageName); }
-
-// ============================================================
-// DATA
-// ============================================================
-async function fetchEventos(filters={}) {
-  let r = [...mockEventos];
-  if(filters.cpf) r = r.filter(e => e.cpf.includes(filters.cpf));
-  if(filters.placa) r = r.filter(e => e.placa.toLowerCase().includes(filters.placa.toLowerCase()));
-  if(filters.associacao) r = r.filter(e => e.associacao===filters.associacao);
-  if(filters.tipo_evento) r = r.filter(e => e.tipo_evento===filters.tipo_evento);
-  if(filters.data_inicio) r = r.filter(e => new Date(e.created_at)>=new Date(filters.data_inicio));
-  if(filters.data_fim) r = r.filter(e => new Date(e.created_at)<=new Date(filters.data_fim+'T23:59:59'));
-  return r;
-}
-
-// ============================================================
-// DASHBOARD
-// ============================================================
-async function loadDashboard() {
-  document.getElementById('kpi-grid').innerHTML = '<div class="loading-overlay"><div class="spinner"></div> Calculando KPIs...</div>';
-  document.getElementById('charts-grid').innerHTML = '';
-
-  const todos = await fetchEventos();
-  const agora = new Date();
-  const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
-  const doMes = todos.filter(e => new Date(e.created_at) >= inicioMes);
-
-  const totalMes = doMes.length;
-  const valorTotalMes = doMes.reduce((s,e)=>s+(e.cota||0),0);
-  const mediaMes = totalMes>0 ? valorTotalMes/totalMes : 0;
-  const reincidentes = todos.filter(e=>e.reincidencia).length;
-  const taxaReincidencia = todos.length>0 ? (reincidentes/todos.length)*100 : 0;
-
-  const mesNome = agora.toLocaleString('pt-BR',{month:'long',year:'numeric'});
-  document.getElementById('dashboard-periodo').textContent = `Mês atual: ${mesNome} • ${todos.length} eventos no total`;
-
-  // KPIs
-  document.getElementById('kpi-grid').innerHTML = `
-    <div class="kpi-card blue">
-      <div class="kpi-label">Eventos no Mês</div>
-      <div class="kpi-value">${totalMes}</div>
-      <div class="kpi-sub">${todos.length} total histórico</div>
-      <div class="kpi-icon">📋</div>
-    </div>
-    <div class="kpi-card green">
-      <div class="kpi-label">Valor Total em Cotas</div>
-      <div class="kpi-value" style="font-size:20px">${fmt(valorTotalMes)}</div>
-      <div class="kpi-sub">no mês atual</div>
-      <div class="kpi-icon">💰</div>
-    </div>
-    <div class="kpi-card amber">
-      <div class="kpi-label">Média por Evento</div>
-      <div class="kpi-value" style="font-size:20px">${fmt(mediaMes)}</div>
-      <div class="kpi-sub">este mês</div>
-      <div class="kpi-icon">📊</div>
-    </div>
-    <div class="kpi-card red">
-      <div class="kpi-label">Taxa de Reincidência</div>
-      <div class="kpi-value">${taxaReincidencia.toFixed(1)}%</div>
-      <div class="kpi-sub">${reincidentes} de ${todos.length} eventos</div>
-      <div class="kpi-icon">🔁</div>
-    </div>
-  `;
-
-  // Charts
-  const porAssoc = {};
-  const porTipo = {};
-  todos.forEach(e => {
-    porAssoc[e.associacao] = (porAssoc[e.associacao]||0)+1;
-    porTipo[e.tipo_evento] = (porTipo[e.tipo_evento]||0)+1;
-  });
-
-  const assocEntries = Object.entries(porAssoc).sort((a,b)=>b[1]-a[1]);
-  const tipoEntries = Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
-  const maxAssoc = assocEntries[0]?.[1]||1;
-
-  // Evolução mensal (6 meses)
-  const evolucao = [];
-  for(let i=5;i>=0;i--) {
-    const d = new Date(agora.getFullYear(), agora.getMonth()-i, 1);
-    const fim = new Date(agora.getFullYear(), agora.getMonth()-i+1, 0);
-    const arr = todos.filter(e => { const dt=new Date(e.created_at); return dt>=d&&dt<=fim; });
-    evolucao.push({
-      mes: d.toLocaleString('pt-BR',{month:'short'}).replace('.',''),
-      count: arr.length,
-      valor: arr.reduce((s,e)=>s+(e.cota||0),0)
+  <!-- Scripts -->
+  <script src="assets/hotfix-clicks.js?v=1.0.1"></script>
+  <script src="assets/diagnostico-firebase.js?v=1.0.0"></script>
+  <script src="assets/import-oficinas.js?v=1.0.0"></script>
+  <script src="assets/melhorias-funcoes.js?v=2.1.0"></script>
+  <script src="assets/features.js?v=1.0.2"></script>
+  <script src="assets/app.js"></script>
+  <script>
+    // ✨ INICIALIZAÇÃO DAS NOVAS FUNCIONALIDADES
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        if (typeof initAllFeatures === 'function') {
+          initAllFeatures();
+          console.log('✅ Features.js inicializado com sucesso!');
+        } else {
+          console.warn('⚠️ initAllFeatures não foi carregado ainda');
+        }
+      }, 1000);
     });
-  }
-  const maxCount = Math.max(...evolucao.map(e=>e.count),1);
-
-  const chartsHtml = `
-    <div class="chart-card">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">Eventos por Associação</div>
-          <div class="chart-sub">distribuição histórica</div>
-        </div>
-      </div>
-      <div class="bar-chart">
-        ${assocEntries.slice(0,6).map(([k,v],i)=>`
-          <div class="bar-row">
-            <div class="bar-label" title="${k}">${k}</div>
-            <div class="bar-track">
-              <div class="bar-fill" style="width:${(v/maxAssoc)*100}%;background:${COLORS[i%COLORS.length]}"></div>
-            </div>
-            <div class="bar-count">${v}</div>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-
-    <div class="chart-card">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">Eventos por Tipo</div>
-          <div class="chart-sub">todos os registros</div>
-        </div>
-      </div>
-      <div class="pie-legend">
-        ${tipoEntries.map(([k,v],i)=>{
-          const pct = todos.length>0?((v/todos.length)*100).toFixed(1):0;
-          const cor = COR_TIPO[k]||COLORS[i%COLORS.length];
-          return `
-            <div class="pie-legend-row">
-              <div class="pie-dot" style="background:${cor}"></div>
-              <div class="pie-legend-label">${k}</div>
-              <div class="pie-legend-pct">${v} <span style="color:var(--text3)">(${pct}%)</span></div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    </div>
-
-    <div class="chart-card" style="grid-column:1/-1">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">Evolução Mensal</div>
-          <div class="chart-sub">quantidade de eventos nos últimos 6 meses</div>
-        </div>
-      </div>
-      <div class="line-chart-wrap">
-        <svg width="100%" height="120" viewBox="0 0 600 120" preserveAspectRatio="none">
-          <!-- Grid lines -->
-          ${[0,1,2,3].map(i=>`<line x1="0" y1="${i*30+5}" x2="600" y2="${i*30+5}" stroke="var(--border)" stroke-width="0.5"/>`).join('')}
-          <!-- Area fill -->
-          <defs>
-            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#1d6ae5" stop-opacity="0.3"/>
-              <stop offset="100%" stop-color="#1d6ae5" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
-          <path d="M ${evolucao.map((e,i)=>`${i*(600/5)},${110-(e.count/maxCount)*100}`).join(' L ')} L ${5*(600/5)},110 L 0,110 Z" fill="url(#areaGrad)"/>
-          <!-- Line -->
-          <polyline points="${evolucao.map((e,i)=>`${i*(600/5)},${110-(e.count/maxCount)*100}`).join(' ')}" fill="none" stroke="#1d6ae5" stroke-width="2.5" stroke-linejoin="round"/>
-          <!-- Dots -->
-          ${evolucao.map((e,i)=>`<circle cx="${i*(600/5)}" cy="${110-(e.count/maxCount)*100}" r="4" fill="#1d6ae5" stroke="var(--bg2)" stroke-width="2"/>`).join('')}
-        </svg>
-      </div>
-      <div class="line-chart-labels">
-        ${evolucao.map(e=>`<span class="line-chart-label">${e.mes}</span>`).join('')}
-      </div>
-    </div>
-  `;
-  document.getElementById('charts-grid').innerHTML = chartsHtml;
-
-  // Recent events
-  const recentes = [...todos].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,5);
-  document.getElementById('recent-table-body').innerHTML = `
-    <table class="data-table">
-      <thead><tr>
-        <th>Data</th><th>Placa</th><th>Associação</th><th>Tipo</th><th>Cota</th><th>Flags</th>
-      </tr></thead>
-      <tbody>
-        ${recentes.map(e=>`
-          <tr class="${e.reincidencia?'row-reincidente':e.cota>5000?'row-alto-valor':''}">
-            <td style="color:var(--text3);font-size:11px">${relTime(e.created_at)}</td>
-            <td><span class="placa-text">${e.placa}</span></td>
-            <td style="font-size:12px">${e.associacao}</td>
-            <td><span class="badge" style="background:${COR_TIPO[e.tipo_evento]}22;color:${COR_TIPO[e.tipo_evento]};border-color:${COR_TIPO[e.tipo_evento]}44">${e.tipo_evento}</span></td>
-            <td><span class="valor-text">${fmt(e.cota)}</span></td>
-            <td>${e.reincidencia?'<span class="badge badge-red">🔁 Reinc.</span>':''}${e.vidro?'<span class="badge badge-blue" style="margin-left:3px">🪟</span>':''}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
-
-  // Update badge
-  document.getElementById('badge-eventos').textContent = todos.length;
-}
-
-// ============================================================
-// EVENTOS TABLE
-// ============================================================
-async function loadEventos() {
-  allEventos = await fetchEventos();
-  populateFilterSelects();
-  applyFilters();
-}
-
-function populateFilterSelects() {
-  const assocSel = document.getElementById('filter-assoc');
-  const tipoSel = document.getElementById('filter-tipo');
-  const curAssoc = assocSel.value;
-  const curTipo = tipoSel.value;
-  assocSel.innerHTML = '<option value="">Todas as associações</option>' +
-    ASSOCIACOES.map(a=>`<option value="${a}">${a}</option>`).join('');
-  tipoSel.innerHTML = '<option value="">Todos os tipos</option>' +
-    TIPOS_EVENTO.map(t=>`<option value="${t}">${t}</option>`).join('');
-  assocSel.value = curAssoc;
-  tipoSel.value = curTipo;
-}
-
-function applyFilters() {
-  const placa = document.getElementById('search-placa').value.toLowerCase();
-  const cpf = document.getElementById('search-cpf').value;
-  const assoc = document.getElementById('filter-assoc').value;
-  const tipo = document.getElementById('filter-tipo').value;
-  const dateIni = document.getElementById('filter-date-ini').value;
-  const dateFim = document.getElementById('filter-date-fim').value;
-
-  filteredEventos = allEventos.filter(e => {
-    if(placa && !e.placa.toLowerCase().includes(placa)) return false;
-    if(cpf && !e.cpf.includes(cpf)) return false;
-    if(assoc && e.associacao!==assoc) return false;
-    if(tipo && e.tipo_evento!==tipo) return false;
-    if(dateIni && new Date(e.created_at)<new Date(dateIni)) return false;
-    if(dateFim && new Date(e.created_at)>new Date(dateFim+'T23:59:59')) return false;
-    return true;
-  });
-
-  // Sort
-  filteredEventos.sort((a,b) => {
-    let av = a[sortField], bv = b[sortField];
-    if(typeof av === 'string') av = av.toLowerCase(), bv = bv.toLowerCase();
-    if(av < bv) return sortDir==='asc' ? -1 : 1;
-    if(av > bv) return sortDir==='asc' ? 1 : -1;
-    return 0;
-  });
-
-  currentPage = 1;
-  renderEventosTable();
-}
-
-function clearFilters() {
-  document.getElementById('search-placa').value = '';
-  document.getElementById('search-cpf').value = '';
-  document.getElementById('filter-assoc').value = '';
-  document.getElementById('filter-tipo').value = '';
-  document.getElementById('filter-date-ini').value = '';
-  document.getElementById('filter-date-fim').value = '';
-  applyFilters();
-}
-
-function toggleSort(field) {
-  if(sortField===field) sortDir = sortDir==='asc' ? 'desc' : 'asc';
-  else { sortField = field; sortDir = 'desc'; }
-  document.querySelectorAll('.data-table th').forEach(th => {
-    th.classList.remove('sort-asc','sort-desc');
-    if(th.getAttribute('onclick')===`toggleSort('${field}')`)
-      th.classList.add(sortDir==='asc'?'sort-asc':'sort-desc');
-  });
-  applyFilters();
-}
-
-function renderEventosTable() {
-  const total = filteredEventos.length;
-  document.getElementById('eventos-count-label').textContent = `${total} evento${total!==1?'s':''} encontrado${total!==1?'s':''}`;
-
-  const totalPages = Math.max(1, Math.ceil(total/pageSize));
-  if(currentPage > totalPages) currentPage = totalPages;
-  const start = (currentPage-1)*pageSize;
-  const slice = filteredEventos.slice(start, start+pageSize);
-
-  if(slice.length===0) {
-    document.getElementById('eventos-tbody').innerHTML = `
-      <tr><td colspan="9">
-        <div class="empty-state">
-          <div class="empty-state-icon">🔍</div>
-          <div class="empty-state-title">Nenhum evento encontrado</div>
-          <div class="empty-state-sub">Tente ajustar os filtros de busca</div>
-        </div>
-      </td></tr>`;
-  } else {
-    document.getElementById('eventos-tbody').innerHTML = slice.map(e=>`
-      <tr class="${e.reincidencia?'row-reincidente':e.cota>8000?'row-alto-valor':''}">
-        <td style="font-size:11px;color:var(--text3)">${fmtDate(e.created_at)}</td>
-        <td><span class="placa-text">${e.placa}</span></td>
-        <td><span class="cpf-text">${e.cpf}</span></td>
-        <td style="font-size:12px">${e.associacao}</td>
-        <td><span class="badge" style="background:${COR_TIPO[e.tipo_evento]||'#6b7280'}22;color:${COR_TIPO[e.tipo_evento]||'#6b7280'};border-color:${COR_TIPO[e.tipo_evento]||'#6b7280'}44">${e.tipo_evento}</span></td>
-        <td><span class="valor-text" style="color:var(--text2)">${fmt(e.valor_fipe)}</span></td>
-        <td><span class="valor-text">${fmt(e.cota)}</span></td>
-        <td style="display:flex;gap:4px;flex-wrap:wrap">
-          ${e.reincidencia?'<span class="badge badge-red" title="Reincidente">🔁</span>':''}
-          ${e.vidro?'<span class="badge badge-blue" title="Vidro">🪟</span>':''}
-          ${e.terceiros?'<span class="badge badge-purple" title="Terceiros">🚗</span>':''}
-          ${e.cota>8000?'<span class="badge badge-amber" title="Alto valor">💰</span>':''}
-        </td>
-        <td>
-          <div style="display:flex;gap:4px">
-            <button class="btn-sm btn-ghost" style="padding:5px 8px" onclick="verDetalhes(${e.id})" title="Visualizar">👁</button>
-            <button class="btn-sm btn-ghost" style="padding:5px 8px" onclick="editarEvento(${e.id})" title="Editar">✏️</button>
-            <button class="btn-sm btn-danger" style="padding:5px 8px" onclick="confirmarExclusao(${e.id})" title="Excluir">🗑</button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
-  }
-
-  // Pagination
-  const pages = [];
-  let lo = Math.max(1, currentPage-2), hi = Math.min(totalPages, currentPage+2);
-  if(lo>1) pages.push(1, '...');
-  for(let i=lo;i<=hi;i++) pages.push(i);
-  if(hi<totalPages) pages.push('...', totalPages);
-
-  document.getElementById('pagination').innerHTML = `
-    <div class="pagination-info">Mostrando ${start+1}–${Math.min(start+pageSize,total)} de ${total}</div>
-    <div class="pagination-buttons">
-      <button class="page-btn" onclick="setPage(${currentPage-1})" ${currentPage<=1?'disabled':''}>‹</button>
-      ${pages.map(p=>p==='...'?`<span class="page-btn" style="cursor:default">…</span>`:`<button class="page-btn ${p===currentPage?'active':''}" onclick="setPage(${p})">${p}</button>`).join('')}
-      <button class="page-btn" onclick="setPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>›</button>
-    </div>
-  `;
-}
-
-function setPage(p) { currentPage = p; renderEventosTable(); }
-
-// ============================================================
-// MODAL
-// ============================================================
-function openModal(type, data={}) {
-  const overlay = document.getElementById('modal-overlay');
-  const content = document.getElementById('modal-content');
-  overlay.classList.remove('hidden');
-
-  if(type==='novo-evento' || type==='editar-evento') {
-    const isEdit = type==='editar-evento';
-    const e = data;
-    content.innerHTML = `
-      <div class="modal-header">
-        <div class="modal-title">${isEdit?'✏️ Editar Evento':'➕ Novo Evento'}</div>
-        <button class="modal-close" onclick="closeModal()">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-grid">
-          <div class="form-group">
-            <label class="form-label">CPF *</label>
-            <input class="form-input" id="f-cpf" maxlength="14" placeholder="000.000.000-00"
-              value="${e.cpf||''}" oninput="this.value=maskCPF(this.value)" />
-            <div class="form-error" id="e-cpf"></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Placa *</label>
-            <input class="form-input" id="f-placa" maxlength="8" placeholder="ABC-1234"
-              value="${e.placa||''}" oninput="this.value=maskPlaca(this.value)" />
-            <div class="form-error" id="e-placa"></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Associação *</label>
-            <select class="form-input form-select" id="f-assoc" onchange="calcularCotaForm()">
-              <option value="">Selecione...</option>
-              ${ASSOCIACOES.map(a=>`<option value="${a}" ${e.associacao===a?'selected':''}>${a}</option>`).join('')}
-            </select>
-            <div class="form-error" id="e-assoc"></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Categoria *</label>
-            <select class="form-input form-select" id="f-cat" onchange="calcularCotaForm()">
-              <option value="">Selecione...</option>
-              ${CATEGORIAS.map(c=>`<option value="${c}" ${e.categoria===c?'selected':''}>${c}</option>`).join('')}
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Tipo de Evento *</label>
-            <select class="form-input form-select" id="f-tipo">
-              <option value="">Selecione...</option>
-              ${TIPOS_EVENTO.map(t=>`<option value="${t}" ${e.tipo_evento===t?'selected':''}>${t}</option>`).join('')}
-            </select>
-            <div class="form-error" id="e-tipo"></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Valor FIPE (R$)</label>
-            <input class="form-input" id="f-fipe" type="number" min="0" placeholder="Ex: 45000"
-              value="${e.valor_fipe||''}" oninput="calcularCotaForm()" />
-          </div>
-          <div class="form-group full">
-            <label class="form-label">Coberturas</label>
-            <div class="checkbox-group">
-              <label class="checkbox-item"><input type="checkbox" id="f-vidro" ${e.vidro?'checked':''} onchange="calcularCotaForm()" /><span class="checkbox-label">🪟 Vidro (+50%)</span></label>
-              <label class="checkbox-item"><input type="checkbox" id="f-terceiros" ${e.terceiros?'checked':''} onchange="calcularCotaForm()" /><span class="checkbox-label">🚗 Terceiros (+50%)</span></label>
-              <label class="checkbox-item"><input type="checkbox" id="f-reinc" ${e.reincidencia?'checked':''} onchange="calcularCotaForm()" /><span class="checkbox-label">🔁 Reincidência (×2)</span></label>
-            </div>
-          </div>
-          <div class="form-group full">
-            <label class="form-label">Cota Calculada</label>
-            <div id="f-cota-preview" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:16px;font-weight:700;color:var(--accent2)">
-              ${e.cota ? fmt(e.cota) : '— preencha FIPE, associação e categoria'}
-            </div>
-          </div>
-          <div class="form-group full">
-            <label class="form-label">Observações</label>
-            <textarea class="form-input" id="f-obs" rows="2" placeholder="Observações opcionais...">${e.observacoes||''}</textarea>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-sm btn-ghost" onclick="closeModal()">Cancelar</button>
-        <button class="btn-sm btn-primary" onclick="salvarEvento(${isEdit?e.id:'null'})">${isEdit?'💾 Salvar':'✅ Criar Evento'}</button>
-      </div>
-    `;
-  }
-
-  if(type==='ver-detalhes') {
-    const e = data;
-    content.innerHTML = `
-      <div class="modal-header">
-        <div class="modal-title">📄 Detalhes do Evento</div>
-        <button class="modal-close" onclick="closeModal()">×</button>
-      </div>
-      <div class="modal-body">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:14px;background:var(--bg3);border-radius:10px">
-          <span class="placa-text" style="font-size:16px">${e.placa}</span>
-          <span class="badge" style="background:${COR_TIPO[e.tipo_evento]||'#666'}22;color:${COR_TIPO[e.tipo_evento]||'#666'};border-color:${COR_TIPO[e.tipo_evento]||'#666'}44;font-size:12px">${e.tipo_evento}</span>
-          ${e.reincidencia?'<span class="badge badge-red">🔁 Reincidente</span>':''}
-          ${e.vidro?'<span class="badge badge-blue">🪟 Vidro</span>':''}
-          ${e.terceiros?'<span class="badge badge-purple">🚗 Terceiros</span>':''}
-        </div>
-        <div class="detail-grid">
-          <div class="detail-item"><div class="detail-label">CPF</div><div class="detail-value" style="font-family:var(--mono)">${e.cpf}</div></div>
-          <div class="detail-item"><div class="detail-label">Placa</div><div class="detail-value" style="font-family:var(--mono)">${e.placa}</div></div>
-          <div class="detail-item"><div class="detail-label">Associação</div><div class="detail-value">${e.associacao}</div></div>
-          <div class="detail-item"><div class="detail-label">Categoria</div><div class="detail-value">${e.categoria}</div></div>
-          <div class="detail-item"><div class="detail-label">Tipo de Evento</div><div class="detail-value">${e.tipo_evento}</div></div>
-          <div class="detail-item"><div class="detail-label">Data</div><div class="detail-value">${fmtDate(e.created_at)}</div></div>
-          <div class="detail-item"><div class="detail-label">Valor FIPE</div><div class="detail-value" style="font-family:var(--mono)">${fmt(e.valor_fipe)}</div></div>
-          <div class="detail-item" style="background:var(--accent-glow);border:1px solid rgba(29,106,229,0.3)">
-            <div class="detail-label">Cota Final</div>
-            <div class="detail-value" style="font-family:var(--mono);font-size:18px;color:var(--accent2)">${fmt(e.cota)}</div>
-          </div>
-        </div>
-        ${e.observacoes?`<div style="margin-top:12px;padding:12px;background:var(--bg3);border-radius:8px;font-size:12px;color:var(--text2)">${e.observacoes}</div>`:''}
-      </div>
-      <div class="modal-footer">
-        <button class="btn-sm btn-ghost" onclick="closeModal()">Fechar</button>
-        <button class="btn-sm btn-primary" onclick="closeModal();editarEvento(${e.id})">✏️ Editar</button>
-      </div>
-    `;
-  }
-
-  if(type==='confirmar-exclusao') {
-    content.innerHTML = `
-      <div class="modal-header">
-        <div class="modal-title" style="color:var(--red)">🗑 Confirmar Exclusão</div>
-        <button class="modal-close" onclick="closeModal()">×</button>
-      </div>
-      <div class="modal-body">
-        <p style="font-size:14px;color:var(--text2)">Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita.</p>
-        <div style="margin-top:14px;padding:12px;background:var(--red-bg);border:1px solid rgba(239,68,68,0.3);border-radius:8px;font-size:12px;color:var(--red)">
-          ⚠️ O evento será removido permanentemente do sistema.
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-sm btn-ghost" onclick="closeModal()">Cancelar</button>
-        <button class="btn-sm btn-danger" onclick="excluirEvento(${data.id})">🗑 Excluir</button>
-      </div>
-    `;
-  }
-}
-
-function closeModal() {
-  document.getElementById('modal-overlay').classList.add('hidden');
-}
-
-document.getElementById('modal-overlay').addEventListener('click', e => {
-  if(e.target === document.getElementById('modal-overlay')) closeModal();
-});
-
-// ============================================================
-// COTA CALCULATION (INLINE FORM)
-// ============================================================
-function calcularCotaForm() {
-  const fipe = parseFloat(document.getElementById('f-fipe')?.value)||0;
-  const assoc = document.getElementById('f-assoc')?.value;
-  const cat = document.getElementById('f-cat')?.value;
-  const vidro = document.getElementById('f-vidro')?.checked;
-  const terceiros = document.getElementById('f-terceiros')?.checked;
-  const reinc = document.getElementById('f-reinc')?.checked;
-  const preview = document.getElementById('f-cota-preview');
-  if(!preview) return;
-
-  const res = calcularCota({valorFipe:fipe, associacao:assoc, categoria:cat, reincidencia:reinc, vidro, terceiros});
-  if(res) {
-    preview.textContent = fmt(res.cotaTotal);
-    preview.style.color = 'var(--accent2)';
-    if(res.aplicouMinimo) preview.title = `Mínimo aplicado: ${fmt(res.minimo)}`;
-  } else {
-    preview.textContent = '— preencha FIPE, associação e categoria';
-    preview.style.color = 'var(--text3)';
-  }
-}
-
-function calcularCota({valorFipe,associacao,categoria,reincidencia=false,vidro=false,terceiros=false}) {
-  const regra = TABELA_COTAS[associacao]?.[categoria];
-  if(!regra||!valorFipe||valorFipe<=0) return null;
-  const {p:percentual,m:minimo,d:desconto} = regra;
-  const fipeEfetivo = desconto ? valorFipe*(1-desconto) : valorFipe;
-  let cotaBase = fipeEfetivo * percentual;
-  let cotaComMinimo = Math.max(cotaBase, minimo);
-  let cotaVidro = vidro ? cotaComMinimo*0.5 : 0;
-  let cotaTerceiros = terceiros ? cotaComMinimo*0.5 : 0;
-  let cotaTotal = cotaComMinimo + cotaVidro + cotaTerceiros;
-  let cotaReincidencia = 0;
-  if(reincidencia) { cotaReincidencia = cotaTotal; cotaTotal *= 2; }
-  return {fipeEfetivo,cotaBase,cotaComMinimo,cotaVidro,cotaTerceiros,cotaReincidencia,cotaTotal,percentual,minimo,aplicouMinimo:cotaBase<minimo};
-}
-
-// ============================================================
-// EVENTS CRUD
-// ============================================================
-function salvarEvento(editId) {
-  const cpf = document.getElementById('f-cpf').value;
-  const placa = document.getElementById('f-placa').value;
-  const assoc = document.getElementById('f-assoc').value;
-  const tipo = document.getElementById('f-tipo').value;
-  const fipe = parseFloat(document.getElementById('f-fipe').value)||0;
-  const cat = document.getElementById('f-cat').value;
-  const vidro = document.getElementById('f-vidro').checked;
-  const terceiros = document.getElementById('f-terceiros').checked;
-  const reinc = document.getElementById('f-reinc').checked;
-  const obs = document.getElementById('f-obs').value;
-
-  let valid = true;
-  const setErr = (id, msg) => { document.getElementById(id).textContent = msg; valid = !msg; };
-
-  setErr('e-cpf', cpf.replace(/\D/g,'').length<11 ? 'CPF inválido' : '');
-  setErr('e-placa', placa.replace(/[^a-zA-Z0-9]/g,'').length<7 ? 'Placa inválida' : '');
-  setErr('e-assoc', !assoc ? 'Selecione a associação' : '');
-  setErr('e-tipo', !tipo ? 'Selecione o tipo' : '');
-
-  if(!valid) return;
-
-  const res = calcularCota({valorFipe:fipe, associacao:assoc, categoria:cat, reincidencia:reinc, vidro, terceiros});
-  const cota = res ? res.cotaTotal : 0;
-
-  const evento = {cpf,placa,associacao:assoc,categoria:cat,tipo_evento:tipo,valor_fipe:fipe,cota,vidro,terceiros,reincidencia:reinc,observacoes:obs};
-
-  if(editId) {
-    const idx = mockEventos.findIndex(e=>e.id===editId);
-    if(idx!==-1) mockEventos[idx] = {...mockEventos[idx],...evento};
-    toast('success', 'Evento atualizado', `${placa} foi atualizado com sucesso`);
-  } else {
-    mockEventos.unshift({...evento, id:nextId++, created_at:new Date().toISOString()});
-    toast('success', 'Evento criado', `${placa} registrado com cota ${fmt(cota)}`);
-  }
-
-  closeModal();
-  document.getElementById('badge-eventos').textContent = mockEventos.length;
-  if(currentPageName==='eventos') loadEventos();
-  if(currentPageName==='dashboard') loadDashboard();
-}
-
-function editarEvento(id) {
-  const e = mockEventos.find(ev=>ev.id===id);
-  if(e) openModal('editar-evento', e);
-}
-
-function verDetalhes(id) {
-  const e = mockEventos.find(ev=>ev.id===id);
-  if(e) openModal('ver-detalhes', e);
-}
-
-function confirmarExclusao(id) {
-  openModal('confirmar-exclusao', {id});
-}
-
-function excluirEvento(id) {
-  const ev = mockEventos.find(e=>e.id===id);
-  mockEventos = mockEventos.filter(e=>e.id!==id);
-  closeModal();
-  toast('success', 'Evento excluído', ev ? `${ev.placa} removido` : '');
-  document.getElementById('badge-eventos').textContent = mockEventos.length;
-  if(currentPageName==='eventos') loadEventos();
-  if(currentPageName==='dashboard') loadDashboard();
-}
-
-// ============================================================
-// SIMULADOR
-// ============================================================
-function initSimulador() {
-  const assocSel = document.getElementById('sim-assoc');
-  const catSel = document.getElementById('sim-cat');
-  assocSel.innerHTML = '<option value="">Selecione...</option>' + ASSOCIACOES.map(a=>`<option value="${a}">${a}</option>`).join('');
-  catSel.innerHTML = '<option value="">Selecione...</option>' + CATEGORIAS.map(c=>`<option value="${c}">${c}</option>`).join('');
-}
-
-async function checkSimReincidencia() {
-  const cpf = document.getElementById('sim-cpf').value;
-  if(cpf.replace(/\D/g,'').length<11) return;
-  const historico = mockEventos.filter(e=>e.cpf===cpf);
-  const alertEl = document.getElementById('sim-reincidencia-alert');
-  if(historico.length>0) {
-    alertEl.style.display = 'block';
-    alertEl.innerHTML = `<div class="alert-box alert-warning">⚠️ CPF com ${historico.length} evento(s) anterior(es). Verificar reincidência.</div>`;
-    document.getElementById('sim-reincidencia').checked = true;
-  } else {
-    alertEl.style.display = 'none';
-    document.getElementById('sim-reincidencia').checked = false;
-  }
-  simularCota();
-}
-
-function simularCota() {
-  const fipe = parseFloat(document.getElementById('sim-fipe').value)||0;
-  const assoc = document.getElementById('sim-assoc').value;
-  const cat = document.getElementById('sim-cat').value;
-  const vidro = document.getElementById('sim-vidro').checked;
-  const terceiros = document.getElementById('sim-terceiros').checked;
-  const reinc = document.getElementById('sim-reincidencia').checked;
-
-  if(!fipe || !assoc || !cat) {
-    document.getElementById('sim-result-container').innerHTML = `
-      <div class="sim-result">
-        <div class="sim-empty">
-          <div class="sim-empty-icon">🧮</div>
-          <div style="font-size:13px;font-weight:600;color:var(--text2)">Preencha os dados ao lado</div>
-          <div style="font-size:12px">para calcular a cota</div>
-        </div>
-      </div>
-    `;
-    return;
-  }
-
-  const res = calcularCota({valorFipe:fipe, associacao:assoc, categoria:cat, reincidencia:reinc, vidro, terceiros});
-  if(!res) {
-    document.getElementById('sim-result-container').innerHTML = `<div class="sim-result"><div class="sim-empty"><div class="sim-empty-icon">⚠️</div><div style="color:var(--red)">Configuração não encontrada para esta combinação</div></div></div>`;
-    return;
-  }
-
-  const regra = TABELA_COTAS[assoc][cat];
-  document.getElementById('sim-result-container').innerHTML = `
-    <div class="sim-result">
-      <div class="sim-result-title">📊 Resultado da Simulação</div>
-      
-      <div class="sim-result-row">
-        <span class="sim-result-label">FIPE informada</span>
-        <span class="sim-result-value" style="color:var(--text2)">${fmt(fipe)}</span>
-      </div>
-      ${res.aplicouDescontoFipe?`
-      <div class="sim-result-row">
-        <span class="sim-result-label">FIPE efetiva (−30% Táxi/App)</span>
-        <span class="sim-result-value" style="color:var(--amber)">${fmt(res.fipeEfetivo)}</span>
-      </div>`:``}
-      <div class="sim-result-row">
-        <span class="sim-result-label">Percentual aplicado</span>
-        <span class="sim-result-value" style="color:var(--text2)">${(regra.p*100).toFixed(1)}%</span>
-      </div>
-      <div class="sim-result-row">
-        <span class="sim-result-label">Cota base</span>
-        <span class="sim-result-value">${fmt(res.cotaBase)}</span>
-      </div>
-      ${res.aplicouMinimo?`
-      <div class="sim-result-row">
-        <span class="sim-result-label">⚠️ Mínimo aplicado</span>
-        <span class="sim-result-value" style="color:var(--amber)">${fmt(res.minimo)}</span>
-      </div>`:``}
-      ${vidro?`
-      <div class="sim-result-row">
-        <span class="sim-result-label">🪟 Acréscimo vidro (+50%)</span>
-        <span class="sim-result-value" style="color:var(--cyan)">+${fmt(res.cotaVidro)}</span>
-      </div>`:``}
-      ${terceiros?`
-      <div class="sim-result-row">
-        <span class="sim-result-label">🚗 Acréscimo terceiros (+50%)</span>
-        <span class="sim-result-value" style="color:var(--purple)">+${fmt(res.cotaTerceiros)}</span>
-      </div>`:``}
-      ${reinc?`
-      <div class="sim-result-row">
-        <span class="sim-result-label">🔁 Acréscimo reincidência (×2)</span>
-        <span class="sim-result-value" style="color:var(--red)">+${fmt(res.cotaReincidencia)}</span>
-      </div>`:``}
-      
-      <div style="margin-top:16px;padding:16px;background:var(--accent-glow);border:1px solid rgba(29,106,229,0.4);border-radius:10px;text-align:center">
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:6px">COTA TOTAL FINAL</div>
-        <div class="sim-result-total-value">${fmt(res.cotaTotal)}</div>
-        ${reinc?'<div class="alert-box alert-warning" style="margin-top:8px;text-align:left">⚠️ Reincidência aplicada — valor dobrado</div>':''}
-        ${res.aplicouMinimo&&!reinc?'<div class="alert-box alert-info" style="margin-top:8px;text-align:left">ℹ️ Mínimo garantido aplicado</div>':''}
-      </div>
-    </div>
-  `;
-}
-
-function salvarSimulacao() {
-  const fipe = parseFloat(document.getElementById('sim-fipe').value)||0;
-  const assoc = document.getElementById('sim-assoc').value;
-  const cat = document.getElementById('sim-cat').value;
-  const cpf = document.getElementById('sim-cpf').value;
-  const vidro = document.getElementById('sim-vidro').checked;
-  const terceiros = document.getElementById('sim-terceiros').checked;
-  const reinc = document.getElementById('sim-reincidencia').checked;
-
-  if(!fipe||!assoc||!cat) { toast('error','Dados incompletos','Preencha FIPE, associação e categoria'); return; }
-
-  const res = calcularCota({valorFipe:fipe, associacao:assoc, categoria:cat, reincidencia:reinc, vidro, terceiros});
-  const evento = {
-    cpf: cpf||'—',
-    placa: '—',
-    associacao: assoc, categoria: cat,
-    tipo_evento: 'Outros',
-    valor_fipe: fipe, cota: res?.cotaTotal||0,
-    vidro, terceiros, reincidencia: reinc,
-    observacoes: 'Criado via simulador'
-  };
-  mockEventos.unshift({...evento, id:nextId++, created_at:new Date().toISOString()});
-  toast('success', 'Simulação salva', `Evento registrado com cota ${fmt(res?.cotaTotal||0)}`);
-  document.getElementById('badge-eventos').textContent = mockEventos.length;
-}
-
-function limparSimulador() {
-  ['sim-fipe','sim-cpf'].forEach(id => document.getElementById(id).value = '');
-  ['sim-assoc','sim-cat'].forEach(id => document.getElementById(id).value = '');
-  ['sim-vidro','sim-terceiros','sim-reincidencia'].forEach(id => document.getElementById(id).checked = false);
-  document.getElementById('sim-reincidencia-alert').style.display = 'none';
-  simularCota();
-}
-
-// ============================================================
-// CONFIGURAÇÃO
-// ============================================================
-function salvarConfig() {
-  const url = document.getElementById('cfg-url').value;
-  const key = document.getElementById('cfg-key').value;
-  if(!url||!key) { toast('error','Campos obrigatórios','Preencha URL e Chave'); return; }
-  localStorage.setItem('sb_url', url);
-  localStorage.setItem('sb_key', key);
-  toast('success','Configuração salva','Recarregue a página para aplicar');
-}
-
-function testarConexao() {
-  toast('info','Testando...','Verificando conexão com Supabase');
-  setTimeout(() => toast('warning','Modo demo','Configure as credenciais para usar o Supabase'), 1500);
-}
-
-function copiarSQL() {
-  const sql = document.querySelector('.sql-block').textContent;
-  navigator.clipboard.writeText(sql).then(() => toast('success','SQL copiado','Cole no SQL Editor do Supabase'));
-}
-
-// ============================================================
-// CLOCK
-// ============================================================
-function updateClock() {
-  const now = new Date();
-  document.getElementById('topbar-time').textContent = now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-}
-
-// ============================================================
-// INIT
-// ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-  updateClock();
-  setInterval(updateClock, 1000);
-  initSimulador();
-  loadDashboard();
-  populateFilterSelects();
-  // Restore config
-  const u = localStorage.getItem('sb_url'), k = localStorage.getItem('sb_key');
-  if(u) document.getElementById('cfg-url').value = u;
-  if(k) document.getElementById('cfg-key').value = k;
-});
-</script>
-
+  </script>
 </body>
 </html>

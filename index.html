@@ -723,16 +723,16 @@
           </div>
           
           <div class="p-6 space-y-6">
-            <!-- 🔴 DIAGNÓSTICO FIREBASE (NOVO) -->
-            <div class="card p-4 bg-red-50 border-2 border-red-300">
-              <h4 class="font-bold text-red-900 mb-2 flex items-center gap-2">
-                🔴 Diagnóstico e Reparo
+                      <!-- 🟢 DIAGNÓSTICO SUPABASE -->
+                      <div class="card p-4 bg-green-50 border-2 border-green-300">
+                          <h4 class="font-bold text-green-900 mb-2 flex items-center gap-2">
+                              🟢 Diagnóstico Supabase
               </h4>
               <p class="text-sm text-red-800 mb-3">
                 Use se tiver problemas de sincronização ou duplicatas
               </p>
               <div class="grid grid-cols-2 gap-2">
-                <button onclick="diagnosticarFirebase()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                                  <button onclick="diagnosticarSupabase()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
                   🔍 Diagnóstico
                 </button>
                 <button onclick="sincronizacaoCompleta()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
@@ -753,7 +753,7 @@
                 💾 Salvar Mês Atual
               </h4>
               <p class="text-sm text-blue-800 mb-3">
-                Salva o mês atual no navegador (LocalStorage) e sincroniza com nuvem (Firebase)
+                            Salva o mês atual no navegador (LocalStorage) e sincroniza com nuvem (Supabase)
               </p>
               <button onclick="saveCurrentMonthWithChecks(); closeConfigModal();" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold transition">
                 💾 Salvar Agora
@@ -793,13 +793,13 @@
               </button>
             </div>
 
-            <!-- Sincronização Firebase -->
+                      <!-- Sincronização Supabase -->
             <div class="card p-4 bg-amber-50 border-2 border-amber-200">
               <h4 class="font-bold text-amber-900 mb-2 flex items-center gap-2">
                 ☁️ Sincronização em Nuvem
               </h4>
               <p class="text-sm text-amber-800 mb-3">
-                Sincroniza automaticamente com Firebase quando conectado à internet
+                            Sincroniza automaticamente com Supabase quando conectado à internet
               </p>
               <div class="grid grid-cols-3 gap-2">
                 <button onclick="uploadToFirebase(); closeConfigModal();" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-lg font-bold transition">
@@ -808,7 +808,7 @@
                 <button onclick="downloadFromFirebase(); closeConfigModal();" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-3 rounded-lg font-bold transition">
                   📅 Baixar
                 </button>
-                <button onclick="checkFirebaseStatus(); closeConfigModal();" class="bg-amber-400 hover:bg-amber-500 text-white px-4 py-3 rounded-lg font-bold transition">
+                                  <button onclick="statusSupabase(); closeConfigModal();" class="bg-amber-400 hover:bg-amber-500 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
                   🔍 Status
                 </button>
               </div>

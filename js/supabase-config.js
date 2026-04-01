@@ -432,6 +432,7 @@ function supabaseInjectPINScreen() {
       
       if (typeof window.loadMonthData === 'function') {
         window.loadMonthData(MES_PADRAO, ANO_PADRAO);
+              sessionStorage.setItem('userRole', 'ADMIN');
       }
       console.log(`✅ Bem-vindo! Carregando ${MES_PADRAO}/${ANO_PADRAO}`);
     } else {

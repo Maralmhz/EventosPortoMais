@@ -1,10 +1,10 @@
 // ============ SISTEMA DE LOGIN - PORTO MAIS ============
-// Senhas dos usuários (hash SHA-256 simples via Web Crypto API)
-// Para adicionar usuários: use a função hashPassword() no console
+// Senhas dos usuários (hash SHA-256 via Web Crypto API)
+// Hashes gerados corretamente para as senhas abaixo
 
 const USERS = [
-  { username: 'porto',  passwordHash: '4c6741ff00e3bea3e02a1e1c5e3d7a6b6c3d2e1f9a8b7c6d5e4f3a2b1c0d9e8' }, // senha: portomais2024
-  { username: 'admin',  passwordHash: 'f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d7c6b5a4f3' }  // senha: admin123
+  { username: 'porto',  passwordHash: '8b172a46c5b247c787561506c4f823529cd9f6bda00b5f23357d9ca2fca12e8e' }, // senha: portomais2024
+  { username: 'admin',  passwordHash: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9' }  // senha: admin123
 ];
 
 // Senhas em texto simples para fallback (usado em ambientes sem Web Crypto)

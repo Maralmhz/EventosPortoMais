@@ -2,7 +2,6 @@
 // SUPABASE CONFIG — EventosPortoMais
 // Autenticação via PIN + CRUD de eventos
 // ============================================================
-
 const SUPABASE_URL = 'https://xjgyijfogxefmvfnwwbh.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqZ3lpamZvZ3hlZm12Zm53d2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNTM3NTYsImV4cCI6MjA5MDYyOTc1Nn0.WCEUnEkswLZXow8xwMBscYdBRZxK1BkW7skI-WS2rFQ';
 
@@ -66,11 +65,9 @@ const sb = {
     }
     return res.json().catch(() => []);
   },
-
   async select(table, params = '') {
     return this.query(`${table}?${params}`);
   },
-
   async insert(table, rows) {
     return this.query(table, {
       method: 'POST',
@@ -78,18 +75,15 @@ const sb = {
       body: JSON.stringify(rows),
     });
   },
-
   async update(table, id, data) {
     return this.query(`${table}?id=eq.${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   },
-
   async delete(table, id) {
     return this.query(`${table}?id=eq.${id}`, { method: 'DELETE' });
   },
-
   async upsert(table, rows) {
     return this.query(table, {
       method: 'POST',
@@ -110,7 +104,6 @@ async function supabaseLoginWithPIN(pin) {
   if (pin !== CORRECT_PIN) {
     return { ok: false, error: 'PIN incorreto' };
   }
-  
   try {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
       method: 'POST',
@@ -120,12 +113,10 @@ async function supabaseLoginWithPIN(pin) {
       },
       body: JSON.stringify({ email: PIN_EMAIL, password: PIN_PASSWORD }),
     });
-
     const data = await res.json();
     if (!res.ok) {
       return { ok: false, error: data.error_description || data.msg || 'Erro de autenticação' };
     }
-
     _authToken = data.access_token;
     window._sbSession = data;
     console.log('✅ Login realizado:', data.user?.email);
@@ -167,26 +158,28 @@ function rowToEvento(row, mes, ano) {
     const n = parseFloat(String(v).replace(',', '.'));
     return isNaN(n) ? null : n;
   }
-
   function str(v) {
     if (v === null || v === undefined) return null;
     const s = String(v).trim();
     return s === '' ? null : s.toUpperCase();
   }
-
   function strRaw(v) {
     if (v === null || v === undefined) return null;
     const s = String(v).trim();
     return s === '' ? null : s;
   }
-
   function date(v) {
     if (!v) return null;
-    if (/^\\d{2}\\/\\d{2}\\/\\d{4}$/.test(v)) {
+    // Formato DD/MM/YYYY
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) {
       const [d, m, y] = v.split('/');
       return `${y}-${m}-${d}`;
     }
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) return {    filial: str(row[COL.FILIAL]),
+    return null;
+  }
+
+  return {
+    filial: str(row[COL.FILIAL]),
     tipo_parte: str(row[COL.TIPO_PARTE]),
     tipo_sinistro: str(row[COL.TIPO_SINISTRO]),
     veiculo: str(row[COL.VEICULO]),
@@ -218,7 +211,6 @@ function eventoToRow(e) {
     const [y, m, d] = iso.split('T')[0].split('-');
     return `${d}/${m}/${y}`;
   }
-
   return [
     e.filial || '',
     e.tipo_parte || '',
@@ -264,10 +256,8 @@ async function supabaseSaveMonth(mes, ano, rows) {
       `${SUPABASE_URL}/rest/v1/eventos?mes_referencia=eq.${mes}&ano_referencia=eq.${ano}`,
       { method: 'DELETE', headers: getHeaders() }
     );
-
     const validas = rows.filter(r => r && r[COL.FILIAL] && String(r[COL.FILIAL]).trim() !== '');
     if (validas.length === 0) return { ok: true, count: 0 };
-
     const objs = validas.map(r => rowToEvento(r, mes, ano));
     await sb.insert('eventos', objs);
     console.log(`✅ Supabase: ${objs.length} eventos salvos (${mes}/${ano})`);
@@ -325,7 +315,6 @@ async function supabaseSearch(termo) {
 // ============================================================
 function supabaseInjectPINScreen() {
   if (document.getElementById('sb-pin-overlay')) return;
-
   const overlay = document.createElement('div');
   overlay.id = 'sb-pin-overlay';
   overlay.style.cssText = `
@@ -334,49 +323,40 @@ function supabaseInjectPINScreen() {
     display:flex; align-items:center; justify-content:center;
     font-family:'Segoe UI',sans-serif;
   `;
-
   overlay.innerHTML = `
-    <div style="background:#fff; border-radius:24px; padding:48px 40px; max-width:380px; width:100%; box-shadow:0 32px 80px rgba(0,0,0,0.4); animation:fadeIn 0.5s ease;">
-      <div style="text-align:center; margin-bottom:32px;">
-        <div style="width:72px; height:72px; margin:0 auto 16px; background:linear-gradient(135deg,#002B5C,#0057b8); border-radius:20px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(0,43,92,0.35);">
-          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="44" height="44">
-            <path d="M32 4L8 16v16c0 13.3 10.3 25.7 24 29 13.7-3.3 24-15.7 24-29V16L32 4z" fill="#fff" fill-opacity="0.15"/>
-            <path d="M32 4L8 16v16c0 13.3 10.3 25.7 24 29 13.7-3.3 24-15.7 24-29V16L32 4z" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
-            <text x="20" y="43" font-family="Arial Black,sans-serif" font-size="26" font-weight="900" fill="#fff" letter-spacing="-1">P+</text>
-          </svg>
+    <div style="background:#fff; padding:2.5rem; border-radius:1.5rem; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); width:100%; max-width:400px; text-align:center; animation:fadeIn 0.5s ease-out;">
+      <div style="font-size:3rem; margin-bottom:0.5rem;">P+</div>
+      <h2 style="margin:0; color:#002B5C; font-weight:800; letter-spacing:-0.5px;">Porto Mais</h2>
+      <p style="color:#64748b; margin-bottom:2rem; font-size:0.9rem;">Gestão de Eventos</p>
+      
+      <div style="margin-bottom:2rem;">
+        <div style="display:flex; justify-content:center; gap:0.75rem; margin-bottom:1rem;">
+          <div class="pin-dot" style="width:14px; height:14px; border-radius:50%; background:#e2e8f0; transition:all 0.2s;"></div>
+          <div class="pin-dot" style="width:14px; height:14px; border-radius:50%; background:#e2e8f0; transition:all 0.2s;"></div>
+          <div class="pin-dot" style="width:14px; height:14px; border-radius:50%; background:#e2e8f0; transition:all 0.2s;"></div>
+          <div class="pin-dot" style="width:14px; height:14px; border-radius:50%; background:#e2e8f0; transition:all 0.2s;"></div>
+          <div class="pin-dot" style="width:14px; height:14px; border-radius:50%; background:#e2e8f0; transition:all 0.2s;"></div>
+          <div class="pin-dot" style="width:14px; height:14px; border-radius:50%; background:#e2e8f0; transition:all 0.2s;"></div>
         </div>
-        <h2 style="font-size:22px; font-weight:900; color:#1e293b; margin:0 0 4px;">Porto Mais</h2>
-        <p style="font-size:13px; color:#64748b; font-weight:500; margin:0;">Gestão de Eventos</p>
+        <p id="pin-error" style="color:#ef4444; font-size:0.85rem; height:1rem; display:none;"></p>
       </div>
 
-      <div style="text-align:center; margin-bottom:24px;">
-        <div style="font-size:12px; font-weight:700; color:#475569; margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px;">Digite o PIN</div>
-        <div id="pin-display" style="display:flex; gap:12px; justify-content:center; margin-bottom:8px;">
-          <div class="pin-dot" style="width:16px; height:16px; border-radius:50%; background:#e2e8f0;"></div>
-          <div class="pin-dot" style="width:16px; height:16px; border-radius:50%; background:#e2e8f0;"></div>
-          <div class="pin-dot" style="width:16px; height:16px; border-radius:50%; background:#e2e8f0;"></div>
-          <div class="pin-dot" style="width:16px; height:16px; border-radius:50%; background:#e2e8f0;"></div>
-          <div class="pin-dot" style="width:16px; height:16px; border-radius:50%; background:#e2e8f0;"></div>
-          <div class="pin-dot" style="width:16px; height:16px; border-radius:50%; background:#e2e8f0;"></div>
-        </div>
-        <div id="pin-error" style="display:none; color:#dc2626; font-size:12px; font-weight:600; margin-top:8px;"></div>
-      </div>
-
-      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px;">
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:2rem;">
         ${[1,2,3,4,5,6,7,8,9].map(n => `
-          <button onclick="addPinDigit('${n}')" style="padding:18px; background:linear-gradient(135deg,#f8fafc,#f1f5f9); border:2px solid #e2e8f0; border-radius:12px; font-size:20px; font-weight:800; color:#1e293b; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='linear-gradient(135deg,#e2e8f0,#cbd5e1)'; this.style.borderColor='#94a3b8';" onmouseout="this.style.background='linear-gradient(135deg,#f8fafc,#f1f5f9)'; this.style.borderColor='#e2e8f0';">${n}</button>
+          <button onclick="addPinDigit('${n}')" style="aspect-ratio:1; border-radius:1rem; border:1px solid #e2e8f0; background:#f8fafc; color:#002B5C; font-size:1.5rem; font-weight:600; cursor:pointer; transition:all 0.2s; outline:none;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">${n}</button>
         `).join('')}
-        <button onclick="clearPin()" style="padding:18px; background:linear-gradient(135deg,#fee2e2,#fecaca); border:2px solid #fca5a5; border-radius:12px; font-size:14px; font-weight:800; color:#dc2626; cursor:pointer;" onmouseover="this.style.background='linear-gradient(135deg,#fecaca,#fca5a5)';" onmouseout="this.style.background='linear-gradient(135deg,#fee2e2,#fecaca)';">Limpar</button>
-        <button onclick="addPinDigit('0')" style="padding:18px; background:linear-gradient(135deg,#f8fafc,#f1f5f9); border:2px solid #e2e8f0; border-radius:12px; font-size:20px; font-weight:800; color:#1e293b; cursor:pointer;" onmouseover="this.style.background='linear-gradient(135deg,#e2e8f0,#cbd5e1)';" onmouseout="this.style.background='linear-gradient(135deg,#f8fafc,#f1f5f9)';">0</button>
-        <button onclick="removePinDigit()" style="padding:18px; background:linear-gradient(135deg,#fff7ed,#fed7aa); border:2px solid #fdba74; border-radius:12px; font-size:20px; font-weight:800; color:#ea580c; cursor:pointer;" onmouseover="this.style.background='linear-gradient(135deg,#fed7aa,#fdba74)';" onmouseout="this.style.background='linear-gradient(135deg,#fff7ed,#fed7aa)';">←</button>
+        <button onclick="clearPin()" style="aspect-ratio:1; border-radius:1rem; border:1px solid #e2e8f0; background:#fff1f2; color:#be123c; font-size:0.85rem; font-weight:600; cursor:pointer; outline:none;">Limpar</button>
+        <button onclick="addPinDigit('0')" style="aspect-ratio:1; border-radius:1rem; border:1px solid #e2e8f0; background:#f8fafc; color:#002B5C; font-size:1.5rem; font-weight:600; cursor:pointer; outline:none;">0</button>
+        <button onclick="removePinDigit()" style="aspect-ratio:1; border-radius:1rem; border:1px solid #e2e8f0; background:#f8fafc; color:#002B5C; font-size:1.5rem; font-weight:600; cursor:pointer; outline:none;">←</button>
       </div>
 
-      <button id="pin-submit" onclick="submitPin()" disabled style="width:100%; padding:16px; background:linear-gradient(135deg,#cbd5e1,#94a3b8); color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:800; cursor:not-allowed; transition:all 0.2s; box-shadow:0 4px 12px rgba(0,0,0,0.1);">🔐 Entrar</button>
-
-      <p style="text-align:center; margin-top:20px; font-size:11px; color:#94a3b8; font-weight:600;">🔒 Acesso protegido • Porto Mais © 2026</p>
+      <button id="pin-submit" onclick="submitPin()" disabled style="width:100%; padding:1rem; border-radius:1rem; border:none; background:linear-gradient(135deg,#cbd5e1,#94a3b8); color:#fff; font-size:1.1rem; font-weight:700; cursor:not-allowed; transition:all 0.3s; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">🔐 Entrar</button>
+      
+      <div style="margin-top:2rem; font-size:0.75rem; color:#94a3b8; display:flex; align-items:center; justify-content:center; gap:0.5rem;">
+        <span>🔒 Acesso protegido • Porto Mais © 2026</span>
+      </div>
     </div>
   `;
-
   document.body.appendChild(overlay);
 
   let pinValue = '';
@@ -389,7 +369,6 @@ function supabaseInjectPINScreen() {
       pinValue += digit;
       dots[pinValue.length - 1].style.background = 'linear-gradient(135deg,#002B5C,#0057b8)';
       errorEl.style.display = 'none';
-      
       if (pinValue.length === 6) {
         submitBtn.disabled = false;
         submitBtn.style.background = 'linear-gradient(135deg,#002B5C,#0057b8)';
@@ -422,7 +401,6 @@ function supabaseInjectPINScreen() {
     submitBtn.innerHTML = '⏳ Verificando...';
     
     const result = await supabaseLoginWithPIN(pinValue);
-    
     if (result.ok) {
       overlay.style.transition = 'opacity .4s';
       overlay.style.opacity = '0';
@@ -430,7 +408,7 @@ function supabaseInjectPINScreen() {
       
       if (typeof window.loadMonthData === 'function') {
         window.loadMonthData(MES_PADRAO, ANO_PADRAO);
-              sessionStorage.setItem('userRole', 'ADMIN');
+        sessionStorage.setItem('userRole', 'ADMIN');
       }
       console.log(`✅ Bem-vindo! Carregando ${MES_PADRAO}/${ANO_PADRAO}`);
     } else {
@@ -468,5 +446,10 @@ console.log(`✅ Supabase PIN login carregado — mês padrão: ${MES_PADRAO}/${
 
 // Adiciona CSS de animação
 const style = document.createElement('style');
-style.textContent = `@keyframes fadeIn { from { opacity:0; transform:translateY(24px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }`;
+style.textContent = `
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+`;
 document.head.appendChild(style);

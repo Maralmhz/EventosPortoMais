@@ -186,9 +186,7 @@ function rowToEvento(row, mes, ano) {
       const [d, m, y] = v.split('/');
       return `${y}-${m}-${d}`;
     }
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) 
-  return {
-    filial: str(row[COL.FILIAL]),
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) return {    filial: str(row[COL.FILIAL]),
     tipo_parte: str(row[COL.TIPO_PARTE]),
     tipo_sinistro: str(row[COL.TIPO_SINISTRO]),
     veiculo: str(row[COL.VEICULO]),

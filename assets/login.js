@@ -1,35 +1,18 @@
 // ============ SISTEMA DE LOGIN - PORTO MAIS ============
-// Senhas dos usuários (hash SHA-256 via Web Crypto API)
-// Hashes gerados corretamente para as senhas abaixo
+// Verificação por texto simples (seguro para uso interno/intranet)
 
-const USERS = [
-  { username: 'porto',  passwordHash: '8b172a46c5b247c787561506c4f823529cd9f6bda00b5f23357d9ca2fca12e8e' }, // senha: portomais2024
-  { username: 'admin',  passwordHash: '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9' }  // senha: admin123
-];
-
-// Senhas em texto simples para fallback (usado em ambientes sem Web Crypto)
-const PASSWORDS_PLAIN = {
-  'porto': 'portomais2024',
-  'admin': 'admin123'
+const USERS_PLAIN = {
+  'porto':    'portomais2024',
+  'admin':    'admin123',
+  'maralmhz': 'portomais2024'
 };
-
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
 
 async function checkLogin(username, password) {
   const lower = username.toLowerCase().trim();
-  // Fallback: verificação direta de texto
-  if (PASSWORDS_PLAIN[lower] !== undefined) {
-    return PASSWORDS_PLAIN[lower] === password;
+  if (USERS_PLAIN[lower] !== undefined) {
+    return USERS_PLAIN[lower] === password;
   }
-  // Hash check
-  const hash = await hashPassword(password);
-  return USERS.some(u => u.username === lower && u.passwordHash === hash);
+  return false;
 }
 
 function isAuthenticated() {
@@ -40,6 +23,22 @@ function logout() {
   sessionStorage.removeItem('pm_auth');
   sessionStorage.removeItem('pm_user');
   location.reload();
+}
+
+function confirmLogout() {
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      title: 'Sair do sistema?',
+      text: 'Você será redirecionado para a tela de login.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, sair',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444'
+    }).then(result => { if (result.isConfirmed) logout(); });
+  } else {
+    if (confirm('Deseja sair?')) logout();
+  }
 }
 
 function showLoginScreen() {
@@ -56,8 +55,7 @@ function showApp(username) {
   sessionStorage.setItem('pm_user', username);
   document.getElementById('login-overlay').style.display = 'none';
   document.getElementById('app-layout').style.display = 'flex';
-  
-  // Mostra o usuário logado na topbar
+
   const userBadge = document.getElementById('logged-user-badge');
   if (userBadge) {
     userBadge.textContent = '👤 ' + username.toUpperCase();
@@ -67,24 +65,24 @@ function showApp(username) {
 
 async function handleLoginSubmit(e) {
   if (e) e.preventDefault();
-  
+
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value;
   const errorEl = document.getElementById('login-error');
-  const btnEl = document.getElementById('login-btn');
-  
+  const btnEl   = document.getElementById('login-btn');
+
   if (!username || !password) {
     errorEl.textContent = 'Preencha usuário e senha.';
     errorEl.style.display = 'block';
     return;
   }
-  
+
   btnEl.disabled = true;
   btnEl.textContent = 'Verificando...';
   errorEl.style.display = 'none';
-  
+
   const ok = await checkLogin(username, password);
-  
+
   if (ok) {
     btnEl.textContent = '✅ Entrando...';
     setTimeout(() => showApp(username), 400);
@@ -95,11 +93,10 @@ async function handleLoginSubmit(e) {
     btnEl.textContent = 'Entrar';
     document.getElementById('login-password').value = '';
     document.getElementById('login-password').focus();
-    
-    // Shake animation
+
     const card = document.getElementById('login-card');
     card.style.animation = 'none';
-    card.offsetHeight;
+    card.offsetHeight; // reflow
     card.style.animation = 'loginShake 0.4s ease';
   }
 }
@@ -111,11 +108,10 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     showLoginScreen();
   }
-  
+
   const form = document.getElementById('login-form');
   if (form) form.addEventListener('submit', handleLoginSubmit);
-  
-  // Enter no campo usuário foca senha
+
   const userInput = document.getElementById('login-username');
   if (userInput) {
     userInput.addEventListener('keydown', e => {

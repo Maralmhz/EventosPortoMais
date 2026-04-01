@@ -245,3 +245,47 @@ console.log('✅ Diagnóstico Supabase carregado. Use:');
 console.log(' - diagnosticarSupabase() para ver status');
 console.log(' - uploadToSupabase() para enviar dados para nuvem');
 console.log(' - downloadFromSupabase() para baixar da nuvem');
+
+// ============================================================================
+// ALIASES PARA FUNÇÕES DO MODAL DE DIAGNÓSTICO (compatibilidade com index.html)
+// sincronizacaoCompleta() e forcarBaixarTudoDaNuvem() referenciavam firebaseDb
+// Agora redirecionamos para funções Supabase
+// ============================================================================
+
+async function sincronizacaoCompletaSupabase() {
+  await uploadToSupabase();
+  await downloadFromSupabase();
+}
+
+async function forcarBaixarTudoDoSupabase() {
+  if (!window.supabaseListMonths || !window.supabaseLoadMonth) {
+    Swal.fire('Supabase Offline', 'Funções Supabase não disponíveis', 'error');
+    return;
+  }
+
+  const confirm = await Swal.fire({
+    title: '⚠️ AVISO IMPORTANTE',
+    html: `
+      <div class="text-left text-sm">
+        <p class="mb-3 text-red-600 font-bold">Isto vai SUBSTITUIR os dados do mês atual pelo do Supabase!</p>
+        <p class="mb-3">Use esta opção se a nuvem tem a versão mais recente.</p>
+      </div>
+    `,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: '📥 SIM, baixar tudo',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444'
+  });
+
+  if (!confirm.isConfirmed) return;
+
+  await downloadFromSupabase();
+}
+
+// Override das funções do diagnostico-firebase.js que usam firebaseDb
+window.sincronizacaoCompleta = sincronizacaoCompletaSupabase;
+window.forcarBaixarTudoDaNuvem = forcarBaixarTudoDoSupabase;
+window.forcarEnviarTudoParaNuvem = uploadToSupabase;
+
+console.log('✅ Overrides Firebase→Supabase aplicados: sincronizacaoCompleta, forcarBaixarTudoDaNuvem');

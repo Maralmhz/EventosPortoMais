@@ -6,15 +6,6 @@
   <title>Gerenciador de Eventos - Porto Mais</title>
 
     
-  <!-- BLOQUEIA APP ATÉ LOGIN -->
-  <style>body { opacity: 0; }</style>
-  <script>
-    // Esconde tudo até autenticar
-    document.addEventListener('DOMContentLoaded', () => {
-      const role = sessionStorage.getItem('userRole');
-    if (role) {        document.body.style.opacity = '1';
-      }
-    });
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
@@ -25,8 +16,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/supabase-config.js"></script>
 
-<!-- Login PIN - DEVE VIR ANTES DE TUDO -->
-    <!-- <script src="assets/pin-login.js"></script> -->  
 
   <link href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css" rel="stylesheet" />
   <link href="assets/styles.css" rel="stylesheet" />

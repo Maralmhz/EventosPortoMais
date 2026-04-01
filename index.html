@@ -12,8 +12,7 @@
     // Esconde tudo até autenticar
     document.addEventListener('DOMContentLoaded', () => {
       const role = sessionStorage.getItem('userRole');
-      if (!role) {
-        document.body.style.opacity = '1';
+    if (role) {        document.body.style.opacity = '1';
       }
     });
   </script>

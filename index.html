@@ -20,6 +20,179 @@
   <link href="assets/features.css" rel="stylesheet" />
 
   <style>
+    /* ============ LOGIN SCREEN ============ */
+    #login-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #001b3a 0%, #002B5C 50%, #003d7a 100%);
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    #login-card {
+      background: rgba(255,255,255,0.97);
+      border-radius: 24px;
+      padding: 48px 40px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1);
+      animation: loginFadeIn 0.5s cubic-bezier(.16,1,.3,1);
+    }
+
+    @keyframes loginFadeIn {
+      from { opacity: 0; transform: translateY(24px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes loginShake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-8px); }
+      40%      { transform: translateX(8px); }
+      60%      { transform: translateX(-5px); }
+      80%      { transform: translateX(5px); }
+    }
+
+    .login-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .login-logo-icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #002B5C 0%, #0057b8 100%);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      box-shadow: 0 8px 24px rgba(0,43,92,0.35);
+    }
+
+    .login-title {
+      font-size: 22px;
+      font-weight: 900;
+      color: #1e293b;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .login-sub {
+      font-size: 13px;
+      color: #64748b;
+      text-align: center;
+      margin-bottom: 32px;
+      font-weight: 500;
+    }
+
+    .login-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+
+    .login-input {
+      width: 100%;
+      padding: 13px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      color: #1e293b;
+      background: #f8fafc;
+      transition: all 0.2s ease;
+      outline: none;
+      margin-bottom: 16px;
+    }
+
+    .login-input:focus {
+      border-color: #002B5C;
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(0,43,92,0.1);
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #002B5C 0%, #0057b8 100%);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 800;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 6px 20px rgba(0,43,92,0.35);
+      margin-top: 8px;
+    }
+
+    .login-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(0,43,92,0.45);
+    }
+
+    .login-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .login-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .login-error {
+      display: none;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    /* ============ APP (oculto até login) ============ */
+    #app-layout {
+      display: none;
+    }
+
+    /* ============ BADGE USUÁRIO ============ */
+    #logged-user-badge {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      background: linear-gradient(135deg, #002B5C 0%, #0057b8 100%);
+      color: #fff;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    #logged-user-badge:hover {
+      opacity: 0.85;
+    }
+
+    /* ============ ESTILOS DO APP (originais) ============ */
     @keyframes shimmer { 0%,100%{background-position:200% center;} 50%{background-position:-200% center;} }
     @keyframes pulse-glow { 0%,100%{box-shadow:0 0 20px rgba(59,130,246,0.3);} 50%{box-shadow:0 0 30px rgba(59,130,246,0.6);} }
     @keyframes float { 0%,100%{transform:translateY(0px);} 50%{transform:translateY(-6px);} }
@@ -104,7 +277,6 @@
       box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
     }
     
-    /* ✨ BARRA DE AÇÕES RÁPIDAS - MELHORADA */
     .quick-action-bar {
       position: fixed;
       bottom: 20px;
@@ -269,7 +441,6 @@
       font-weight: 800;
     }
 
-    /* PATCH: Correção do Modal de Configurações */
     #configModal .bg-white {
       max-height: 80vh !important;
       overflow-y: auto !important;
@@ -303,28 +474,57 @@
       padding: 20px !important;
     }
 
-    #configModal .space-y-6::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    #configModal .space-y-6::-webkit-scrollbar-track {
-      background: #f1f5f9;
-      border-radius: 10px;
-    }
-
-    #configModal .space-y-6::-webkit-scrollbar-thumb {
-      background: #94a3b8;
-      border-radius: 10px;
-    }
-
-    #configModal .space-y-6::-webkit-scrollbar-thumb:hover {
-      background: #64748b;
-    }
+    #configModal .space-y-6::-webkit-scrollbar { width: 6px; }
+    #configModal .space-y-6::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+    #configModal .space-y-6::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+    #configModal .space-y-6::-webkit-scrollbar-thumb:hover { background: #64748b; }
   </style>
 </head>
 
 <body>
-  <div class="layout">
+
+  <!-- ============ TELA DE LOGIN ============ -->
+  <div id="login-overlay">
+    <div id="login-card">
+      <div class="login-logo">
+        <div class="login-logo-icon">🛡️</div>
+      </div>
+      <div class="login-title">Porto Mais</div>
+      <div class="login-sub">Gerenciador de Eventos &mdash; Acesso restrito</div>
+
+      <form id="login-form" autocomplete="off">
+        <label class="login-label" for="login-username">Usuário</label>
+        <input
+          id="login-username"
+          class="login-input"
+          type="text"
+          placeholder="Digite seu usuário"
+          autocomplete="username"
+          spellcheck="false"
+        />
+
+        <label class="login-label" for="login-password">Senha</label>
+        <input
+          id="login-password"
+          class="login-input"
+          type="password"
+          placeholder="Digite sua senha"
+          autocomplete="current-password"
+        />
+
+        <div id="login-error" class="login-error"></div>
+
+        <button id="login-btn" class="login-btn" type="submit">Entrar</button>
+      </form>
+
+      <div class="login-footer">
+        🔒 Acesso protegido &bull; Porto Mais &copy; 2025
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ APP PRINCIPAL ============ -->
+  <div id="app-layout" class="layout">
     <aside class="sidebar" id="sidebar">
       <nav class="menu">
         <div class="item active" id="nav-dash" onclick="go('dash')" title="Dashboard"><span>📊</span></div>
@@ -349,30 +549,28 @@
         </div>
 
         <div class="flex items-center gap-2 flex-wrap">
-          <!-- ✨ NOVAS FUNCIONALIDADES: Barra de busca inteligente -->
           <div class="smart-search-container" style="display: flex; align-items: center; gap: 8px;">
             <input type="text" id="smart-search-input" placeholder="🔍 Busca inteligente..." 
                    style="padding: 8px 12px; border-radius: 8px; border: 2px solid #e2e8f0; min-width: 200px;">
             <button id="smart-search-btn" class="month-nav-btn" style="padding: 8px 12px;">🔎</button>
-            <button id="clear-search-btn" class="month-nav-btn" style="padding: 8px 12px; background: linear-gradient(135deg, #64748b 0%, #475569 100%);"><nowiki>✖️</nowiki></button>
+            <button id="clear-search-btn" class="month-nav-btn" style="padding: 8px 12px; background: linear-gradient(135deg, #64748b 0%, #475569 100%);">&#x2716;&#xFE0F;</button>
             <span id="search-counter" style="font-size: 11px; color: #64748b; font-weight: 700;"></span>
           </div>
           
-          <button class="month-nav-btn" onclick="showMonthNavigator()">📅 Navegar Meses</button>
-          <button class="btn btn-primary" onclick="saveCurrentMonthWithChecks()">💾 Salvar</button>
-          <button class="btn btn-success" onclick="updateDashboard(); go('dash')">🔄 Atualizar</button>
+          <button class="month-nav-btn" onclick="showMonthNavigator()">&#x1F4C5; Navegar Mêses</button>
+          <button class="btn btn-primary" onclick="saveCurrentMonthWithChecks()">&#x1F4BE; Salvar</button>
+          <button class="btn btn-success" onclick="updateDashboard(); go('dash')">&#x1F504; Atualizar</button>
           
-          <!-- ✨ Contador de linhas -->
           <div id="row-counter" class="row-counter"></div>
           
-          <!-- ✨ Botão modo escuro -->
-          <button class="month-nav-btn" onclick="setTimeout(() => { if(window.toggleDarkMode) window.toggleDarkMode(); }, 50)" id="dark-mode-icon" style="padding: 8px 12px;" title="Modo Escuro (Ctrl+Shift+D)">🌙</button>
+          <!-- Badge do usuário logado + botão sair -->
+          <span id="logged-user-badge" onclick="confirmLogout()"></span>
           
+          <button class="month-nav-btn" onclick="setTimeout(() => { if(window.toggleDarkMode) window.toggleDarkMode(); }, 50)" id="dark-mode-icon" style="padding: 8px 12px;" title="Modo Escuro (Ctrl+Shift+D)">🌙</button>
         </div>
       </div>
 
-    
-      <!-- 🎯 ABAS DE MESES NO TOPO -->
+      <!-- ABAS DE MESES NO TOPO -->
       <div class="month-tabs-container">
         <div id="month-tabs" class="flex items-center gap-2"></div>
       </div>
@@ -499,13 +697,9 @@
             <div class="flex gap-2 flex-wrap">
               <button class="btn btn-primary" onclick="showAddOficinaModal()">➕ Nova Oficina</button>
               <button class="month-nav-btn" onclick="setTimeout(() => { if(window.exportarOficinasParaJSON) window.exportarOficinasParaJSON(); }, 50)" 
-                      style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
-                📤 Backup
-              </button>
+                      style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">&#x1F4E4; Backup</button>
               <button class="month-nav-btn" onclick="setTimeout(() => { if(window.showOficinasMap) window.showOficinasMap(); }, 50)" 
-                      style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
-                🗺️ Ver Mapa
-              </button>
+                      style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">&#x1F5FA;&#xFE0F; Ver Mapa</button>
             </div>
           </div>
         </div>
@@ -549,159 +743,121 @@
               <button onclick="closeOficinaModal()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
             </div>
           </div>
-          
           <div class="p-6 space-y-4">
-            <div>
-              <label class="block text-sm font-bold mb-2">Nome da Oficina *</label>
-              <input type="text" id="of-nome" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="Ex: Auto Center Silva">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="md:col-span-2">
+                <label class="block text-sm font-bold mb-1">Nome da Oficina *</label>
+                <input id="of-nome" type="text" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="Nome completo da oficina">
+              </div>
+              <div>
+                <label class="block text-sm font-bold mb-1">CNPJ</label>
+                <input id="of-cnpj" type="text" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="00.000.000/0000-00">
+              </div>
+              <div>
+                <label class="block text-sm font-bold mb-1">Telefone</label>
+                <input id="of-telefone" type="text" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="(00) 00000-0000">
+              </div>
+              <div>
+                <label class="block text-sm font-bold mb-1">E-mail</label>
+                <input id="of-email" type="email" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="email@oficina.com">
+              </div>
+              <div>
+                <label class="block text-sm font-bold mb-1">Endereço</label>
+                <input id="of-endereco" type="text" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="Rua, número, cidade">
+              </div>
             </div>
-            
-            <div>
-              <label class="block text-sm font-bold mb-2">CNPJ</label>
-              <input type="text" id="of-cnpj" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="00.000.000/0000-00">
-            </div>
-            
-            <div>
-              <label class="block text-sm font-bold mb-2">Telefone</label>
-              <input type="text" id="of-telefone" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="(31) 99999-9999">
-            </div>
-            
-            <div>
-              <label class="block text-sm font-bold mb-2">E-mail</label>
-              <input type="email" id="of-email" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="contato@oficina.com.br">
-            </div>
-            
-            <div>
-              <label class="block text-sm font-bold mb-2">Endereço</label>
-              <textarea id="of-endereco" rows="2" class="w-full border-2 border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none" placeholder="Rua, Número, Bairro, Cidade"></textarea>
-            </div>
-            
             <div>
               <label class="block text-sm font-bold mb-2">Categorias de Serviço *</label>
               <div class="grid grid-cols-2 gap-2">
-                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
-                  <input type="checkbox" value="Mecânica" class="of-categoria">
-                  <span class="text-sm">Mecânica</span>
+                <label class="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="checkbox" class="of-categoria" value="Mecânica"> Mecânica
                 </label>
-                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
-                  <input type="checkbox" value="Lanternagem" class="of-categoria">
-                  <span class="text-sm">Lanternagem</span>
+                <label class="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="checkbox" class="of-categoria" value="Lanternagem"> Lanternagem
                 </label>
-                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
-                  <input type="checkbox" value="Lanternagem+Mecânica" class="of-categoria">
-                  <span class="text-sm">Lanternagem+Mecânica</span>
+                <label class="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="checkbox" class="of-categoria" value="Lanternagem+Mecânica"> Lanternagem+Mecânica
                 </label>
-                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
-                  <input type="checkbox" value="Vidros" class="of-categoria">
-                  <span class="text-sm">Vidros</span>
+                <label class="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="checkbox" class="of-categoria" value="Vidros"> Vidros
                 </label>
-                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
-                  <input type="checkbox" value="Ar-Condicionado" class="of-categoria">
-                  <span class="text-sm">Ar-Condicionado</span>
+                <label class="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="checkbox" class="of-categoria" value="Ar-Condicionado"> Ar-Condicionado
                 </label>
-                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
-                  <input type="checkbox" value="Elétrica" class="of-categoria">
-                  <span class="text-sm">Elétrica</span>
+                <label class="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="checkbox" class="of-categoria" value="Elétrica"> Elétrica
                 </label>
-                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
-                  <input type="checkbox" value="Alinhamento/Balanceamento" class="of-categoria">
-                  <span class="text-sm">Alinhamento/Balanceamento</span>
+                <label class="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="checkbox" class="of-categoria" value="Alinhamento/Balanceamento"> Alinhamento/Balanc.
                 </label>
-                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
-                  <input type="checkbox" value="Estofaria" class="of-categoria">
-                  <span class="text-sm">Estofaria</span>
+                <label class="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="checkbox" class="of-categoria" value="Estofaria"> Estofaria
                 </label>
-                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
-                  <input type="checkbox" value="Funilaria" class="of-categoria">
-                  <span class="text-sm">Funilaria</span>
+                <label class="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="checkbox" class="of-categoria" value="Funilaria"> Funilaria
                 </label>
-                <label class="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
-                  <input type="checkbox" value="Pintura" class="of-categoria">
-                  <span class="text-sm">Pintura</span>
+                <label class="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input type="checkbox" class="of-categoria" value="Pintura"> Pintura
                 </label>
               </div>
             </div>
           </div>
-          
-          <div class="p-4 bg-gray-50 rounded-b-2xl flex gap-2 justify-end">
-            <button onclick="closeOficinaModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-bold">Cancelar</button>
-            <button onclick="saveOficina()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">💾 Salvar Oficina</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- COMPARE SELECTOR MODAL -->
-      <div id="compareSelectorModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-auto">
-          <div class="p-6 border-b bg-gradient-to-r from-purple-500 to-pink-600 rounded-t-2xl">
-            <div class="flex items-center justify-between">
-              <h3 class="font-bold text-2xl text-white">📈 Selecionar Meses para Comparar</h3>
-              <button onclick="closeCompareSelector()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
-            </div>
-          </div>
-          
-          <div class="p-6">
-            <div class="year-selector">
-              <button class="year-btn" onclick="changeCompareSelectorYear(-1)">◀ Ano Anterior</button>
-              <div class="year-display" id="compare-year">2026</div>
-              <button class="year-btn" onclick="changeCompareSelectorYear(1)">Próximo Ano ▶</button>
-            </div>
-            
-            <div class="mb-4">
-              <p class="text-sm font-bold text-gray-700 mb-2">✅ Meses selecionados: <span id="selected-count">0</span></p>
-              <div id="selected-months-badges" class="flex flex-wrap gap-2"></div>
-            </div>
-            
-            <div class="calendar-grid" id="compare-calendar"></div>
-            
-            <div class="mt-6 p-4 bg-purple-50 rounded-lg">
-              <p class="text-sm text-gray-700"><b>💡 Como usar:</b></p>
-              <ul class="text-xs text-gray-600 mt-2 space-y-1">
-                <li>• Clique nos meses que deseja comparar (mínimo 2)</li>
-                <li>• Verde = selecionado para comparação</li>
-                <li>• Navegue entre anos para comparar períodos diferentes</li>
-              </ul>
-            </div>
-          </div>
-          
-          <div class="p-4 bg-gray-50 rounded-b-2xl flex gap-2 justify-end">
-            <button onclick="closeCompareSelector()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-bold">Cancelar</button>
-            <button onclick="generateComparison()" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-bold">📊 Gerar Comparação</button>
+          <div class="p-6 border-t flex gap-3 justify-end">
+            <button onclick="closeOficinaModal()" class="px-6 py-2 border-2 border-gray-300 rounded-lg font-bold hover:bg-gray-50">Cancelar</button>
+            <button onclick="saveOficina()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700">✅ Salvar Oficina</button>
           </div>
         </div>
       </div>
 
       <!-- MONTH NAVIGATOR MODAL -->
       <div id="monthNavigatorModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-auto">
-          <div class="p-6 border-b bg-gradient-to-r from-blue-500 to-purple-600 rounded-t-2xl">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div class="p-6 border-b bg-gradient-to-r from-blue-500 to-indigo-600 rounded-t-2xl">
             <div class="flex items-center justify-between">
-              <h3 class="font-bold text-2xl text-white flex items-center gap-2">📅 Navegador de Meses e Anos</h3>
+              <h3 class="font-bold text-xl text-white">📅 Navegar Meses</h3>
               <button onclick="closeMonthNavigator()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
             </div>
           </div>
-          
           <div class="p-6">
             <div class="year-selector">
-              <button class="year-btn" onclick="changeNavigatorYear(-1)">◀ Ano Anterior</button>
-              <div class="year-display" id="navigator-year">2026</div>
-              <button class="year-btn" onclick="changeNavigatorYear(1)">Próximo Ano ▶</button>
+              <button class="year-btn" onclick="changeNavigatorYear(-1)">&lt;</button>
+              <span class="year-display" id="navigator-year">2025</span>
+              <button class="year-btn" onclick="changeNavigatorYear(1)">&gt;</button>
             </div>
-            
-            <div class="mb-4 text-center">
-              <button class="month-nav-btn" onclick="createNewMonth()">➕ Criar Novo Mês</button>
-            </div>
-            
             <div class="calendar-grid" id="month-calendar"></div>
-            
-            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-              <p class="text-sm text-gray-700"><b>💡 Como usar:</b></p>
-              <ul class="text-xs text-gray-600 mt-2 space-y-1">
-                <li>• <b>Azul claro</b> = Mês com dados salvos</li>
-                <li>• <b>Azul escuro</b> = Mês atual</li>
-                <li>• <b>Clique</b> em qualquer mês para carregar seus dados</li>
-                <li>• Use <b>"➕ Criar Novo Mês"</b> para adicionar meses de anos passados (ex: Janeiro 2024)</li>
-              </ul>
+            <div class="mt-4 flex gap-2 justify-center">
+              <button class="month-nav-btn" onclick="createNewMonth()">➕ Novo Mês</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPARE SELECTOR MODAL -->
+      <div id="compareSelectorModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+          <div class="p-6 border-b bg-gradient-to-r from-purple-500 to-indigo-600 rounded-t-2xl">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-xl text-white">🗓️ Selecionar Meses para Comparar</h3>
+              <button onclick="closeCompareSelector()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
+            </div>
+          </div>
+          <div class="p-6">
+            <div class="year-selector">
+              <button class="year-btn" onclick="changeCompareSelectorYear(-1)">&lt;</button>
+              <span class="year-display" id="compare-year">2025</span>
+              <button class="year-btn" onclick="changeCompareSelectorYear(1)">&gt;</button>
+            </div>
+            <div class="calendar-grid" id="compare-calendar"></div>
+            <div class="mt-4 p-3 bg-gray-50 rounded-lg">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-sm font-bold text-gray-700">Selecionados: </span>
+                <span id="selected-count" class="badge">0</span>
+              </div>
+              <div id="selected-months-badges" class="flex flex-wrap gap-2"></div>
+            </div>
+            <div class="mt-4 flex gap-2 justify-end">
+              <button onclick="closeCompareSelector()" class="px-6 py-2 border-2 border-gray-300 rounded-lg font-bold hover:bg-gray-50">Cancelar</button>
+              <button onclick="generateComparison()" class="px-6 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700">📊 Gerar Comparação</button>
             </div>
           </div>
         </div>
@@ -709,126 +865,70 @@
 
       <!-- CONFIG MODAL -->
       <div id="configModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
-          <div class="p-6 border-b bg-gradient-to-r from-blue-600 to-indigo-600 rounded-t-2xl">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+          <div class="p-6 border-b bg-gradient-to-r from-gray-700 to-gray-900 rounded-t-2xl">
             <div class="flex items-center justify-between">
-              <h3 class="font-bold text-2xl text-white flex items-center gap-2">
-                ⚙️ Configurações e Backup
-              </h3>
+              <h3 class="font-bold text-xl text-white">⚙️ Configurações</h3>
               <button onclick="closeConfigModal()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
             </div>
           </div>
-          
-          <div class="p-6 space-y-6">
-            <!-- 🔴 DIAGNÓSTICO FIREBASE (NOVO) -->
-            <div class="card p-4 bg-red-50 border-2 border-red-300">
-              <h4 class="font-bold text-red-900 mb-2 flex items-center gap-2">
-                🔴 Diagnóstico e Reparo
-              </h4>
-              <p class="text-sm text-red-800 mb-3">
-                Use se tiver problemas de sincronização ou duplicatas
-              </p>
-              <div class="grid grid-cols-2 gap-2">
-                <button onclick="diagnosticarFirebase()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
-                  🔍 Diagnóstico
-                </button>
-                <button onclick="sincronizacaoCompleta()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
-                  🔄 Sync Completo
-                </button>
-                <button onclick="limparDuplicatas()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
-                  🗑️ Limpar Duplicatas
-                </button>
-                <button onclick="forcarBaixarTudoDaNuvem()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
-                  ☁️ Baixar Tudo
-                </button>
+          <div class="p-6 space-y-6" style="max-height:calc(80vh - 120px);overflow-y:auto;">
+            <div class="card">
+              <h4 class="font-bold text-gray-700 mb-2">📥 Importar Dados</h4>
+              <p class="text-xs text-gray-500 mb-3">Cole dados da planilha antiga para importar</p>
+              <button onclick="openImportModal(); closeConfigModal()" class="btn btn-primary w-full">📋 Colar dados (Paste)</button>
+            </div>
+            <div class="card">
+              <h4 class="font-bold text-gray-700 mb-2">📄 Backup Local</h4>
+              <p class="text-xs text-gray-500 mb-3">Exportar/importar todos os meses como JSON</p>
+              <div class="flex gap-2">
+                <button onclick="exportBackup(); closeConfigModal()" class="btn btn-success flex-1">📤 Exportar Backup</button>
+                <button onclick="importBackupFile(); closeConfigModal()" class="btn btn-primary flex-1">📥 Importar Backup</button>
               </div>
             </div>
-
-            <!-- Salvar Atual -->
-            <div class="card p-4 bg-blue-50 border-2 border-blue-200">
-              <h4 class="font-bold text-blue-900 mb-2 flex items-center gap-2">
-                💾 Salvar Mês Atual
-              </h4>
-              <p class="text-sm text-blue-800 mb-3">
-                Salva o mês atual no navegador (LocalStorage) e sincroniza com nuvem (Firebase)
-              </p>
-              <button onclick="saveCurrentMonthWithChecks(); closeConfigModal();" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold transition">
-                💾 Salvar Agora
-              </button>
-            </div>
-
-            <!-- Exportar Backup -->
-            <div class="card p-4 bg-purple-50 border-2 border-purple-200">
-              <h4 class="font-bold text-purple-900 mb-2 flex items-center gap-2">
-                📅 Exportar Backup
-              </h4>
-              <p class="text-sm text-purple-800 mb-3">
-                Baixa todos os meses salvos em arquivo JSON (recomendado fazer semanalmente)
-              </p>
-              <button onclick="exportBackup(); closeConfigModal();" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-bold transition">
-                📅 Exportar JSON
-              </button>
-            </div>
-
-            <!-- Importar Backup -->
-            <div class="card p-4 bg-green-50 border-2 border-green-200">
-              <h4 class="font-bold text-green-900 mb-2 flex items-center gap-2">
-                📄 Importar Backup
-              </h4>
-              <p class="text-sm text-green-800 mb-3">
-                Restaura dados de um arquivo JSON de backup previamente exportado
-              </p>
-              <input 
-                type="file" 
-                id="import-file-input" 
-                accept=".json" 
-                class="hidden" 
-                onchange="handleImportFile(event)"
-              >
-              <button onclick="document.getElementById('import-file-input').click()" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-bold transition">
-                📄 Selecionar Arquivo JSON
-              </button>
-            </div>
-
-            <!-- Sincronização Firebase -->
-            <div class="card p-4 bg-amber-50 border-2 border-amber-200">
-              <h4 class="font-bold text-amber-900 mb-2 flex items-center gap-2">
-                ☁️ Sincronização em Nuvem
-              </h4>
-              <p class="text-sm text-amber-800 mb-3">
-                Sincroniza automaticamente com Firebase quando conectado à internet
-              </p>
-              <div class="grid grid-cols-3 gap-2">
-                <button onclick="uploadToFirebase(); closeConfigModal();" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-3 rounded-lg font-bold transition">
-                  📄 Enviar
-                </button>
-                <button onclick="downloadFromFirebase(); closeConfigModal();" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-3 rounded-lg font-bold transition">
-                  📅 Baixar
-                </button>
-                <button onclick="checkFirebaseStatus(); closeConfigModal();" class="bg-amber-400 hover:bg-amber-500 text-white px-4 py-3 rounded-lg font-bold transition">
-                  🔍 Status
-                </button>
+            <div class="card">
+              <h4 class="font-bold text-gray-700 mb-2">☁️ Nuvem Firebase</h4>
+              <p class="text-xs text-gray-500 mb-3">Sincronização automática com Firebase Realtime DB</p>
+              <div class="flex gap-2">
+                <button onclick="downloadFromFirebase(); closeConfigModal()" class="btn btn-primary flex-1">⬇️ Baixar da nuvem</button>
+                <button onclick="uploadToFirebase(); closeConfigModal()" class="btn btn-success flex-1">⬆️ Enviar para nuvem</button>
               </div>
             </div>
-
-            <!-- Limpar Cache -->
-            <div class="card p-4 bg-red-50 border-2 border-red-200">
-              <h4 class="font-bold text-red-900 mb-2 flex items-center gap-2">
-                🗑️ Limpar Cache Local
-              </h4>
-              <p class="text-sm text-red-800 mb-3">
-                ⚠️ Remove TODOS os dados salvos localmente (não afeta Firebase)
-              </p>
-              <button onclick="clearLocalCache()" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-bold transition">
-                🗑️ Limpar Tudo
-              </button>
+            <div class="card">
+              <h4 class="font-bold text-gray-700 mb-2">📤 Exportar CSV</h4>
+              <p class="text-xs text-gray-500 mb-3">Baixar dados do mês atual como CSV</p>
+              <button onclick="exportData(); closeConfigModal()" class="btn btn-success w-full">📅 Exportar CSV</button>
+            </div>
+            <div class="card">
+              <h4 class="font-bold text-gray-700 mb-2">🔴 Limpar cache</h4>
+              <p class="text-xs text-gray-500 mb-3">Remove todos os dados locais (irreversível!)</p>
+              <button onclick="clearLocalCache()" class="btn btn-danger w-full">🗑️ Limpar tudo</button>
+            </div>
+            <div class="card">
+              <h4 class="font-bold text-gray-700 mb-2">🔐 Sair do sistema</h4>
+              <p class="text-xs text-gray-500 mb-3">Encerrar a sessão atual</p>
+              <button onclick="logout()" class="btn btn-danger w-full">🚪 Sair / Logout</button>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div class="p-4 bg-gray-50 rounded-b-2xl flex justify-end">
-            <button onclick="closeConfigModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg font-bold">
-              Fechar
-            </button>
+      <!-- IMPORT MODAL -->
+      <div id="importModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+          <div class="p-6 border-b bg-gradient-to-r from-emerald-500 to-teal-600 rounded-t-2xl">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-xl text-white">📋 Importar via Paste</h3>
+              <button onclick="closeImportModal()" class="text-white hover:text-gray-200 font-bold text-3xl">&times;</button>
+            </div>
+          </div>
+          <div class="p-6">
+            <p class="text-sm text-gray-600 mb-4">Cole os dados copiados da planilha (Ctrl+C / Ctrl+V). Suporte a TSV (Excel), CSV e formato separado por espaços.</p>
+            <textarea id="pasteArea" class="w-full h-40 border-2 border-gray-300 rounded-lg p-3 font-mono text-xs focus:border-blue-500 focus:outline-none" placeholder="Cole aqui os dados..."></textarea>
+            <div class="flex gap-3 mt-4 justify-end">
+              <button onclick="closeImportModal()" class="px-6 py-2 border-2 border-gray-300 rounded-lg font-bold hover:bg-gray-50">Cancelar</button>
+              <button onclick="processPaste()" class="px-6 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700">✅ Importar</button>
+            </div>
           </div>
         </div>
       </div>
@@ -836,25 +936,31 @@
     </main>
   </div>
 
-  <!-- Scripts -->
-  <script src="assets/hotfix-clicks.js?v=1.0.1"></script>
-  <script src="assets/diagnostico-firebase.js?v=1.0.0"></script>
-  <script src="assets/import-oficinas.js?v=1.0.0"></script>
-  <script src="assets/melhorias-funcoes.js?v=2.1.0"></script>
-  <script src="assets/features.js?v=1.0.2"></script>
+  <!-- SCRIPTS -->
+  <script src="assets/login.js"></script>
   <script src="assets/app.js"></script>
+  <script src="assets/features.js"></script>
+  <script src="assets/melhorias-funcoes.js"></script>
+  <script src="assets/melhorias-ux.js"></script>
+  <script src="assets/hotfix-clicks.js"></script>
+  <script src="assets/import-oficinas.js"></script>
+
   <script>
-    // ✨ INICIALIZAÇÃO DAS NOVAS FUNCIONALIDADES
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        if (typeof initAllFeatures === 'function') {
-          initAllFeatures();
-          console.log('✅ Features.js inicializado com sucesso!');
-        } else {
-          console.warn('⚠️ initAllFeatures não foi carregado ainda');
-        }
-      }, 1000);
-    });
+    // Função de logout com confirmação
+    function confirmLogout() {
+      Swal.fire({
+        title: 'Sair do sistema?',
+        text: 'Sua sessão será encerrada.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, sair',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#ef4444'
+      }).then(result => {
+        if (result.isConfirmed) logout();
+      });
+    }
   </script>
+
 </body>
 </html>

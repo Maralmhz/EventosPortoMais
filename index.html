@@ -10,6 +10,12 @@
   <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+
+<!-- Login PIN - DEVE VIR ANTES DE TUDO -->
+<script src="assets/pin-login.js"></script>
   
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -856,5 +862,17 @@
       }, 1000);
     });
   </script>
+  <script>
+// Auto-save antes de sair
+window.addEventListener('beforeunload', function(e) {
+  if (window.isAdmin && window.isAdmin()) {
+    // Salva automaticamente se houver mudanças
+    const saveBtn = document.getElementById('btn-salvar');
+    if (saveBtn && !saveBtn.disabled) {
+      saveBtn.click();
+    }
+  }
+});
+</script>
 </body>
 </html>

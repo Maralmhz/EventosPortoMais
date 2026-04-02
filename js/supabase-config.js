@@ -6,11 +6,11 @@ const SUPABASE_URL = 'https://xjgyijfogxefmvfnwwbh.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqZ3lpamZvZ3hlZm12Zm53d2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNTM3NTYsImV4cCI6MjA5MDYyOTc1Nn0.WCEUnEkswLZXow8xwMBscYdBRZxK1BkW7skI-WS2rFQ';
 
 // ============================================================
-// MÊS PADRÃO = MÊS ANTERIOR (Abril → exibe Março)
+// MÊS PADRÃO = MÊS ATUAL (não o anterior)
 // ============================================================
 const _hoje = new Date();
-const MES_PADRAO = _hoje.getMonth() === 0 ? 12 : _hoje.getMonth(); // getMonth() retorna 0-11
-const ANO_PADRAO = _hoje.getMonth() === 0 ? _hoje.getFullYear() - 1 : _hoje.getFullYear();
+const MES_PADRAO = _hoje.getMonth() + 1; // getMonth() retorna 0-11, somamos 1
+const ANO_PADRAO = _hoje.getFullYear();
 
 // ============================================================
 // MAPEAMENTO: índices do array Handsontable → colunas SQL
@@ -173,7 +173,6 @@ function rowToEvento(row, mes, ano) {
   }
   function date(v) {
     if (!v) return null;
-    // Formato DD/MM/YYYY
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) {
       const [d, m, y] = v.split('/');
       return `${y}-${m}-${d}`;
@@ -373,12 +372,23 @@ async function supabaseSaveMonth(mes, ano, rows) {
   }
 }
 
+// ============================================================
+// LISTA MESES DISPONÍVEIS — usa RPC distinct para performance
+// ============================================================
 async function supabaseListMonths() {
   try {
-    const rows = await sb.select(
-      'eventos',
-      'select=mes_referencia,ano_referencia&order=ano_referencia.desc,mes_referencia.desc'
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/eventos?select=mes_referencia,ano_referencia&order=ano_referencia.desc,mes_referencia.desc`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON,
+          'Authorization': `Bearer ${_authToken}`,
+          'Prefer': 'count=none',
+          'Range': '0-999',
+        }
+      }
     );
+    const rows = await res.json();
     const seen = new Set();
     return rows
       .filter(r => {
@@ -425,6 +435,58 @@ async function supabaseSearch(termo) {
     );
   } catch (e) {
     return [];
+  }
+}
+
+// ============================================================
+// DOWNLOAD CSV — baixa eventos do mês/ano atual
+// ============================================================
+async function supabaseDownloadCSV(mes, ano) {
+  try {
+    const rows = await sb.select(
+      'eventos',
+      `mes_referencia=eq.${mes}&ano_referencia=eq.${ano}&order=id.asc&limit=1000`
+    );
+
+    if (!rows || rows.length === 0) {
+      alert('Nenhum dado encontrado para exportar.');
+      return;
+    }
+
+    const colunas = [
+      'filial','tipo_parte','tipo_sinistro','veiculo','placa',
+      'data_ocorrencia','oficina','valor_franquia','valor_servicos',
+      'valor_pecas','valor_outros','valor_total','status',
+      'causador','juridico_status','juridico_valor','categoria','observacoes'
+    ];
+
+    const cabecalho = colunas.join(';');
+    const linhas = rows.map(row =>
+      colunas.map(col => {
+        const val = row[col];
+        if (val === null || val === undefined) return '';
+        const str = String(val);
+        if (str.includes(';') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      }).join(';')
+    );
+
+    const csvContent = '\uFEFF' + [cabecalho, ...linhas].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `eventos_porto_${String(mes).padStart(2,'0')}_${ano}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    console.log(`✅ CSV exportado: ${rows.length} registros`);
+  } catch (e) {
+    console.error('❌ supabaseDownloadCSV:', e);
+    alert('Erro ao exportar: ' + e.message);
   }
 }
 
@@ -510,3 +572,4 @@ window.supabaseIsLoggedIn = supabaseIsLoggedIn;
 window.supabaseCurrentUser = supabaseCurrentUser;
 window.supabaseIsOfflineMode = supabaseIsOfflineMode;
 window.supabaseCanSyncCloud = supabaseCanSyncCloud;
+window.supabaseDownloadCSV = supabaseDownloadCSV;

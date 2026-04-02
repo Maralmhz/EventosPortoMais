@@ -104,34 +104,15 @@ async function supabaseLoginWithPIN(pin) {
   if (pin !== CORRECT_PIN) {
     return { ok: false, error: 'PIN incorreto' };
   }
-  try {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_ANON,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email: PIN_EMAIL, password: PIN_PASSWORD }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      // ✅ FIX: se Supabase Auth falhar, entra com anon key (modo degradado)
-      console.warn('⚠️ Supabase Auth erro, usando anon key:', data);
-      window._authToken = SUPABASE_ANON;
-      window._sbSession = { access_token: SUPABASE_ANON, user: { email: PIN_EMAIL } };
-      return { ok: true, user: { email: PIN_EMAIL } };
-    }
-    _authToken = data.access_token;
-    window._sbSession = data;
-    console.log('✅ Login realizado:', data.user?.email);
-    return { ok: true, user: data.user };
-  } catch (e) {
-    // ✅ FIX: em caso de erro de rede, também entra com anon key
-    console.warn('⚠️ Erro de rede no auth, usando anon key:', e.message);
-    window._authToken = SUPABASE_ANON;
-    window._sbSession = { access_token: SUPABASE_ANON, user: { email: PIN_EMAIL } };
-    return { ok: true, user: { email: PIN_EMAIL } };
-  }
+
+  // Modo padrão: evita chamada ao endpoint /auth/v1/token para não gerar ruído (HTTP 500)
+  // quando o projeto usa apenas RLS com anon key.
+  _authToken = SUPABASE_ANON;
+  window._authToken = SUPABASE_ANON;
+  window._sbSession = { access_token: SUPABASE_ANON, user: { email: PIN_EMAIL, role: 'pin' } };
+
+  console.log('✅ Login via PIN realizado (sessão Supabase anon).');
+  return { ok: true, user: window._sbSession.user };
 }
 
 async function supabaseLogout() {

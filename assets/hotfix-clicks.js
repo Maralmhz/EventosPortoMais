@@ -3,7 +3,7 @@
 
 console.log('✅ Hotfix de interação Handsontable carregado!');
 
-const HOTFIX_MODAL_IDS = ['configModal', 'monthNavigatorModal', 'compareSelectorModal', 'oficinaModal', 'pin-login-overlay', 'login-overlay'];
+const HOTFIX_MODAL_IDS = ['configModal', 'monthNavigatorModal', 'compareSelectorModal', 'oficinaModal', 'pin-login-overlay', 'login-overlay', 'sb-pin-overlay'];
 
 function syncHiddenModalState(modal) {
   if (!modal) return;
@@ -30,11 +30,14 @@ function enforceHandsontableInteractivity() {
     el.style.pointerEvents = 'auto';
   });
 
-  spreadsheet.addEventListener('mousedown', () => {
-    if (window.hot && typeof window.hot.listen === 'function') {
-      window.hot.listen();
-    }
-  });
+  if (!spreadsheet.dataset.hotfixBound) {
+    spreadsheet.addEventListener('mousedown', () => {
+      if (window.hot && typeof window.hot.listen === 'function') {
+        window.hot.listen();
+      }
+    });
+    spreadsheet.dataset.hotfixBound = '1';
+  }
 }
 
 function neutralizeBlockingOverlays() {

@@ -1,8 +1,8 @@
 // 📦 IMPORTADOR DE OFICINAS PARCEIRAS
-// Carrega oficinas do arquivo JSON e sincroniza com Firebase
+// Carrega oficinas do arquivo JSON e salva no armazenamento local
 
 /**
- * Carrega o arquivo JSON de oficinas e importa para o Firebase
+ * Carrega o arquivo JSON de oficinas e importa no armazenamento local
  */
 async function importarOficinasDoJSON() {
   try {
@@ -17,20 +17,8 @@ async function importarOficinasDoJSON() {
     const data = await response.json();
     console.log(`📄 Arquivo carregado: ${data.metadados.totalOficinas} oficinas encontradas`);
     
-    // Verifica conexão Firebase
-    if (typeof firebase === 'undefined' || !firebase.database) {
-      console.error('❌ Firebase não está disponível');
-      Swal.fire({
-        icon: 'error',
-        title: 'Erro de Conexão',
-        text: 'Firebase não está conectado. As oficinas serão salvas apenas localmente.',
-      });
-      salvarOficinasLocal(data.oficinas);
-      return;
-    }
-    
-    // Carrega oficinas existentes
-    const oficinasSalvas = await carregarOficinasFirebase();
+    // Carrega oficinas existentes (somente local)
+    const oficinasSalvas = carregarOficinasLocal();
     console.log(`💾 Oficinas já cadastradas: ${oficinasSalvas.length}`);
     
     // Filtra oficinas novas (sem duplicatas)
@@ -66,10 +54,7 @@ async function importarOficinasDoJSON() {
     
     if (!result.isConfirmed) return;
     
-    // Importa para Firebase
-    await importarParaFirebase(oficinasNovas);
-    
-    // Salva localmente também
+    // Salva localmente
     salvarOficinasLocal([...oficinasSalvas, ...oficinasNovas]);
     
     // Atualiza interface
@@ -97,21 +82,13 @@ async function importarOficinasDoJSON() {
 }
 
 /**
- * Carrega oficinas do Firebase
+ * Carrega oficinas do localStorage
  */
-async function carregarOficinasFirebase() {
+function carregarOficinasLocal() {
   try {
-    const snapshot = await firebase.database().ref('oficinas').once('value');
-    const data = snapshot.val();
-    
-    if (!data) return [];
-    
-    return Object.keys(data).map(key => ({
-      firebaseKey: key,
-      ...data[key]
-    }));
+    return JSON.parse(localStorage.getItem('oficinas') || '[]');
   } catch (error) {
-    console.error('Erro ao carregar oficinas do Firebase:', error);
+    console.error('Erro ao carregar oficinas locais:', error);
     return [];
   }
 }
@@ -140,28 +117,6 @@ function filtrarOficinasNovas(novasOficinas, oficinasSalvas) {
     
     return !existePorNome;
   });
-}
-
-/**
- * Importa oficinas para o Firebase
- */
-async function importarParaFirebase(oficinas) {
-  const ref = firebase.database().ref('oficinas');
-  
-  for (const oficina of oficinas) {
-    // Remove campos vazios
-    const oficinaLimpa = Object.fromEntries(
-      Object.entries(oficina).filter(([_, v]) => v !== '' && v !== null && v !== undefined)
-    );
-    
-    // Adiciona timestamp
-    oficinaLimpa.dataCadastro = new Date().toISOString();
-    oficinaLimpa.importado = true;
-    
-    // Salva no Firebase
-    await ref.push(oficinaLimpa);
-    console.log(`✅ ${oficina.nome} importada`);
-  }
 }
 
 /**
@@ -223,11 +178,6 @@ async function limparTodasOficinas() {
   if (!result.isConfirmed) return;
   
   try {
-    // Remove do Firebase
-    if (typeof firebase !== 'undefined' && firebase.database) {
-      await firebase.database().ref('oficinas').remove();
-    }
-    
     // Remove local
     localStorage.removeItem('oficinas');
     

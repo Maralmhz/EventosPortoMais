@@ -708,11 +708,17 @@ async function saveCurrentMonthWithChecksCrossMonth() {
       saveCurrentMonth();
       setBadge();
       
-      if (firebaseDb) {
+      if (typeof window.supabaseSaveMonth === 'function') {
         const md = saveCurrentMonth();
-        firebaseDb.ref('months/' + monthKey(currentYear, currentMonth)).set(md)
-          .then(() => Swal.fire('✅ Salvo!', 'Mês salvo e sincronizado.', 'success'))
-          .catch(() => Swal.fire('✅ Salvo!', 'Mês salvo localmente.', 'success'));
+        window.supabaseSaveMonth(currentMonth, currentYear, md.data || [])
+          .then((result) => {
+            if (result?.ok === false) {
+              Swal.fire('✅ Salvo localmente', 'Falha na sincronização com Supabase.', 'warning');
+              return;
+            }
+            Swal.fire('✅ Salvo!', 'Mês salvo e sincronizado.', 'success');
+          })
+          .catch(() => Swal.fire('✅ Salvo localmente', 'Falha na sincronização com Supabase.', 'warning'));
       } else {
         Swal.fire('✅ Salvo!', 'Mês salvo com sucesso.', 'success');
       }
@@ -724,11 +730,17 @@ async function saveCurrentMonthWithChecksCrossMonth() {
   saveCurrentMonth();
   setBadge();
   
-  if (firebaseDb) {
+  if (typeof window.supabaseSaveMonth === 'function') {
     const md = saveCurrentMonth();
-    firebaseDb.ref('months/' + monthKey(currentYear, currentMonth)).set(md)
-      .then(() => Swal.fire('✅ Salvo!', 'Mês salvo e sincronizado com a nuvem.', 'success'))
-      .catch(() => Swal.fire('✅ Salvo!', 'Mês salvo localmente.', 'success'));
+    window.supabaseSaveMonth(currentMonth, currentYear, md.data || [])
+      .then((result) => {
+        if (result?.ok === false) {
+          Swal.fire('✅ Salvo localmente', 'Falha na sincronização com Supabase.', 'warning');
+          return;
+        }
+        Swal.fire('✅ Salvo!', 'Mês salvo e sincronizado com a nuvem.', 'success');
+      })
+      .catch(() => Swal.fire('✅ Salvo localmente', 'Falha na sincronização com Supabase.', 'warning'));
   } else {
     Swal.fire('✅ Salvo!', 'Mês salvo com sucesso.', 'success');
   }

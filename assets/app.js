@@ -1220,6 +1220,7 @@ async function saveCurrentMonthWithChecks() {
       Swal.fire('✅ Salvo localmente', 'Mês salvo localmente. Falha ao sincronizar com Supabase.', 'warning');
       return;
     }
+    saveCurrentMonth();
     Swal.fire('✅ Salvo!', 'Mês salvo e sincronizado com Supabase.', 'success');
     return;
   }

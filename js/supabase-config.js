@@ -160,7 +160,7 @@ function rowToEvento(row, mes, ano) {
   function date(v) {
     if (!v) return null;
     // Formato DD/MM/YYYY
-    if (/^\\d{2}\\/\\d{2}\\/\\d{4}$/.test(v)) {
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) {
       const [d, m, y] = v.split('/');
       return `${y}-${m}-${d}`;
     }
@@ -300,20 +300,14 @@ async function supabaseSearch(termo) {
 }
 
 // ============================================================
-// TELA DE LOGIN COM PIN (teclado numérico estilo caixa eletrônico)
+// API pública exposta globalmente (compatível com app.js)
 // ============================================================
-function supabaseInjectPINScreen() {
-  if (document.getElementById('sb-pin-overlay')) return;
-  const overlay = document.createElement('div');
-  overlay.id = 'sb-pin-overlay';
-  overlay.style.cssText = `
-    position:fixed; inset:0; z-index:99999;
-    background:linear-gradient(135deg,#002B5C 0%,#001b3a 60%,#003366 100%);
-    display:flex; align-items:center; justify-content:center;
-    font-family:'Segoe UI',sans-serif;
-  `;
-  overlay.innerHTML = `
-    <div style="background:#fff; padding:2.5rem; border-radius:1.5rem; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); width:100%; max-width:400px; text-align:center; animation:fadeIn 0.5s ease-out;">
-      <div style="font-size:3rem; margin-bottom:0.5rem;">P+</div>
-      <h2 style="margin:0; color:#002B5C; font-weight:800; letter-spacing:-0.5px;">Porto Mais</h2>
-      <p style="color:#64748b; margin-bottom:2rem; font-size:0
+window.supabaseLoadMonth = supabaseLoadMonth;
+window.supabaseSaveMonth = supabaseSaveMonth;
+window.supabaseListMonths = supabaseListMonths;
+window.supabaseDeleteRow = supabaseDeleteRow;
+window.supabaseSearch = supabaseSearch;
+window.supabaseLoginWithPIN = supabaseLoginWithPIN;
+window.supabaseLogout = supabaseLogout;
+window.supabaseIsLoggedIn = supabaseIsLoggedIn;
+window.supabaseCurrentUser = supabaseCurrentUser;

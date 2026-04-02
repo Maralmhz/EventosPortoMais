@@ -731,17 +731,17 @@
                 Use se tiver problemas de sincronização ou duplicatas
               </p>
               <div class="grid grid-cols-2 gap-2">
-                                  <button onclick="diagnosticarSupabase()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
-                  🔍 Diagnóstico
+                <button onclick="checkFirebaseStatus()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                  🔍 Status
                 </button>
-                <button onclick="sincronizacaoCompleta()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
-                  🔄 Sync Completo
+                <button onclick="syncWithFirebase()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                  🔄 Sincronizar
                 </button>
-                <button onclick="limparDuplicatas()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
-                  🗑️ Limpar Duplicatas
+                <button onclick="downloadFromFirebase()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                  ☁️ Baixar Nuvem
                 </button>
-                <button onclick="forcarBaixarTudoDaNuvem()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
-                  ☁️ Baixar Tudo
+                <button onclick="uploadToFirebase()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-3 rounded-lg font-bold transition text-xs">
+                  📤 Enviar Nuvem
                 </button>
               </div>
             </div>
@@ -840,7 +840,6 @@
 
   <!-- Scripts -->
   <script src="assets/hotfix-clicks.js?v=1.0.1"></script>
-  <script src="assets/diagnostico-supabase.js"></script>
   <script src="assets/import-oficinas.js?v=1.0.0"></script>
   <script src="assets/melhorias-funcoes.js?v=2.1.0"></script>
   <script src="assets/features.js?v=1.0.2"></script>

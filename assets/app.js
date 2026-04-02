@@ -15,7 +15,6 @@ let navigatorYear = currentYear;
 let compareSelectorYear = currentYear;
 let selectedMonthsForComparison = [];
 let chartTipo, chartJuridico, chartCustos, chartCompareEventos, chartCompareCustos;
-let firebaseDb = null;
 let oficinas = [];
 let currentOficinaId = null;
 let hot = null;
@@ -180,12 +179,7 @@ function syncWithFirebase() {
     window.uploadToSupabase();
     return;
   }
-
-  if (!firebaseDb) {
-    Swal.fire('Nuvem offline', 'Conexão não disponível', 'warning');
-    return;
-  }
-  uploadToFirebase();
+  Swal.fire('Nuvem offline', 'Conexão Supabase não disponível.', 'warning');
 }
 
 function checkFirebaseStatus() {
@@ -193,19 +187,7 @@ function checkFirebaseStatus() {
     window.statusSupabase();
     return;
   }
-
-  if (!firebaseDb) {
-    Swal.fire('Nuvem offline', 'Conexão não está ativa', 'warning');
-    return;
-  }
-
-  const months = getSavedMonths();
-  Swal.fire({
-    icon: 'success',
-    title: 'Nuvem conectada',
-    html: `<p>Meses locais: ${months.length}</p><p>Sincronização ativa</p>`,
-    confirmButtonText: 'OK'
-  });
+  Swal.fire('Nuvem offline', 'Conexão Supabase não está ativa.', 'warning');
 }
 
 function clearLocalCache() {
@@ -599,11 +581,6 @@ function loadOficinas() {
 
 function saveOficinasToStorage() {
   localStorage.setItem('oficinas', JSON.stringify(oficinas));
-  if (firebaseDb) {
-    firebaseDb.ref('oficinas').set(oficinas)
-      .then(() => console.log('🏪 Oficinas sincronizadas'))
-      .catch(err => console.error('Erro sync oficinas:', err));
-  }
 }
 
 function getOficinasList() {
@@ -940,151 +917,19 @@ async function createNewMonth() {
   }
 }
 
-// ============ FIREBASE AUTO-CONNECT ============
-function initFirebase() {
-  firebaseDb = null;
-
-  const syncStatus = document.getElementById('sync-status');
-  if (syncStatus) {
-    const supabaseReady = typeof window.supabaseSaveMonth === 'function' && typeof window.supabaseLoadMonth === 'function';
-    syncStatus.innerHTML = supabaseReady
-      ? '<span style="color:#10b981;">✓ Supabase</span>'
-      : '<span style="color:#64748b;">Offline</span>';
-  }
-
-  console.log('ℹ️ Sincronização ativa via Supabase.');
-}
-
-// ============ DOWNLOAD/UPLOAD FIREBASE ============
+// ============ DOWNLOAD/UPLOAD NUVEM ============
 async function downloadFromFirebase() {
   if (typeof window.downloadFromSupabase === 'function') {
     return window.downloadFromSupabase();
   }
-
-  if (!firebaseDb) {
-    Swal.fire('Nuvem indisponível', 'Conexão com nuvem não configurada.', 'warning');
-    return;
-  }
-
-  Swal.fire({
-    title: '📥 Baixando da nuvem...',
-    html: 'Aguarde enquanto buscamos seus dados do Firebase.',
-    allowOutsideClick: false,
-    didOpen: () => { Swal.showLoading(); }
-  });
-
-  try {
-    const snapshot = await firebaseDb.ref('months').once('value');
-    const cloudData = snapshot.val();
-
-    if (!cloudData || Object.keys(cloudData).length === 0) {
-      Swal.fire('⚠️ Nuvem vazia', 'Não há dados salvos na nuvem ainda. Use "Enviar para nuvem" primeiro.', 'info');
-      return;
-    }
-
-    let downloadedCount = 0;
-    let updatedCount = 0;
-    let skippedCount = 0;
-
-    for (const [key, cloudMonth] of Object.entries(cloudData)) {
-      const localData = localStorage.getItem(key);
-      
-      if (!localData) {
-        localStorage.setItem(key, JSON.stringify(cloudMonth));
-        downloadedCount++;
-      } else {
-        const localMonth = JSON.parse(localData);
-        const cloudDate = new Date(cloudMonth.saveDate || 0);
-        const localDate = new Date(localMonth.saveDate || 0);
-        
-        if (cloudDate > localDate) {
-          localStorage.setItem(key, JSON.stringify(cloudMonth));
-          updatedCount++;
-        } else {
-          skippedCount++;
-        }
-      }
-    }
-
-    const months = getSavedMonths();
-    if (months.length > 0) {
-      const latest = months[0];
-      currentYear = latest.year;
-      currentMonth = latest.month;
-      hot.loadData(latest.data || []);
-      setBadge();
-      renderMonthTabs();
-      updateDashboard();
-    }
-
-    const html = `
-      <div class="text-left text-sm">
-        <p class="mb-2"><b>✅ Sincronização concluída!</b></p>
-        <ul class="space-y-1">
-          <li>🆕 <b>${downloadedCount}</b> mês(es) baixado(s)</li>
-          <li>🔄 <b>${updatedCount}</b> mês(es) atualizado(s)</li>
-          <li>✅ <b>${skippedCount}</b> mês(es) já atualizado(s)</li>
-        </ul>
-      </div>
-    `;
-
-    Swal.fire({ icon: 'success', title: 'Dados sincronizados!', html: html, confirmButtonText: 'OK' });
-
-  } catch (error) {
-    console.error('Erro ao baixar da nuvem:', error);
-    Swal.fire('Erro', 'Falha ao baixar dados: ' + error.message, 'error');
-  }
+  Swal.fire('Nuvem indisponível', 'Função de download Supabase não configurada.', 'warning');
 }
 
 async function uploadToFirebase() {
   if (typeof window.uploadToSupabase === 'function') {
     return window.uploadToSupabase();
   }
-
-  if (!firebaseDb) {
-    Swal.fire('Nuvem indisponível', 'Conexão com nuvem não configurada.', 'warning');
-    return;
-  }
-  
-  const months = getSavedMonths();
-  if (months.length === 0) {
-    Swal.fire('⚠️ Nenhum dado local', 'Adicione alguns eventos antes de enviar para a nuvem.', 'info');
-    return;
-  }
-
-  Swal.fire({
-    title: '📤 Enviando para nuvem...',
-    html: `Fazendo upload de ${months.length} mês(es)...<br><small>Aguarde, pode levar alguns segundos.</small>`,
-    allowOutsideClick: false,
-    didOpen: () => { Swal.showLoading(); }
-  });
-  
-  try {
-    const results = await Promise.allSettled(
-      months.map(m => 
-        firebaseDb.ref('months/' + m.key).set({
-          year: m.year,
-          month: m.month,
-          monthLabel: m.monthLabel,
-          saveDate: new Date().toLocaleString('pt-BR'),
-          data: m.data
-        }).then(() => ({ success: true, key: m.key }))
-          .catch(err => ({ success: false, key: m.key, error: err.message }))
-      )
-    );
-
-    const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-    const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)).length;
-
-    if (failed > 0) {
-      Swal.fire('⚠️ Upload parcial', `${successful} mês(es) enviado(s). ${failed} falharam. Tente novamente.`, 'warning');
-    } else {
-      Swal.fire('✅ Enviado!', `${successful} mês(es) salvos na nuvem com sucesso.`, 'success');
-    }
-  } catch (error) {
-    console.error('Erro no upload:', error);
-    Swal.fire('Erro', 'Falha ao enviar: ' + error.message, 'error');
-  }
+  Swal.fire('Nuvem indisponível', 'Função de upload Supabase não configurada.', 'warning');
 }
 
 function syncToFirebase() {
@@ -1365,18 +1210,22 @@ async function saveCurrentMonthWithChecks() {
     if (!podeSalvar) return;
   }
   
-  // Salva normalmente
-  saveCurrentMonth();
+  // Salva localmente
+  const md = saveCurrentMonth();
   setBadge();
-  
-  if (firebaseDb) {
-    const md = saveCurrentMonth();
-    firebaseDb.ref('months/' + monthKey(currentYear, currentMonth)).set(md)
-      .then(() => Swal.fire('✅ Salvo!', 'Mês salvo e sincronizado com a nuvem.', 'success'))
-      .catch(() => Swal.fire('✅ Salvo!', 'Mês salvo localmente.', 'success'));
-  } else {
-    Swal.fire('✅ Salvo!', 'Mês salvo com sucesso.', 'success');
+
+  if (typeof window.supabaseSaveMonth === 'function') {
+    const result = await window.supabaseSaveMonth(currentMonth, currentYear, md.data || []);
+    if (result?.ok === false) {
+      Swal.fire('✅ Salvo localmente', 'Mês salvo localmente. Falha ao sincronizar com Supabase.', 'warning');
+      return;
+    }
+    saveCurrentMonth();
+    Swal.fire('✅ Salvo!', 'Mês salvo e sincronizado com Supabase.', 'success');
+    return;
   }
+
+  Swal.fire('✅ Salvo!', 'Mês salvo localmente com sucesso.', 'success');
 }
 
 function exportAllBackup(){
@@ -1640,7 +1489,7 @@ function initHandsontable() {
       { type:'dropdown', source: EVENTO_TIPO_OPTS },
       { type:'text' },
       { type:'text' },
-      { type:'date', dateFormat:'DD/MM/YYYY' },
+      { type:'date', dateFormat:'DD/MM/YYYY', datePickerConfig:{ firstDay: 1 } },
       { type:'dropdown', source: [] },
       { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
       { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
@@ -1650,7 +1499,7 @@ function initHandsontable() {
       { type:'dropdown', source:['FINALIZADO','EM ANDAMENTO','NEGADO','PENDENTE','ACORDO'] },
       { type:'dropdown', source: CAUSADOR_OPTS },
       { type:'dropdown', source: JURIDICO_STATUS },
-      { type:'date', dateFormat:'DD/MM/YYYY' },
+      { type:'date', dateFormat:'DD/MM/YYYY', datePickerConfig:{ firstDay: 1 } },
       { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
       { type:'text' }
     ],
@@ -1664,6 +1513,14 @@ function initHandsontable() {
     manualColumnResize:true,
     autoWrapRow:true,
     stretchH:'all',
+    outsideClickDeselects:false,
+    enterBeginsEditing:true,
+    afterOnCellMouseDown(){
+      if (this && typeof this.listen === 'function') this.listen();
+    },
+    afterSelection(){
+      if (this && typeof this.listen === 'function') this.listen();
+    },
     afterChange(changes, source){
       if(!changes || source==='source') return;
       changes.forEach(([row, col])=>{
@@ -1686,10 +1543,9 @@ function initHandsontable() {
 setTimeout(()=>{ 
   loadOficinas();
   initHandsontable();
-  initFirebase();
   setBadge();
   renderMonthTabs(); // RENDERIZA ABAS
-  saveCurrentMonth(); 
+  window.loadMonthData(currentYear, currentMonth);
   updateHotOficinaDropdown();
   updateDashboard(); 
 }, 200);

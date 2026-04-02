@@ -37,9 +37,13 @@ const COL = {
 };
 
 // ============================================================
-// AUTH — token dinâmico (atualizado após login)
+// AUTH — sessão real via Supabase Auth + fallback offline explícito
 // ============================================================
+const sbAuthClient = (window.supabase && typeof window.supabase.createClient === 'function')
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
+  : null;
 let _authToken = SUPABASE_ANON;
+let _offlineMode = false;
 
 function getHeaders() {
   return {
@@ -93,40 +97,36 @@ const sb = {
   },
 };
 
-// ============================================================
-// AUTENTICAÇÃO — Login via PIN
-// ============================================================
-const CORRECT_PIN = '101010';
-const PIN_EMAIL = 'eventos@portomais.net.br';
-const PIN_PASSWORD = '101010';
+function applySession(session) {
+  _authToken = session?.access_token || SUPABASE_ANON;
+  window._authToken = _authToken;
+  window._sbSession = session || null;
+}
 
-async function supabaseLoginWithPIN(pin) {
-  if (pin !== CORRECT_PIN) {
-    return { ok: false, error: 'PIN incorreto' };
-  }
+async function supabaseLogin(email, password) {
+  if (!sbAuthClient) return { ok: false, error: 'SDK Supabase indisponível.' };
+  const { data, error } = await sbAuthClient.auth.signInWithPassword({ email, password });
+  if (error) return { ok: false, error: error.message };
+  applySession(data.session || null);
+  _offlineMode = false;
+  localStorage.removeItem('epm_offline_mode');
+  return { ok: true, user: data.user || null };
+}
 
-  // Modo padrão: evita chamada ao endpoint /auth/v1/token para não gerar ruído (HTTP 500)
-  // quando o projeto usa apenas RLS com anon key.
-  _authToken = SUPABASE_ANON;
-  window._authToken = SUPABASE_ANON;
-  window._sbSession = { access_token: SUPABASE_ANON, user: { email: PIN_EMAIL, role: 'pin' } };
-
-  console.log('✅ Login via PIN realizado (sessão Supabase anon).');
-  return { ok: true, user: window._sbSession.user };
+async function supabaseLoginWithPIN() {
+  return {
+    ok: false,
+    error: 'Login por PIN desativado. Use e-mail e senha ou modo offline explícito.'
+  };
 }
 
 async function supabaseLogout() {
   try {
-    await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_ANON,
-        'Authorization': `Bearer ${_authToken}`,
-      },
-    });
+    if (sbAuthClient) await sbAuthClient.auth.signOut();
   } catch (_) {}
-  _authToken = SUPABASE_ANON;
-  window._sbSession = null;
+  applySession(null);
+  _offlineMode = false;
+  localStorage.removeItem('epm_offline_mode');
   console.log('🔒 Sessão encerrada');
 }
 
@@ -136,6 +136,20 @@ function supabaseIsLoggedIn() {
 
 function supabaseCurrentUser() {
   return window._sbSession?.user || null;
+}
+
+function supabaseIsOfflineMode() {
+  return _offlineMode === true;
+}
+
+function supabaseCanSyncCloud() {
+  return supabaseIsLoggedIn() && !_offlineMode;
+}
+
+function startOfflineMode() {
+  _offlineMode = true;
+  applySession(null);
+  localStorage.setItem('epm_offline_mode', '1');
 }
 
 // ============================================================
@@ -160,7 +174,7 @@ function rowToEvento(row, mes, ano) {
   function date(v) {
     if (!v) return null;
     // Formato DD/MM/YYYY
-    if (/^\\d{2}\\/\\d{2}\\/\\d{4}$/.test(v)) {
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) {
       const [d, m, y] = v.split('/');
       return `${y}-${m}-${d}`;
     }
@@ -239,18 +253,120 @@ async function supabaseLoadMonth(mes, ano) {
   }
 }
 
+async function logAuditRows(rows) {
+  if (!rows || rows.length === 0 || !supabaseCanSyncCloud()) return;
+  try {
+    await sb.insert('eventos_audit', rows);
+  } catch (e) {
+    console.warn('⚠️ eventos_audit indisponível:', e.message);
+  }
+}
+
+function buildFieldDiffs(before, after) {
+  const keys = Object.keys(after);
+  const diffs = [];
+  keys.forEach((key) => {
+    const oldValue = before?.[key] ?? null;
+    const newValue = after?.[key] ?? null;
+    if (String(oldValue ?? '') !== String(newValue ?? '')) {
+      diffs.push({ field_name: key, old_value: oldValue, new_value: newValue });
+    }
+  });
+  return diffs;
+}
+
 async function supabaseSaveMonth(mes, ano, rows) {
   try {
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/eventos?mes_referencia=eq.${mes}&ano_referencia=eq.${ano}`,
-      { method: 'DELETE', headers: getHeaders() }
+    if (!supabaseCanSyncCloud()) {
+      return { ok: false, error: 'Sincronização em nuvem indisponível (offline ou sem login).' };
+    }
+
+    const existentes = await sb.select(
+      'eventos',
+      `mes_referencia=eq.${mes}&ano_referencia=eq.${ano}&select=*&order=id.asc&limit=1000`
     );
-    const validas = rows.filter(r => r && r[COL.FILIAL] && String(r[COL.FILIAL]).trim() !== '');
-    if (validas.length === 0) return { ok: true, count: 0 };
-    const objs = validas.map(r => rowToEvento(r, mes, ano));
-    await sb.insert('eventos', objs);
-    console.log(`✅ Supabase: ${objs.length} eventos salvos (${mes}/${ano})`);
-    return { ok: true, count: objs.length };
+    const existentesPorId = new Map(existentes.map((e) => [Number(e.id), e]));
+    const idsPresentes = new Set();
+    const auditRows = [];
+    const user = supabaseCurrentUser();
+    const userLabel = user?.email || user?.id || 'desconhecido';
+
+    let created = 0;
+    let updated = 0;
+
+    const linhasValidas = rows
+      .map((row, index) => ({ row, index }))
+      .filter(({ row }) => row && row[COL.FILIAL] && String(row[COL.FILIAL]).trim() !== '');
+
+    for (const { row } of linhasValidas) {
+      const payload = rowToEvento(row, mes, ano);
+      const rowId = Number(row[18]);
+
+      if (Number.isFinite(rowId) && existentesPorId.has(rowId)) {
+        const before = existentesPorId.get(rowId);
+        await sb.update('eventos', rowId, payload);
+        const diffs = buildFieldDiffs(before, payload);
+        diffs.forEach((d) => {
+          auditRows.push({
+            evento_id: rowId,
+            action: 'UPDATE',
+            field_name: d.field_name,
+            old_value: d.old_value === null ? null : String(d.old_value),
+            new_value: d.new_value === null ? null : String(d.new_value),
+            user_email: userLabel,
+            changed_at: new Date().toISOString(),
+            mes_referencia: mes,
+            ano_referencia: ano
+          });
+        });
+        idsPresentes.add(rowId);
+        updated++;
+      } else {
+        const inserted = await sb.insert('eventos', [payload]);
+        const newId = inserted?.[0]?.id;
+        if (newId !== undefined && newId !== null) {
+          row[18] = Number(newId);
+          idsPresentes.add(Number(newId));
+          auditRows.push({
+            evento_id: Number(newId),
+            action: 'CREATE',
+            field_name: '*',
+            old_value: null,
+            new_value: JSON.stringify(payload),
+            user_email: userLabel,
+            changed_at: new Date().toISOString(),
+            mes_referencia: mes,
+            ano_referencia: ano
+          });
+        }
+        created++;
+      }
+    }
+
+    let deleted = 0;
+    for (const existente of existentes) {
+      const id = Number(existente.id);
+      if (!idsPresentes.has(id)) {
+        auditRows.push({
+          evento_id: id,
+          action: 'DELETE',
+          field_name: '*',
+          old_value: JSON.stringify(existente),
+          new_value: null,
+          user_email: userLabel,
+          changed_at: new Date().toISOString(),
+          mes_referencia: mes,
+          ano_referencia: ano
+        });
+        await sb.delete('eventos', id);
+        deleted++;
+      }
+    }
+
+    await logAuditRows(auditRows);
+
+    console.log(`✅ Supabase: ${created} criados, ${updated} atualizados, ${deleted} removidos (${mes}/${ano})`);
+    return { ok: true, count: linhasValidas.length, created, updated, deleted };
   } catch (e) {
     console.error('❌ supabaseSaveMonth:', e);
     return { ok: false, error: e.message };
@@ -280,7 +396,20 @@ async function supabaseListMonths() {
 
 async function supabaseDeleteRow(id) {
   try {
+    const existing = await sb.select('eventos', `id=eq.${id}&limit=1`);
     await sb.delete('eventos', id);
+    const user = supabaseCurrentUser();
+    await logAuditRows([{
+      evento_id: Number(id),
+      action: 'DELETE',
+      field_name: '*',
+      old_value: existing?.[0] ? JSON.stringify(existing[0]) : null,
+      new_value: null,
+      user_email: user?.email || user?.id || 'desconhecido',
+      changed_at: new Date().toISOString(),
+      mes_referencia: existing?.[0]?.mes_referencia || null,
+      ano_referencia: existing?.[0]?.ano_referencia || null
+    }]);
     return { ok: true };
   } catch (e) {
     return { ok: false };
@@ -299,21 +428,85 @@ async function supabaseSearch(termo) {
   }
 }
 
-// ============================================================
-// TELA DE LOGIN COM PIN (teclado numérico estilo caixa eletrônico)
-// ============================================================
-function supabaseInjectPINScreen() {
-  if (document.getElementById('sb-pin-overlay')) return;
+function removeAuthOverlay() {
+  const el = document.getElementById('sb-auth-overlay');
+  if (el) el.remove();
+}
+
+function showAuthOverlay() {
+  if (document.getElementById('sb-auth-overlay')) return;
   const overlay = document.createElement('div');
-  overlay.id = 'sb-pin-overlay';
-  overlay.style.cssText = `
-    position:fixed; inset:0; z-index:99999;
-    background:linear-gradient(135deg,#002B5C 0%,#001b3a 60%,#003366 100%);
-    display:flex; align-items:center; justify-content:center;
-    font-family:'Segoe UI',sans-serif;
-  `;
+  overlay.id = 'sb-auth-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(2,6,23,.85);display:flex;align-items:center;justify-content:center;padding:16px;';
   overlay.innerHTML = `
-    <div style="background:#fff; padding:2.5rem; border-radius:1.5rem; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); width:100%; max-width:400px; text-align:center; animation:fadeIn 0.5s ease-out;">
-      <div style="font-size:3rem; margin-bottom:0.5rem;">P+</div>
-      <h2 style="margin:0; color:#002B5C; font-weight:800; letter-spacing:-0.5px;">Porto Mais</h2>
-      <p style="color:#64748b; margin-bottom:2rem; font-size:0
+    <div style="background:#fff;border-radius:16px;width:min(460px,100%);padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.35);">
+      <h2 style="margin:0 0 10px;font-weight:800;color:#0f172a;">Acesso Porto Mais</h2>
+      <p style="margin:0 0 16px;color:#475569;font-size:14px;">Entre com usuário/senha Supabase. Offline é permitido apenas como fallback local.</p>
+      <form id="sb-auth-form">
+        <input id="sb-auth-email" type="email" autocomplete="username" placeholder="E-mail" style="width:100%;margin-bottom:8px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;" required />
+        <input id="sb-auth-pass" type="password" autocomplete="current-password" placeholder="Senha" style="width:100%;margin-bottom:12px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;" required />
+        <div id="sb-auth-msg" style="font-size:12px;color:#b91c1c;min-height:18px;margin-bottom:8px;"></div>
+        <button type="submit" style="width:100%;padding:10px;border:none;border-radius:8px;background:#0f766e;color:#fff;font-weight:700;cursor:pointer;">Entrar</button>
+      </form>
+      <button id="sb-auth-offline" style="width:100%;margin-top:8px;padding:10px;border:1px solid #94a3b8;border-radius:8px;background:#f8fafc;color:#0f172a;font-weight:600;cursor:pointer;">Continuar em modo offline (local)</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#sb-auth-form')?.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const email = overlay.querySelector('#sb-auth-email')?.value?.trim();
+    const password = overlay.querySelector('#sb-auth-pass')?.value || '';
+    const msg = overlay.querySelector('#sb-auth-msg');
+    msg.textContent = 'Validando...';
+    const result = await supabaseLogin(email, password);
+    if (!result.ok) {
+      msg.textContent = result.error || 'Falha no login.';
+      return;
+    }
+    msg.textContent = '';
+    removeAuthOverlay();
+  });
+
+  overlay.querySelector('#sb-auth-offline')?.addEventListener('click', () => {
+    startOfflineMode();
+    removeAuthOverlay();
+  });
+}
+
+async function initializeAuthGate() {
+  if (localStorage.getItem('epm_offline_mode') === '1') {
+    _offlineMode = true;
+    return;
+  }
+  if (!sbAuthClient) {
+    showAuthOverlay();
+    return;
+  }
+  const { data } = await sbAuthClient.auth.getSession();
+  applySession(data?.session || null);
+  if (!data?.session) showAuthOverlay();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initializeAuthGate().catch((err) => {
+    console.error('Falha ao inicializar autenticação:', err);
+    showAuthOverlay();
+  });
+});
+
+// ============================================================
+// API pública exposta globalmente (compatível com app.js)
+// ============================================================
+window.supabaseLoadMonth = supabaseLoadMonth;
+window.supabaseSaveMonth = supabaseSaveMonth;
+window.supabaseListMonths = supabaseListMonths;
+window.supabaseDeleteRow = supabaseDeleteRow;
+window.supabaseSearch = supabaseSearch;
+window.supabaseLogin = supabaseLogin;
+window.supabaseLoginWithPIN = supabaseLoginWithPIN;
+window.supabaseLogout = supabaseLogout;
+window.supabaseIsLoggedIn = supabaseIsLoggedIn;
+window.supabaseCurrentUser = supabaseCurrentUser;
+window.supabaseIsOfflineMode = supabaseIsOfflineMode;
+window.supabaseCanSyncCloud = supabaseCanSyncCloud;

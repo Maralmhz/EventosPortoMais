@@ -782,7 +782,7 @@ function getHandsontableConfigWith21Columns() {
       { type: 'dropdown', source: EVENTO_TIPO_OPTS },
       { type: 'text' },
       { type: 'text' },
-      { type: 'date', dateFormat: 'DD/MM/YYYY', correctFormat: true },
+      { type: 'date', dateFormat: 'DD/MM/YYYY' },
       { type: 'dropdown', source: [] },
       { type: 'numeric', numericFormat: { pattern: '0,0.00', culture: 'pt-BR' } },
       { type: 'numeric', numericFormat: { pattern: '0,0.00', culture: 'pt-BR' } },
@@ -792,7 +792,7 @@ function getHandsontableConfigWith21Columns() {
       { type: 'dropdown', source: ['FINALIZADO', 'EM ANDAMENTO', 'NEGADO', 'PENDENTE', 'ACORDO'] },
       { type: 'dropdown', source: CAUSADOR_OPTS },
       { type: 'dropdown', source: JURIDICO_STATUS },
-      { type: 'date', dateFormat: 'DD/MM/YYYY', correctFormat: true },
+      { type: 'date', dateFormat: 'DD/MM/YYYY' },
       { type: 'numeric', numericFormat: { pattern: '0,0.00', culture: 'pt-BR' } },
       { type: 'text' },
       // NOVAS COLUNAS

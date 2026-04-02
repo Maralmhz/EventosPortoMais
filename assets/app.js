@@ -87,6 +87,38 @@ function switchToMonth(year, month) {
 
 // ============ BACKUP FUNCTIONS ============
 
+window.loadMonthData = async function loadMonthData(year = currentYear, month = currentMonth) {
+  const key = monthKey(year, month);
+  const local = JSON.parse(localStorage.getItem(key) || 'null');
+
+  if (local?.data && hot) {
+    currentYear = year;
+    currentMonth = month;
+    hot.loadData(local.data);
+    setBadge();
+    renderMonthTabs();
+    updateDashboard();
+    return local.data;
+  }
+
+  if (typeof window.supabaseLoadMonth === 'function') {
+    const rows = await window.supabaseLoadMonth(month, year);
+    if (rows && rows.length && hot) {
+      currentYear = year;
+      currentMonth = month;
+      hot.loadData(rows);
+      saveCurrentMonth();
+      setBadge();
+      renderMonthTabs();
+      updateDashboard();
+      return rows;
+    }
+  }
+
+  if (hot) hot.loadData([[""]]);
+  return [];
+};
+
 function exportBackup() {
   exportAllBackup();
 }
@@ -144,24 +176,34 @@ function handleImportFile(event) {
 }
 
 function syncWithFirebase() {
+  if (typeof window.uploadToSupabase === 'function') {
+    window.uploadToSupabase();
+    return;
+  }
+
   if (!firebaseDb) {
-    Swal.fire('Firebase offline', 'Conexão não disponível', 'warning');
+    Swal.fire('Nuvem offline', 'Conexão não disponível', 'warning');
     return;
   }
   uploadToFirebase();
 }
 
 function checkFirebaseStatus() {
-  if (!firebaseDb) {
-    Swal.fire('Firebase offline', 'Conexão não está ativa', 'warning');
+  if (typeof window.statusSupabase === 'function') {
+    window.statusSupabase();
     return;
   }
-  
+
+  if (!firebaseDb) {
+    Swal.fire('Nuvem offline', 'Conexão não está ativa', 'warning');
+    return;
+  }
+
   const months = getSavedMonths();
   Swal.fire({
     icon: 'success',
-    title: 'Firebase Conectado',
-    html: `<p>Meses locais: ${months.length}</p><p>Auto-sync ativo</p>`,
+    title: 'Nuvem conectada',
+    html: `<p>Meses locais: ${months.length}</p><p>Sincronização ativa</p>`,
     confirmButtonText: 'OK'
   });
 }
@@ -578,7 +620,7 @@ function updateHotOficinaDropdown() {
       { type:'dropdown', source: EVENTO_TIPO_OPTS },
       { type:'text' },
       { type:'text' },
-      { type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true },
+      { type:'date', dateFormat:'DD/MM/YYYY' },
       { type:'dropdown', source: list },
       { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
       { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
@@ -588,7 +630,7 @@ function updateHotOficinaDropdown() {
       { type:'dropdown', source:['FINALIZADO','EM ANDAMENTO','NEGADO','PENDENTE','ACORDO'] },
       { type:'dropdown', source: CAUSADOR_OPTS },
       { type:'dropdown', source: JURIDICO_STATUS },
-      { type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true },
+      { type:'date', dateFormat:'DD/MM/YYYY' },
       { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
       { type:'text' }
     ]
@@ -900,52 +942,27 @@ async function createNewMonth() {
 
 // ============ FIREBASE AUTO-CONNECT ============
 function initFirebase() {
-  try {
-    const firebaseConfig = {
-      apiKey: "AIzaSyASDJpwHTtOn71liMYaMTwyWVDY4s1FJRU",
-      authDomain: "porto-mais-eventos.firebaseapp.com",
-      databaseURL: "https://porto-mais-eventos-default-rtdb.firebaseio.com",
-      projectId: "porto-mais-eventos",
-      storageBucket: "porto-mais-eventos.firebasestorage.app",
-      messagingSenderId: "1084717178712",
-      appId: "1:1084717178712:web:05f7aa39e06d626d208f2d"
-    };
-    
-    const app = firebase.initializeApp(firebaseConfig);
-    firebaseDb = firebase.database();
-    
-    document.getElementById('sync-status').innerHTML = '<span style="color:#10b981;">✓ Online</span>';
-    console.log('✅ Firebase conectado automaticamente!');
-    
-    setInterval(() => {
-      if (firebaseDb) {
-        const md = saveCurrentMonth();
-        firebaseDb.ref('months/' + monthKey(currentYear, currentMonth)).set(md)
-          .then(() => console.log('🔄 Auto-sync realizado'))
-          .catch(err => console.error('Erro no auto-sync:', err));
-      }
-    }, 30000);
-    
-    firebaseDb.ref('oficinas').once('value', snapshot => {
-      const cloudOficinas = snapshot.val();
-      if (cloudOficinas && Array.isArray(cloudOficinas) && cloudOficinas.length > 0) {
-        oficinas = cloudOficinas;
-        saveOficinasToStorage();
-        updateHotOficinaDropdown();
-        console.log('🏪 Oficinas baixadas do Firebase');
-      }
-    });
-    
-  } catch (error) {
-    console.warn('Firebase não configurado:', error);
-    document.getElementById('sync-status').innerHTML = '<span style="color:#64748b;">Offline</span>';
+  firebaseDb = null;
+
+  const syncStatus = document.getElementById('sync-status');
+  if (syncStatus) {
+    const supabaseReady = typeof window.supabaseSaveMonth === 'function' && typeof window.supabaseLoadMonth === 'function';
+    syncStatus.innerHTML = supabaseReady
+      ? '<span style="color:#10b981;">✓ Supabase</span>'
+      : '<span style="color:#64748b;">Offline</span>';
   }
+
+  console.log('ℹ️ Sincronização ativa via Supabase.');
 }
 
 // ============ DOWNLOAD/UPLOAD FIREBASE ============
 async function downloadFromFirebase() {
+  if (typeof window.downloadFromSupabase === 'function') {
+    return window.downloadFromSupabase();
+  }
+
   if (!firebaseDb) {
-    Swal.fire('Firebase não disponível', 'Conexão com nuvem não configurada.', 'warning');
+    Swal.fire('Nuvem indisponível', 'Conexão com nuvem não configurada.', 'warning');
     return;
   }
 
@@ -1020,8 +1037,12 @@ async function downloadFromFirebase() {
 }
 
 async function uploadToFirebase() {
+  if (typeof window.uploadToSupabase === 'function') {
+    return window.uploadToSupabase();
+  }
+
   if (!firebaseDb) {
-    Swal.fire('Firebase não disponível', 'Conexão com nuvem não configurada.', 'warning');
+    Swal.fire('Nuvem indisponível', 'Conexão com nuvem não configurada.', 'warning');
     return;
   }
   
@@ -1619,7 +1640,7 @@ function initHandsontable() {
       { type:'dropdown', source: EVENTO_TIPO_OPTS },
       { type:'text' },
       { type:'text' },
-      { type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true },
+      { type:'date', dateFormat:'DD/MM/YYYY' },
       { type:'dropdown', source: [] },
       { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
       { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
@@ -1629,7 +1650,7 @@ function initHandsontable() {
       { type:'dropdown', source:['FINALIZADO','EM ANDAMENTO','NEGADO','PENDENTE','ACORDO'] },
       { type:'dropdown', source: CAUSADOR_OPTS },
       { type:'dropdown', source: JURIDICO_STATUS },
-      { type:'date', dateFormat:'DD/MM/YYYY', correctFormat:true },
+      { type:'date', dateFormat:'DD/MM/YYYY' },
       { type:'numeric', numericFormat:{ pattern:'0,0.00', culture:'pt-BR' } },
       { type:'text' }
     ],
@@ -1664,8 +1685,8 @@ function initHandsontable() {
 
 setTimeout(()=>{ 
   loadOficinas();
-  initFirebase();
   initHandsontable();
+  initFirebase();
   setBadge();
   renderMonthTabs(); // RENDERIZA ABAS
   saveCurrentMonth(); 

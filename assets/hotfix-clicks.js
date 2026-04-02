@@ -7,12 +7,12 @@ const HOTFIX_MODAL_IDS = ['configModal', 'monthNavigatorModal', 'compareSelector
 
 function syncHiddenModalState(modal) {
   if (!modal) return;
-  const isHidden = modal.classList.contains('hidden') || modal.style.display === 'none';
-  if (isHidden) {
+  const isHiddenByClass = modal.classList.contains('hidden');
+  if (isHiddenByClass) {
     modal.style.display = 'none';
     modal.style.pointerEvents = 'none';
   } else {
-    modal.style.display = '';
+    modal.style.removeProperty('display');
     modal.style.pointerEvents = 'auto';
   }
 }

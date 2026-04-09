@@ -1,15 +1,15 @@
 // ============================================================
 // SUPABASE CONFIG — EventosPortoMais
-// Autenticação via PIN + CRUD de eventos
+// Acesso anônimo total — sem necessidade de login
 // ============================================================
 const SUPABASE_URL = 'https://xjgyijfogxefmvfnwwbh.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqZ3lpamZvZ3hlZm12Zm53d2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNTM3NTYsImV4cCI6MjA5MDYyOTc1Nn0.WCEUnEkswLZXow8xwMBscYdBRZxK1BkW7skI-WS2rFQ';
 
 // ============================================================
-// MÊS PADRÃO = MÊS ATUAL (não o anterior)
+// MÊS PADRÃO = MÊS ATUAL
 // ============================================================
 const _hoje = new Date();
-const MES_PADRAO = _hoje.getMonth() + 1; // getMonth() retorna 0-11, somamos 1
+const MES_PADRAO = _hoje.getMonth() + 1;
 const ANO_PADRAO = _hoje.getFullYear();
 
 // ============================================================
@@ -37,13 +37,13 @@ const COL = {
 };
 
 // ============================================================
-// AUTH — sessão real via Supabase Auth + fallback offline explícito
+// Sem autenticação — usa token anon direto
 // ============================================================
-const sbAuthClient = (window.supabase && typeof window.supabase.createClient === 'function')
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
-  : null;
 let _authToken = SUPABASE_ANON;
 let _offlineMode = false;
+
+window._authToken = _authToken;
+window._sbSession = null;
 
 function getHeaders() {
   return {
@@ -97,6 +97,9 @@ const sb = {
   },
 };
 
+// ============================================================
+// STUBS de autenticação (mantidos para compatibilidade com app.js)
+// ============================================================
 function applySession(session) {
   _authToken = session?.access_token || SUPABASE_ANON;
   window._authToken = _authToken;
@@ -104,52 +107,35 @@ function applySession(session) {
 }
 
 async function supabaseLogin(email, password) {
-  if (!sbAuthClient) return { ok: false, error: 'SDK Supabase indisponível.' };
-  const { data, error } = await sbAuthClient.auth.signInWithPassword({ email, password });
-  if (error) return { ok: false, error: error.message };
-  applySession(data.session || null);
-  _offlineMode = false;
-  localStorage.removeItem('epm_offline_mode');
-  return { ok: true, user: data.user || null };
+  return { ok: true, user: null };
 }
 
 async function supabaseLoginWithPIN() {
-  return {
-    ok: false,
-    error: 'Login por PIN desativado. Use e-mail e senha ou modo offline explícito.'
-  };
+  return { ok: true };
 }
 
 async function supabaseLogout() {
-  try {
-    if (sbAuthClient) await sbAuthClient.auth.signOut();
-  } catch (_) {}
-  applySession(null);
-  _offlineMode = false;
-  localStorage.removeItem('epm_offline_mode');
-  console.log('🔒 Sessão encerrada');
+  console.log('Logout chamado — modo anon, sem efeito.');
 }
 
 function supabaseIsLoggedIn() {
-  return !!(window._sbSession && window._sbSession.access_token);
+  return true; // sempre "logado" como anon
 }
 
 function supabaseCurrentUser() {
-  return window._sbSession?.user || null;
+  return null;
 }
 
 function supabaseIsOfflineMode() {
-  return _offlineMode === true;
+  return false;
 }
 
 function supabaseCanSyncCloud() {
-  return supabaseIsLoggedIn() && !_offlineMode;
+  return true; // anon pode sincronizar
 }
 
 function startOfflineMode() {
   _offlineMode = true;
-  applySession(null);
-  localStorage.setItem('epm_offline_mode', '1');
 }
 
 // ============================================================
@@ -253,7 +239,7 @@ async function supabaseLoadMonth(mes, ano) {
 }
 
 async function logAuditRows(rows) {
-  if (!rows || rows.length === 0 || !supabaseCanSyncCloud()) return;
+  if (!rows || rows.length === 0) return;
   try {
     await sb.insert('eventos_audit', rows);
   } catch (e) {
@@ -276,10 +262,6 @@ function buildFieldDiffs(before, after) {
 
 async function supabaseSaveMonth(mes, ano, rows) {
   try {
-    if (!supabaseCanSyncCloud()) {
-      return { ok: false, error: 'Sincronização em nuvem indisponível (offline ou sem login).' };
-    }
-
     const existentes = await sb.select(
       'eventos',
       `mes_referencia=eq.${mes}&ano_referencia=eq.${ano}&select=*&order=id.asc&limit=1000`
@@ -287,8 +269,7 @@ async function supabaseSaveMonth(mes, ano, rows) {
     const existentesPorId = new Map(existentes.map((e) => [Number(e.id), e]));
     const idsPresentes = new Set();
     const auditRows = [];
-    const user = supabaseCurrentUser();
-    const userLabel = user?.email || user?.id || 'desconhecido';
+    const userLabel = 'anon';
 
     let created = 0;
     let updated = 0;
@@ -373,7 +354,7 @@ async function supabaseSaveMonth(mes, ano, rows) {
 }
 
 // ============================================================
-// LISTA MESES DISPONÍVEIS — usa RPC distinct para performance
+// LISTA MESES DISPONÍVEIS
 // ============================================================
 async function supabaseListMonths() {
   try {
@@ -408,14 +389,13 @@ async function supabaseDeleteRow(id) {
   try {
     const existing = await sb.select('eventos', `id=eq.${id}&limit=1`);
     await sb.delete('eventos', id);
-    const user = supabaseCurrentUser();
     await logAuditRows([{
       evento_id: Number(id),
       action: 'DELETE',
       field_name: '*',
       old_value: existing?.[0] ? JSON.stringify(existing[0]) : null,
       new_value: null,
-      user_email: user?.email || user?.id || 'desconhecido',
+      user_email: 'anon',
       changed_at: new Date().toISOString(),
       mes_referencia: existing?.[0]?.mes_referencia || null,
       ano_referencia: existing?.[0]?.ano_referencia || null
@@ -439,7 +419,7 @@ async function supabaseSearch(termo) {
 }
 
 // ============================================================
-// DOWNLOAD CSV — baixa eventos do mês/ano atual
+// DOWNLOAD CSV
 // ============================================================
 async function supabaseDownloadCSV(mes, ano) {
   try {
@@ -490,71 +470,26 @@ async function supabaseDownloadCSV(mes, ano) {
   }
 }
 
+// ============================================================
+// Auth gate DESATIVADO — sem overlay de login
+// ============================================================
 function removeAuthOverlay() {
   const el = document.getElementById('sb-auth-overlay');
   if (el) el.remove();
 }
 
 function showAuthOverlay() {
-  if (document.getElementById('sb-auth-overlay')) return;
-  const overlay = document.createElement('div');
-  overlay.id = 'sb-auth-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(2,6,23,.85);display:flex;align-items:center;justify-content:center;padding:16px;';
-  overlay.innerHTML = `
-    <div style="background:#fff;border-radius:16px;width:min(460px,100%);padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.35);">
-      <h2 style="margin:0 0 10px;font-weight:800;color:#0f172a;">Acesso Porto Mais</h2>
-      <p style="margin:0 0 16px;color:#475569;font-size:14px;">Entre com usuário/senha Supabase. Offline é permitido apenas como fallback local.</p>
-      <form id="sb-auth-form">
-        <input id="sb-auth-email" type="email" autocomplete="username" placeholder="E-mail" style="width:100%;margin-bottom:8px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;" required />
-        <input id="sb-auth-pass" type="password" autocomplete="current-password" placeholder="Senha" style="width:100%;margin-bottom:12px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;" required />
-        <div id="sb-auth-msg" style="font-size:12px;color:#b91c1c;min-height:18px;margin-bottom:8px;"></div>
-        <button type="submit" style="width:100%;padding:10px;border:none;border-radius:8px;background:#0f766e;color:#fff;font-weight:700;cursor:pointer;">Entrar</button>
-      </form>
-      <button id="sb-auth-offline" style="width:100%;margin-top:8px;padding:10px;border:1px solid #94a3b8;border-radius:8px;background:#f8fafc;color:#0f172a;font-weight:600;cursor:pointer;">Continuar em modo offline (local)</button>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-
-  overlay.querySelector('#sb-auth-form')?.addEventListener('submit', async (ev) => {
-    ev.preventDefault();
-    const email = overlay.querySelector('#sb-auth-email')?.value?.trim();
-    const password = overlay.querySelector('#sb-auth-pass')?.value || '';
-    const msg = overlay.querySelector('#sb-auth-msg');
-    msg.textContent = 'Validando...';
-    const result = await supabaseLogin(email, password);
-    if (!result.ok) {
-      msg.textContent = result.error || 'Falha no login.';
-      return;
-    }
-    msg.textContent = '';
-    removeAuthOverlay();
-  });
-
-  overlay.querySelector('#sb-auth-offline')?.addEventListener('click', () => {
-    startOfflineMode();
-    removeAuthOverlay();
-  });
+  // Desativado — acesso anônimo liberado
+  console.log('ℹ️ Auth overlay desativado — modo anônimo ativo.');
 }
 
 async function initializeAuthGate() {
-  if (localStorage.getItem('epm_offline_mode') === '1') {
-    _offlineMode = true;
-    return;
-  }
-  if (!sbAuthClient) {
-    showAuthOverlay();
-    return;
-  }
-  const { data } = await sbAuthClient.auth.getSession();
-  applySession(data?.session || null);
-  if (!data?.session) showAuthOverlay();
+  // Modo anônimo — nenhum overlay exibido
+  console.log('✅ EventosPortoMais — acesso anônimo ativo, sem login necessário.');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  initializeAuthGate().catch((err) => {
-    console.error('Falha ao inicializar autenticação:', err);
-    showAuthOverlay();
-  });
+  initializeAuthGate();
 });
 
 // ============================================================

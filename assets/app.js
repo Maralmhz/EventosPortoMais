@@ -183,8 +183,27 @@ function syncWithFirebase() {
 }
 
 function checkFirebaseStatus() {
+  // Usa diagnosticarSupabase se disponível, senão statusSupabase, senão erro
+  if (typeof window.diagnosticarSupabase === 'function') {
+    window.diagnosticarSupabase();
+    return;
+  }
   if (typeof window.statusSupabase === 'function') {
     window.statusSupabase();
+    return;
+  }
+  // Fallback: testa conexão diretamente
+  if (typeof window.supabaseListMonths === 'function') {
+    window.supabaseListMonths().then(months => {
+      Swal.fire({
+        title: '✅ Supabase Conectado',
+        html: `<p>Conexão ativa com o banco de dados.</p><p class="mt-2">☁️ <b>${months.length}</b> mês(es) encontrado(s) na nuvem.</p>`,
+        icon: 'success',
+        confirmButtonText: 'OK'
+      });
+    }).catch(err => {
+      Swal.fire('❌ Erro de Conexão', 'Falha ao conectar ao Supabase: ' + err.message, 'error');
+    });
     return;
   }
   Swal.fire('Nuvem offline', 'Conexão Supabase não está ativa.', 'warning');

@@ -5,45 +5,76 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Eventos Porto Mais</title>
   
-  <!-- BLOQUEIO DE MODAL - Carrega PRIMEIRO para prevenir abertura -->
+  <!-- BLOQUEIO TOTAL DE MODAIS - Executa PRIMEIRO -->
   <script>
-    // Executa IMEDIATAMENTE antes de qualquer outro script
-    (function() {
-      // Previne abertura de modais
-      window.abrirModal = function() { return false; };
-      window.openModal = function() { return false; };
-      window.showModal = function() { return false; };
-      window.exibirModal = function() { return false; };
-      window.toggleModal = function() { return false; };
-      window.closeModal = function() { return true; };
-      window.fecharModal = function() { return true; };
+  (function() {
+    // Previne SweetAlert2
+    window.Swal = {
+      fire: function() { console.log('[BLOQUEIO] Swal.fire bloqueado'); return Promise.resolve({isConfirmed: false}); },
+      mixin: function() { return this; },
+      showLoading: function() {},
+      close: function() {},
+      isVisible: function() { return false; }
+    };
+    
+    // Previne alert, confirm, prompt
+    window.alert = function() { console.log('[BLOQUEIO] alert() bloqueado'); };
+    window.confirm = function() { console.log('[BLOQUEIO] confirm() bloqueado'); return false; };
+    window.prompt = function() { console.log('[BLOQUEIO] prompt() bloqueado'); return null; };
+    
+    // CSS inline ultra-agressivo
+    var style = document.createElement('style');
+    style.textContent = `
+      /* Esconde TUDO que seja modal/overlay/popup */
+      .modal, .modal-overlay, #modalOverlay, .modal-backdrop,
+      .modal-content, #pinModal, #loginModal, #configModal,
+      #modal, .modal-dialog, .modal-container, #modalContainer,
+      .modal-wrapper, #modalWrapper, .modal-outer, #modalOuter,
+      [class*="modal"], [id*="modal"], [class*="Modal"], [id*="Modal"],
+      .overlay, #overlay, .backdrop, #backdrop,
+      .popup, #popup, .dialog, #dialog,
+      .swal2-container, .swal2-popup, .swal2-overlay,
+      .Toastify, .toast, .notification,
+      .ReactModal__Overlay, .ReactModal__Content {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        position: fixed !important;
+        top: -9999px !important;
+        left: -9999px !important;
+        z-index: -9999 !important;
+        transform: none !important;
+      }
       
-      // CSS inline para esconder modais
-      var style = document.createElement('style');
-      style.textContent = `
-        .modal, .modal-overlay, #modalOverlay, .modal-backdrop,
-        .modal-content, #pinModal, #loginModal, #configModal,
-        #modal, .modal-dialog, .modal-container, #modalContainer,
-        .modal-wrapper, #modalWrapper, .modal-outer, #modalOuter,
-        [class*="modal"], [id*="modal"], [class*="Modal"], [id*="Modal"],
-        .overlay, #overlay, .backdrop, #backdrop,
-        .popup, #popup, .dialog, #dialog {
-          display: none !important;
-          visibility: hidden !important;
-          opacity: 0 !important;
-          pointer-events: none !important;
-          position: fixed !important;
-          top: -9999px !important;
-          left: -9999px !important;
-          z-index: -9999 !important;
-        }
-        body {
-          overflow: auto !important;
-          position: static !important;
-        }
-      `;
-      document.head.appendChild(style);
-    })();
+      /* Remove animacoes */
+      .fade, .fadeIn, .fadeOut, .zoom, .slide {
+        animation: none !important;
+        transition: none !important;
+      }
+      
+      /* Libera body */
+      body, html {
+        overflow: auto !important;
+        position: static !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      
+      /* Menu superior */
+      nav, .menu, .navbar, .header {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    console.log('[BLOQUEIO] Sistema anti-modal ativado');
+  })();
   </script>
   
   <link rel="stylesheet" href="assets/styles.css">
@@ -52,7 +83,7 @@
 <body>
   <div id="app"></div>
   
-  <!-- Scripts -->
+  <!-- Scripts em ORDEM CORRETA -->
   <script src="assets/hotfix-modal-fechado.js"></script>
   <script src="js/supabase-config.js"></script>
   <script src="assets/diagnostico-supabase.js"></script>

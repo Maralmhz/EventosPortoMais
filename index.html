@@ -1,16 +1,66 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gerenciador de Eventos - Porto Mais</title>
-
- 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase-config.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eventos Porto Mais</title>
+  
+  <!-- BLOQUEIO DE MODAL - Carrega PRIMEIRO para prevenir abertura -->
+  <script>
+    // Executa IMEDIATAMENTE antes de qualquer outro script
+    (function() {
+      // Previne abertura de modais
+      window.abrirModal = function() { return false; };
+      window.openModal = function() { return false; };
+      window.showModal = function() { return false; };
+      window.exibirModal = function() { return false; };
+      window.toggleModal = function() { return false; };
+      window.closeModal = function() { return true; };
+      window.fecharModal = function() { return true; };
+      
+      // CSS inline para esconder modais
+      var style = document.createElement('style');
+      style.textContent = `
+        .modal, .modal-overlay, #modalOverlay, .modal-backdrop,
+        .modal-content, #pinModal, #loginModal, #configModal,
+        #modal, .modal-dialog, .modal-container, #modalContainer,
+        .modal-wrapper, #modalWrapper, .modal-outer, #modalOuter,
+        [class*="modal"], [id*="modal"], [class*="Modal"], [id*="Modal"],
+        .overlay, #overlay, .backdrop, #backdrop,
+        .popup, #popup, .dialog, #dialog {
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          position: fixed !important;
+          top: -9999px !important;
+          left: -9999px !important;
+          z-index: -9999 !important;
+        }
+        body {
+          overflow: auto !important;
+          position: static !important;
+        }
+      `;
+      document.head.appendChild(style);
+    })();
+  </script>
+  
+  <link rel="stylesheet" href="assets/styles.css">
+  <link rel="stylesheet" href="assets/features.css">
+</head>
+<body>
+  <div id="app"></div>
+  
+  <!-- Scripts -->
+  <script src="assets/hotfix-modal-fechado.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="assets/diagnostico-supabase.js"></script>
+  <script src="assets/app.js"></script>
+  <script src="assets/features.js"></script>
+  <script src="assets/melhorias-ux.js"></script>
+  <script src="assets/melhorias-funcoes.js"></script>
+  <script src="assets/import-oficinas.js"></script>
+  <script src="assets/hotfix-clicks.js"></script>
+</body>
+</html>

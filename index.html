@@ -5,86 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Eventos Porto Mais</title>
   
-  <!-- BLOQUEIO TOTAL DE MODAIS - Executa PRIMEIRO -->
+  <!-- BLOQUEIO DE MODAL - EXECUTA PRIMEIRO ABSOLUTO -->
   <script>
-  (function() {
-    // Previne SweetAlert2
-    window.Swal = {
-      fire: function() { console.log('[BLOQUEIO] Swal.fire bloqueado'); return Promise.resolve({isConfirmed: false}); },
-      mixin: function() { return this; },
-      showLoading: function() {},
-      close: function() {},
-      isVisible: function() { return false; }
-    };
+  (function(){
+    console.log('🛡️ [INDEX.HTML] BLOQUEIO INICIANDO...');
     
-    // Previne alert, confirm, prompt
-    window.alert = function() { console.log('[BLOQUEIO] alert() bloqueado'); };
-    window.confirm = function() { console.log('[BLOQUEIO] confirm() bloqueado'); return false; };
-    window.prompt = function() { console.log('[BLOQUEIO] prompt() bloqueado'); return null; };
+    // 1. Bloqueia SweetAlert2 ANTES de carregar
+    window.Swal = { fire: function() { console.log('🛡️ Swal.fire BLOQUEADO'); return Promise.resolve({isConfirmed:false,isDismissed:true}); }, mixin: function(){return this;}, showLoading:function(){}, close:function(){}, isVisible:function(){return false;}, getContainer:function(){return null;} };
     
-    // CSS inline ultra-agressivo
-    var style = document.createElement('style');
-    style.textContent = `
-      /* Esconde TUDO que seja modal/overlay/popup */
-      .modal, .modal-overlay, #modalOverlay, .modal-backdrop,
-      .modal-content, #pinModal, #loginModal, #configModal,
-      #modal, .modal-dialog, .modal-container, #modalContainer,
-      .modal-wrapper, #modalWrapper, .modal-outer, #modalOuter,
-      [class*="modal"], [id*="modal"], [class*="Modal"], [id*="Modal"],
-      .overlay, #overlay, .backdrop, #backdrop,
-      .popup, #popup, .dialog, #dialog,
-      .swal2-container, .swal2-popup, .swal2-overlay,
-      .Toastify, .toast, .notification,
-      .ReactModal__Overlay, .ReactModal__Content {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        position: fixed !important;
-        top: -9999px !important;
-        left: -9999px !important;
-        z-index: -9999 !important;
-        transform: none !important;
-      }
-      
-      /* Remove animacoes */
-      .fade, .fadeIn, .fadeOut, .zoom, .slide {
-        animation: none !important;
-        transition: none !important;
-      }
-      
-      /* Libera body */
-      body, html {
-        overflow: auto !important;
-        position: static !important;
-        height: auto !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-      
-      /* Menu superior */
-      nav, .menu, .navbar, .header {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-      }
-    `;
-    document.head.appendChild(style);
+    // 2. Bloqueia alert/confirm/prompt
+    window.alert = function(){}; window.confirm = function(){return false;}; window.prompt = function(){return null;};
     
-    console.log('[BLOQUEIO] Sistema anti-modal ativado');
+    // 3. CSS inline
+    var css = '.modal,.modal-overlay,#modalOverlay,.modal-backdrop,.modal-content,#pinModal,#loginModal,#configModal,#modal,.modal-dialog,.modal-container,.swal2-container,.swal2-popup,.swal2-overlay,.overlay,.backdrop,.popup,.dialog{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;position:fixed!important;top:-9999px!important;left:-9999px!important;z-index:-9999!important;} body,html{overflow:auto!important;position:static!important;}';
+    document.write('<style>'+css+'</style>');
+    
+    // 4. Previne abertura de modal
+    window.abrirModal=window.openModal=window.showModal=window.exibirModal=window.toggleModal=function(){console.log('🛡️ Modal bloqueado');return false;};
+    
+    console.log('🛡️ [INDEX.HTML] BLOQUEIO ATIVO');
   })();
   </script>
   
+  <!-- Hotfix carrega IMEDIATAMENTE -->
+  <script src="assets/hotfix-modal-fechado.js"></script>
+  
+  <!-- CSS -->
   <link rel="stylesheet" href="assets/styles.css">
   <link rel="stylesheet" href="assets/features.css">
 </head>
 <body>
   <div id="app"></div>
   
-  <!-- Scripts em ORDEM CORRETA -->
-  <script src="assets/hotfix-modal-fechado.js"></script>
+  <!-- Scripts -->
   <script src="js/supabase-config.js"></script>
   <script src="assets/diagnostico-supabase.js"></script>
   <script src="assets/app.js"></script>
@@ -93,5 +46,7 @@
   <script src="assets/melhorias-funcoes.js"></script>
   <script src="assets/import-oficinas.js"></script>
   <script src="assets/hotfix-clicks.js"></script>
+  <script src="assets/login.js"></script>
+  <script src="assets/pin-login.js"></script>
 </body>
 </html>
